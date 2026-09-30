@@ -1,6 +1,7 @@
 "use client";
 
 import { KEYS } from "./data";
+import { readStore } from "./store";
 
 // Tiny synthesized sounds (no audio files). Off by default, Hanifa can switch them on from the menu.
 type Kind = "pop" | "correct" | "wrong" | "win" | "levelup" | "chime";
@@ -14,7 +15,8 @@ const notes: Record<Kind, { f: number; t: number; d: number; type?: OscillatorTy
 };
 
 let context: AudioContext | null = null;
-export const soundEnabled = () => { try { return window.localStorage.getItem(KEYS.sound) === "on"; } catch { return false; } };
+// The setting is saved through the store, which JSON-encodes it, so read it the same way.
+export const soundEnabled = () => readStore<string>(KEYS.sound, "off") === "on";
 
 export function play(kind: Kind) {
   if (typeof window === "undefined" || !soundEnabled()) return;

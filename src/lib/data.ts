@@ -18,7 +18,27 @@ export const KEYS = {
   role: "future-world-role",
   sound: "future-world-sound",
   guideSeen: "future-world-guide-seen",
+  sheetSeeded: "future-world-sheet-seeded-v1",
+  lastSheetSync: "future-world-last-sheet-sync",
+  asks: "future-world-asks-v1",
+  // per device, never synced
+  cloudUrl: "future-world-cloud-url",
+  cloudMeta: "future-world-cloud-meta-v1",
+  mentorToken: "future-world-mentor-token",
 } as const;
+
+/**
+ * What Cloud save shares between devices: Hanifa's progress and everything she and Xander say to each other.
+ * Per-device things (theme, sound, the running focus timer, which celebrations this screen has shown) stay local.
+ */
+export const SYNCED_KEYS: string[] = [
+  KEYS.quests, KEYS.activity, KEYS.roadmap, KEYS.goal, KEYS.unis, KEYS.scholarships,
+  KEYS.skillProof, KEYS.brain, KEYS.inbox, KEYS.inboxSeen, KEYS.asks,
+];
+
+/** Hanifa's working Google Sheet (weekly updates, daily time tracking, training plan, university research). */
+export const WORKING_SHEET_ID = "1U-4tJ5tJGLne0uCzxhKHlO9aBvm9DsfIOvV94VDXYfE";
+export const WORKING_SHEET_URL = `https://docs.google.com/spreadsheets/d/${WORKING_SHEET_ID}/edit?gid=1730295282#gid=1730295282`;
 
 // ---------- shared types ----------
 export type Comment = { id: string; by: "mentor" | "hanifa"; text: string; at: string };
@@ -28,7 +48,7 @@ export type Activity = {
   kind: "Time log" | "Learning update" | "Weekly reflection";
   topic: string; minutes: number; did: string; practiced: string; feeling: string;
   blocker: string; proof: string; attachment?: string; mentorNote?: string;
-  comments?: Comment[]; source?: "focus" | "manual";
+  comments?: Comment[]; source?: "focus" | "manual" | "sheet";
 };
 
 export type QuestStatus = "Today" | "Upcoming" | "In Progress" | "Waiting for Mentor" | "Needs a tweak" | "Completed";
@@ -49,6 +69,8 @@ export type QuizResult = { best: number; total: number; attempts: number; last: 
 export type Brain = { cards: Record<string, CardState>; quiz: Record<string, QuizResult>; days: string[]; daily: Record<string, { score: number; total: number }> };
 
 export type InboxMessage = { id: string; at: string; kind: "cheer" | "challenge" | "note"; text: string; reply?: string; repliedAt?: string };
+export type AskLog = { id: string; at: string; module: number; topic: string; mode: string; question: string };
+export const EMPTY_ASKS: AskLog[] = [];
 export type FocusTimer = { endsAt: number; minutes: number; topic: string; startedAt: number } | null;
 
 // ---------- stable defaults (must be module constants for useLocalStore) ----------
@@ -87,6 +109,14 @@ export const SKILLS = seed.skills;
 export const skillForModule = (moduleNumber: number) => SKILLS[moduleNumber - 1];
 export const blankSkillProof = (): SkillProof => ({ completed: [], note: "", proof: "", sent: false });
 
+/** The feeling's emoji, whole (so 😮‍💨 isn't cut in half). Plain text like "Easy" from the workbook gets a note icon. */
+export const feelingIcon = (feeling: string) => {
+  const first = typeof Intl !== "undefined" && "Segmenter" in Intl
+    ? new Intl.Segmenter().segment(feeling.trim())[Symbol.iterator]().next().value?.segment ?? ""
+    : Array.from(feeling.trim())[0] ?? "";
+  return /\p{Extended_Pictographic}/u.test(first) ? first : "📝";
+};
+
 export const FEELINGS = [
   { emoji: "🔥", label: "On fire" }, { emoji: "✨", label: "In the zone" }, { emoji: "😊", label: "Good" },
   { emoji: "🤔", label: "Confused" }, { emoji: "😮‍💨", label: "Tough day" }, { emoji: "😴", label: "Sleepy" },
@@ -107,3 +137,4 @@ export const fileToCompressedDataUrl = async (file: File, max = 1000): Promise<s
 };
 
 export const EMPTY_LIST: never[] = [];
+export const EMPTY_IDS: string[] = [];

@@ -2,8 +2,8 @@
 
 import { ChangeEvent, FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CalendarDays, Camera, HelpCircle, ImagePlus, Link2, Pencil, Plus, Trash2 } from "lucide-react";
-import { FEELINGS, IMPORTED_ACTIVITY, KEYS, SKILLS, addDays, fileToCompressedDataUrl, fmtDay, fmtMinutes, isSample, localDate, uid } from "@/lib/data";
+import { CalendarDays, Camera, ExternalLink, HelpCircle, ImagePlus, Link2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { FEELINGS, IMPORTED_ACTIVITY, KEYS, SKILLS, WORKING_SHEET_URL, addDays, feelingIcon, fileToCompressedDataUrl, fmtDay, fmtMinutes, isSample, localDate, uid } from "@/lib/data";
 import type { Activity, Comment } from "@/lib/data";
 import { XP } from "@/lib/game";
 import { useGame } from "@/lib/useGame";
@@ -33,6 +33,7 @@ function Journal() {
   const [attachment, setAttachment] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const [error, setError] = useState("");
+  const [viewing, setViewing] = useState("");
   const today = hydrated ? localDate() : "";
   const learner = role === "learner";
 
@@ -57,7 +58,7 @@ function Journal() {
     const minutes = Math.max(0, Number(draft.minutes) || 0);
     if (!draft.did.trim() && minutes === 0) { setError("Add a few words or some time before saving."); return; }
     const previous = editingId ? items.find(i => i.id === editingId) : undefined;
-    const entry: Activity = { ...previous, id: editingId || uid(), date: draft.date, kind: draft.kind, topic: draft.topic, minutes, did: draft.did.trim(), practiced: draft.practiced.trim(), feeling: draft.feeling, blocker: draft.blocker.trim(), proof: draft.proof.trim(), attachment: attachment || undefined, source: "manual" };
+    const entry: Activity = { ...previous, id: editingId || uid(), date: draft.date, kind: draft.kind, topic: draft.topic, minutes, did: draft.did.trim(), practiced: draft.practiced.trim(), feeling: draft.feeling, blocker: draft.blocker.trim(), proof: draft.proof.trim(), attachment: attachment || undefined, source: previous?.source ?? "manual" };
     setItems(editingId ? items.map(i => i.id === editingId ? entry : i) : [...items, entry]);
     if (!editingId) celebrate({ emoji: draft.blocker.trim() ? "🙋‍♀️" : "📝", title: draft.blocker.trim() ? "Question sent to Xander" : "Entry saved!", text: minutes ? `${fmtMinutes(minutes)} logged on ${draft.topic}` : "Every note counts.", xp: Math.min(minutes, 60) + XP.journalEntry, sound: "win" });
     reset();
@@ -120,19 +121,26 @@ function Journal() {
         <h3 className="mb-3 flex items-center gap-2 text-sm font-extrabold text-ink/50"><CalendarDays size={15} />{fmtDay(date, { weekday: "long", day: "numeric", month: "long" })}{date === today && <span className="chip bg-brand text-white">Today</span>}</h3>
         <div className="stagger space-y-4">{entries.map(a => <article key={a.id} className="card p-5">
           <div className="flex items-start gap-3">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand/10 text-2xl">{a.feeling.slice(0, 2) || "📝"}</span>
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand/10 text-2xl">{feelingIcon(a.feeling)}</span>
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2"><span className="chip bg-brand/10 text-brand">{a.kind}</span>{a.minutes > 0 && <span className="chip bg-ink/5 text-ink/60">{fmtMinutes(a.minutes)}</span>}{a.source === "focus" && <span className="chip bg-ink/5 text-ink/60">⏱️ Focus timer</span>}{isSample(a) && <span className="chip bg-amber-100 text-amber-900">Sample week · not counted</span>}</div>
+              <div className="flex flex-wrap items-center gap-2"><span className="chip bg-brand/10 text-brand">{a.kind}</span>{a.minutes > 0 && <span className="chip bg-ink/5 text-ink/60">{fmtMinutes(a.minutes)}</span>}{a.source === "focus" && <span className="chip bg-ink/5 text-ink/60">⏱️ Focus timer</span>}{a.source === "sheet" && <span className="chip bg-emerald-100 text-emerald-800">📊 From the sheet</span>}{isSample(a) && <span className="chip bg-amber-100 text-amber-900">Sample week · not counted</span>}</div>
               <h4 className="mt-2 font-display text-lg font-extrabold">{a.topic}</h4>
             </div>
-            {learner && !isSample(a) && <div className="flex gap-1"><button onClick={() => edit(a)} className="grid h-9 w-9 place-items-center rounded-xl text-ink/45 transition hover:bg-ink/5 hover:text-ink" aria-label="Edit entry"><Pencil size={15} /></button><button onClick={() => remove(a)} className="grid h-9 w-9 place-items-center rounded-xl text-ink/45 transition hover:bg-rose-50 hover:text-rose-600" aria-label="Delete entry"><Trash2 size={15} /></button></div>}
+            {learner && a.source === "sheet" && <a href={WORKING_SHEET_URL} target="_blank" rel="noopener noreferrer" title="Entries from the sheet are changed in the sheet" className="chip shrink-0 bg-ink/5 text-ink/55 transition hover:bg-ink/10 hover:text-ink"><Pencil size={12} />Edit in sheet<ExternalLink size={11} /></a>}
+            {learner && !isSample(a) && a.source !== "sheet" && <div className="flex gap-1"><button onClick={() => edit(a)} className="grid h-9 w-9 place-items-center rounded-xl text-ink/45 transition hover:bg-ink/5 hover:text-ink" aria-label="Edit entry"><Pencil size={15} /></button><button onClick={() => remove(a)} className="grid h-9 w-9 place-items-center rounded-xl text-ink/45 transition hover:bg-rose-50 hover:text-rose-600" aria-label="Delete entry"><Trash2 size={15} /></button></div>}
           </div>
           {a.did && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{a.did}</p>}
           {a.practiced && <p className="mt-2 text-xs text-ink/55"><b>Practised:</b> {a.practiced}</p>}
           {a.blocker && <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-2.5 text-sm text-amber-950"><b>🙋‍♀️ Question for Xander:</b> {a.blocker}</p>}
-          {(a.proof || a.attachment) && <div className="mt-3 flex flex-wrap items-center gap-3">{a.proof && (a.proof.startsWith("http") ? <a href={a.proof} target="_blank" rel="noopener noreferrer" className="chip bg-brand/10 text-brand underline">🔗 Proof link</a> : <span className="chip bg-ink/5 text-ink/60">{a.proof}</span>)}{a.attachment && <a href={a.attachment} target="_blank" rel="noopener noreferrer"><img src={a.attachment} alt="Screenshot proof" className="h-20 rounded-xl object-cover ring-1 ring-ink/10 transition hover:scale-105" /></a>}</div>}
+          {(a.proof || a.attachment) && <div className="mt-3 flex flex-wrap items-center gap-3">{a.proof && (a.proof.startsWith("http") ? <a href={a.proof} target="_blank" rel="noopener noreferrer" className="chip bg-brand/10 text-brand underline">🔗 Proof link</a> : <span className="chip bg-ink/5 text-ink/60">{a.proof}</span>)}{a.attachment && <button type="button" onClick={() => setViewing(a.attachment!)} aria-label="View screenshot"><img src={a.attachment} alt="Screenshot proof" className="h-20 rounded-xl object-cover ring-1 ring-ink/10 transition hover:scale-105" /></button>}</div>}
           <CommentThread comments={a.comments ?? []} legacyMentorNote={a.mentorNote} viewer={learner ? "hanifa" : "mentor"} onAdd={c => addComment(a.id, c)} />
         </article>)}</div>
       </section>)}</div>}
+
+    {/* Browsers won't open a saved screenshot (a data: link) in a new tab, so show it here instead. */}
+    {viewing && <div role="dialog" aria-label="Screenshot" onClick={() => setViewing("")} className="animate-fade-in fixed inset-0 z-[80] grid place-items-center bg-ink/80 p-4 backdrop-blur-sm">
+      <img src={viewing} alt="Screenshot proof" className="max-h-[85vh] max-w-full rounded-2xl shadow-pop" />
+      <button onClick={() => setViewing("")} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white text-ink" aria-label="Close"><X size={20} /></button>
+    </div>}
   </div>;
 }

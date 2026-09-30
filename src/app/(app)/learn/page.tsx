@@ -63,7 +63,8 @@ function Learn() {
     const old = prev.quiz[String(module)];
     return markDay({ ...prev, quiz: { ...prev.quiz, [String(module)]: { best: Math.max(old?.best ?? 0, correct), total, attempts: (old?.attempts ?? 0) + 1, last: today } } });
   });
-  const saveDaily = (score: number, total: number) => setBrain(prev => markDay({ ...prev, daily: { ...prev.daily, [today]: { score, total } } }));
+  // "Play again for fun" never lowers today's score.
+  const saveDaily = (score: number, total: number) => setBrain(prev => markDay({ ...prev, daily: { ...prev.daily, [today]: { score: Math.max(score, prev.daily[today]?.score ?? 0), total } } }));
 
   const masteredIn = (module: number) => lessonFor(module)!.cards.filter((_, i) => (brain.cards[cardId(module, i)]?.box ?? 0) >= MASTERED_BOX).length;
 

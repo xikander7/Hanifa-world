@@ -148,6 +148,7 @@ export default function AdventurePage() {
 
       <div className="flex flex-wrap items-center gap-3 border-b border-ink/5 bg-brand/5 px-5 py-3.5 sm:px-7">
         <span className="text-xl">🧠</span><p className="min-w-0 flex-1 text-sm font-semibold">Learn faster: flip the {lesson.cards.length} key-idea flashcards, then test yourself.</p>
+        <Link href={`/ask?m=${selected.number}`} className="btn-soft !px-4 !py-2 text-xs">💬 Stuck? Ask a helper</Link>
         <Link href={`/learn?m=${selected.number}`} className="btn-primary !px-4 !py-2 text-xs"><Brain size={14} />Open Brain Gym</Link>
       </div>
       {selected.notes.length > 0 && <div className="space-y-2 border-b border-amber-200/60 bg-amber-50 px-5 py-4 sm:px-7">{selected.notes.map((n, i) => <p key={i} className="text-xs leading-5 text-amber-950">💡 {n}</p>)}</div>}

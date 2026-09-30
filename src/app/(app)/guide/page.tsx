@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronDown } from "lucide-react";
+import { KEYS } from "@/lib/data";
+import { useLocalStore } from "@/lib/store";
 import { Nova } from "@/components/Nova";
 import { SectionHeading } from "@/components/SectionHeading";
 
@@ -65,6 +67,21 @@ const SECTIONS: Section[] = [
     tips: ["Getting an answer wrong is GOOD. That is exactly when your brain grows.", "Do the flashcards first, then the quiz. It is easier that way."],
   },
   {
+    id: "ask", emoji: "💬", title: "Ask a Helper", href: "/ask", tagline: "Get help from ChatGPT when you are stuck.",
+    what: "Sometimes you read something and it just does not make sense. That is normal! ChatGPT is like a super patient teacher who can explain things again and again. This page helps you ask it the right way. You do not need to write a perfect question. We write it for you.",
+    see: "Three numbered steps: 1) what you are learning, 2) what kind of help you want, 3) anything to add. Then a big pink “Ask ChatGPT” button.",
+    steps: [
+      "Step 1: choose the topic you are learning. It already picks your current level for you.",
+      "Step 2: tap the kind of help you want. “Explain it simply” is for things you do not understand. “Show me an example” gives real-life examples. “Quiz me” asks you questions, one at a time. “Why do I need this?” tells you where it is used. “I'm stuck on a problem” helps you fix something yourself. “Check if I understood” tells you if your explanation is right.",
+      "Step 3: type a few words. For “stuck” and “check”, you must write something so ChatGPT knows what you mean. For the others it is optional.",
+      "Press the big pink “Ask ChatGPT” button. A new tab opens with ChatGPT and your question is already typed in. We also copy it for you. If the box is empty, press Cmd + V (Mac) or Ctrl + V (Windows) to paste it.",
+      "Want to see the question before you send it? Press “Show the exact question we'll send”.",
+      "Read the answer slowly. If it is too hard, type to ChatGPT: “Please explain that again in an easier way.” You can do this as many times as you like.",
+      "Then try it yourself on your computer, and write one sentence about what you learned in your Journal.",
+    ],
+    tips: ["Ask it to teach you, not to do your work. You learn by trying.", "ChatGPT can make mistakes. Check important things with your lesson or with Xander.", "Never type passwords, your address or your phone number.", "Xander can see which questions you asked, so he can help with the tricky topics. You will never get in trouble for asking."],
+  },
+  {
     id: "missions", emoji: "🎯", title: "Missions", href: "/quests", tagline: "Little jobs to finish, like a to-do list.",
     what: "A mission is one small job with a prize. Xander can give you missions. You can also make your own missions, like “Watch the Python video today”. When you finish a mission, you win XP.",
     see: "A list of cards. Each card is one mission with a title and a pink button.",
@@ -93,7 +110,7 @@ const SECTIONS: Section[] = [
       "You can add a link or a photo (screenshot) of your work. This is optional.",
       "Press “Save entry”. You get confetti and XP!",
       "Under your entry you can chat with Xander. His words are in dark bubbles. Yours are in pink bubbles. Type in the little box and press the arrow to reply.",
-      "Made a mistake? Tap the pencil ✏️ on an entry to change it. The bin 🗑️ deletes it.",
+      "Made a mistake? Tap the pencil ✏️ on an entry to change it. The bin 🗑️ deletes it. (Entries from the sheet are changed in the sheet.)",
     ],
     earn: "You get 1 XP for every minute you studied (up to 180 a day). You get 15 XP when you write something (up to 2 times a day).",
     tips: ["When the Focus timer finishes, it writes a journal entry for you. You do not need to write the time again.", "The entry called “Sample week” is only an example. It does not count for points."],
@@ -113,6 +130,22 @@ const SECTIONS: Section[] = [
       "Press “Compare countries” to read about different countries. Talk about them with Xander. Nobody decides alone.",
     ],
     tips: ["Xander can write a note back to you on each university and scholarship.", "Always check the real website for the newest dates and prices."],
+  },
+  {
+    id: "sheet", emoji: "📊", title: "Working Excel Sheet", href: "/sheet", tagline: "The Google Sheet you share with Xander. It syncs by itself.",
+    what: "The Working Excel Sheet is a big table in Google Sheets that you and Xander share. You can write your weekly update and your daily study hours there. The app reads the sheet by itself every time you open it, so what you write in the sheet shows up in your Journal, and it counts for XP, streaks and badges!",
+    see: "A big pink box with “Open the sheet” and “Sync now” buttons, and cards that explain each page inside the sheet.",
+    steps: [
+      "Press the white “Open the sheet” button. The sheet opens in a new tab.",
+      "At the bottom of the sheet you will see little tabs, like pages in a book. Tap one to open that page.",
+      "“Weekly Learning Updates” is where you write a report once a week. Write “week 2” in the first box, then fill in the boxes to the right: what you learned, what you practised, what confused you.",
+      "“Time Tracking Daily” has one row for every day. Write how many hours you studied (for example 1.5) and one line about what you did.",
+      "Xander writes his comments in the last column of each row. They show up in the app as his reply to you!",
+      "Come back to the app. It reads the sheet by itself. Want it right now? Press “Sync now”. You get a little celebration when new entries arrive. 🎉",
+      "In your Journal, entries from the sheet have a green “📊 From the sheet” label. To change one, press “Edit in sheet” and change it there.",
+    ],
+    earn: "Hours in the sheet give XP just like the Focus timer (1 XP a minute). Fill in the sheet on 3 different days to win the 📊 Sheet Star badge, and write 4 weekly updates to win 🗞️ Weekly Reporter.",
+    tips: ["You do not need to write everything twice. Pick the sheet or the Journal. Both count.", "The Hanifa Training Plan page in the sheet is the same list as the Adventure map."],
   },
 ];
 
@@ -144,13 +177,16 @@ const FAQ: [string, string][] = [
   ["Can I change the colours?", "Yes! Look at the left menu, under “Make it yours”. Tap one of the four colour circles. The little speaker button turns the sounds on or off."],
   ["What is “Mentor sign in”?", "That is only for Xander. You do not need it. Just ignore it."],
   ["What do the two numbers at the top right mean?", "The 🔥 number is your streak (days in a row). The ⚡ number is your total XP points."],
-  ["I am on a phone. Where is the menu?", "The buttons are at the very bottom of your screen: Home, Adventure, Learn, Missions, Journal, Dreams. The round ❓ button at the top brings you to this page."],
+  ["I am on a phone. Where is the menu?", "The buttons are at the very bottom of your screen: Home, Map (Adventure), Learn, Ask, Missions, Journal, Dreams. At the top, the round ❓ button opens this page (How to use this app) and the 📊 button opens the Working Excel Sheet. The ☰ button at the top left opens the full menu."],
+  ["I wrote in the sheet. Why don't I see it yet?", "The app reads the sheet when you open it, and again every few minutes when you come back to it. Go to Working Excel Sheet and press “Sync now” to get it straight away. You need to be online."],
 ];
 
 export default function GuidePage() {
   const [open, setOpen] = useState<string | null>("home");
+  const [, setGuideSeen] = useLocalStore<string>(KEYS.guideSeen, "");
+  useEffect(() => { setGuideSeen("yes"); }, [setGuideSeen]);
   return <div className="max-w-4xl">
-    <SectionHeading eyebrow="Start here · takes 5 minutes to read" title="How to use me 📖" copy="Every button and every page, explained in easy steps. Tap a card below to open it. Read it slowly. You can always come back." />
+    <SectionHeading eyebrow="Start here · takes 5 minutes to read" title="How to use this app 📖" copy="Every button and every page, explained in easy steps. Tap a card below to open it. Read it slowly. You can always come back." />
 
     <section className="bg-hero relative mb-8 overflow-hidden rounded-[2.2rem] p-6 text-white shadow-glow sm:p-8">
       <div className="pointer-events-none absolute -right-10 -top-14 h-60 w-60 rounded-full bg-white/10" />

@@ -4,7 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Brain, Check, Copy, Flame, MessageCircle, NotebookPen, Pause, Play, Send, Share2, Target, Timer, Trophy } from "lucide-react";
 import roadmap from "@/data/roadmap.json";
-import { SKILLS, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, IMPORTED_ACTIVITY, KEYS, addDays, fmtDay, fmtMinutes, localDate, weekStart } from "@/lib/data";
+import { SKILLS, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, IMPORTED_ACTIVITY, KEYS, addDays, feelingIcon, fmtDay, fmtMinutes, localDate, weekStart } from "@/lib/data";
 import type { Activity, InboxMessage, Quest, RoadmapProgress } from "@/lib/data";
 import { DAILY_FOCUS_GOAL_MINUTES, XP } from "@/lib/game";
 import { novaSays } from "@/lib/nova";
@@ -62,7 +62,7 @@ export default function HomePage() {
     {role === "mentor" && <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-ink px-5 py-3 text-sm font-semibold text-white"><span>👀 You’re viewing Hanifa’s space as Mentor.</span><Link href="/mentor" className="chip bg-white/15 text-white">Open Mentor Hub <ArrowRight size={13} /></Link></div>}
 
     {!guideSeen && role === "learner" && <div className="animate-fade-up flex flex-wrap items-center gap-3 rounded-3xl bg-white/80 px-5 py-3.5 ring-1 ring-brand/30">
-      <span className="text-2xl">👋</span><p className="min-w-0 flex-1 text-sm font-semibold">New here? Read <b>How to use me</b>. It explains every tab in simple steps (5 minutes).</p>
+      <span className="text-2xl">👋</span><p className="min-w-0 flex-1 text-sm font-semibold">New here? Read <b>How to use this app</b>. It explains every tab in simple steps (5 minutes).</p>
       <Link href="/guide" onClick={() => setGuideSeen("yes")} className="btn-primary !py-2 text-xs"><BookOpen size={14} />Show me</Link><button onClick={() => setGuideSeen("yes")} className="text-xs font-bold text-ink/45 hover:text-ink">Not now</button>
     </div>}
 
@@ -115,6 +115,12 @@ export default function HomePage() {
 
     {/* ---------- messages from Xander ---------- */}
     <Reveal><XanderInbox /></Reveal>
+
+    <Reveal className="card flex flex-wrap items-center gap-4 p-5">
+      <Nova mood="think" size={64} />
+      <div className="min-w-0 flex-1"><p className="font-display text-lg font-extrabold">Stuck on something? 🤔</p><p className="text-sm text-ink/60">Ask ChatGPT for help. We write the question for you in 3 easy steps.</p></div>
+      <Link href="/ask" className="btn-primary !py-2.5 text-sm">Ask a helper <ArrowRight size={15} /></Link>
+    </Reveal>
 
     {/* ---------- stats ---------- */}
     <Reveal className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -181,7 +187,7 @@ export default function HomePage() {
     <div className="grid gap-6 lg:grid-cols-5">
       <Reveal className="card p-6 lg:col-span-3">
         <div className="flex items-center justify-between"><div><p className="eyebrow">Journal</p><h2 className="mt-1 font-display text-xl font-extrabold">Recent little wins</h2></div><Link href="/time" className="chip bg-brand/10 text-brand">Open journal <ArrowRight size={12} /></Link></div>
-        {recent.length ? <ul className="mt-4 divide-y divide-ink/5">{recent.map(a => <li key={a.id} className="flex gap-3 py-3.5"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand/10 text-lg">{a.attachment ? "📸" : a.feeling.slice(0, 2) || "📝"}</span><div className="min-w-0"><p className="truncate text-sm font-extrabold">{a.topic}</p><p className="line-clamp-2 text-xs leading-5 text-ink/55">{a.did || "Time logged"}</p><p className="mt-1 text-[11px] font-bold text-ink/35">{fmtDay(a.date)}{a.minutes ? ` · ${fmtMinutes(a.minutes)}` : ""}{a.comments?.some(c => c.by === "mentor") || a.mentorNote ? " · 💬 Xander replied" : ""}</p></div></li>)}</ul>
+        {recent.length ? <ul className="mt-4 divide-y divide-ink/5">{recent.map(a => <li key={a.id} className="flex gap-3 py-3.5"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand/10 text-lg">{a.attachment ? "📸" : feelingIcon(a.feeling)}</span><div className="min-w-0"><p className="truncate text-sm font-extrabold">{a.topic}</p><p className="line-clamp-2 text-xs leading-5 text-ink/55">{a.did || "Time logged"}</p><p className="mt-1 text-[11px] font-bold text-ink/35">{fmtDay(a.date)}{a.minutes ? ` · ${fmtMinutes(a.minutes)}` : ""}{a.comments?.some(c => c.by === "mentor") || a.mentorNote ? " · 💬 Xander replied" : ""}</p></div></li>)}</ul>
           : <div className="mt-4 rounded-2xl border border-dashed border-ink/15 p-7 text-center"><NotebookPen className="mx-auto text-brand" /><p className="mt-2 text-sm font-bold">Your story starts with one line</p><Link href="/time?new=1" className="btn-primary mt-3 !py-2.5 text-xs">Write your first entry</Link></div>}
       </Reveal>
       <Reveal delay={80} className="lg:col-span-2"><ShareCard goalHours={goalHours} onCopied={() => celebrate({ emoji: "📋", title: "Update copied!", text: "Paste it to Xander on WhatsApp.", confetti: false, sound: "pop" })} /></Reveal>

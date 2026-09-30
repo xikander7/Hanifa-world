@@ -9,7 +9,12 @@ const listeners = new Map<string, Set<() => void>>();
 const parsed = new Map<string, { raw: string | null; initial: unknown; value: unknown }>();
 
 const safeGet = (key: string) => { try { return window.localStorage.getItem(key); } catch { return null; } };
-const safeSet = (key: string, value: string) => { try { window.localStorage.setItem(key, value); } catch { /* storage full or blocked */ } };
+/** Fired on window when a save fails (usually storage is full of screenshots), so the app can say so instead of losing work quietly. */
+export const STORE_ERROR_EVENT = "future-world-store-error";
+const safeSet = (key: string, value: string) => {
+  try { window.localStorage.setItem(key, value); return true; }
+  catch { window.dispatchEvent(new CustomEvent(STORE_ERROR_EVENT, { detail: key })); return false; }
+};
 
 function snapshot<T>(key: string, initial: T): T {
   const raw = safeGet(key);
@@ -30,9 +35,17 @@ function subscribe(key: string, callback: () => void) {
   return () => { set?.delete(callback); window.removeEventListener("storage", onStorage); };
 }
 
-export function writeStore<T>(key: string, value: T) {
-  safeSet(key, JSON.stringify(value));
+type WriteHook = (key: string, previousRaw: string | null) => void;
+const writeHooks = new Set<WriteHook>();
+/** Cloud save listens here to learn which keys changed on this device. */
+export function onLocalWrite(hook: WriteHook) { writeHooks.add(hook); return () => { writeHooks.delete(hook); }; }
+
+/** Returns false if the browser refused to save. `fromCloud` writes (changes from another device) skip the write hooks. */
+export function writeStore<T>(key: string, value: T, options?: { fromCloud?: boolean }): boolean {
+  if (!options?.fromCloud && writeHooks.size) { const previous = safeGet(key); writeHooks.forEach(hook => hook(key, previous)); }
+  const saved = safeSet(key, JSON.stringify(value));
   listeners.get(key)?.forEach(callback => callback());
+  return saved;
 }
 
 export function readStore<T>(key: string, initial: T): T {

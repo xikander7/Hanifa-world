@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BadgeCheck, CheckCircle2, Flame, HelpCircle, Lock, MessageCircle, Send, Trophy } from "lucide-react";
 import roadmap from "@/data/roadmap.json";
 import { lessons } from "@/data/lessons";
-import { EMPTY_BRAIN, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, EMPTY_SKILL_PROOF, IMPORTED_ACTIVITY, KEYS, SKILLS, addDays, blankSkillProof, fmtDay, fmtMinutes, isSample, localDate, uid, weekStart } from "@/lib/data";
+import { EMPTY_BRAIN, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, EMPTY_SKILL_PROOF, IMPORTED_ACTIVITY, KEYS, SKILLS, addDays, blankSkillProof, feelingIcon, fmtDay, fmtMinutes, isSample, localDate, uid, weekStart } from "@/lib/data";
 import type { Activity, Brain, Comment, InboxMessage, Quest, RoadmapProgress, SkillProofMap } from "@/lib/data";
 import { XP } from "@/lib/game";
 import { getStageState } from "@/lib/roadmap-progress";
@@ -13,6 +13,7 @@ import { useGame } from "@/lib/useGame";
 import { useHydrated, useLocalStore } from "@/lib/store";
 import { useRole } from "@/components/AppShell";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { AskedQuestions } from "@/components/AskedQuestions";
 import { useCelebrate } from "@/components/Celebrate";
 import { CommentThread } from "@/components/CommentThread";
 import { MissionForm } from "@/components/MissionForm";
@@ -20,8 +21,10 @@ import { Nova } from "@/components/Nova";
 import { ProgressBar } from "@/components/ProgressBar";
 import { Ring } from "@/components/Ring";
 import { SectionHeading } from "@/components/SectionHeading";
+import { CloudSetup } from "@/components/CloudSetup";
+import { SheetSync } from "@/components/SheetSync";
 
-const TABS = ["Overview", "Reviews", "Journal", "Learning", "Message & assign"] as const;
+const TABS = ["Overview", "Reviews", "Journal", "Learning", "Message & assign", "Sync & devices"] as const;
 type Tab = (typeof TABS)[number];
 const stageIds = roadmap.map(m => `module-${m.number}`);
 const TEMPLATES: { kind: InboxMessage["kind"]; text: string }[] = [
@@ -38,6 +41,7 @@ export default function MentorPage() {
   const { celebrate } = useCelebrate();
   const game = useGame();
   const [tab, setTab] = useState<Tab>("Overview");
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("tab") === "sync") setTab("Sync & devices"); }, []);
   const [activity, setActivity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
   const [quests, setQuests] = useLocalStore<Quest[]>(KEYS.quests, EMPTY_QUESTS);
   const [proofs, setProofs] = useLocalStore<SkillProofMap>(KEYS.skillProof, EMPTY_SKILL_PROOF);
@@ -145,6 +149,8 @@ export default function MentorPage() {
       </div>
     </div>}
 
+    {tab === "Overview" && <AskedQuestions />}
+
     {tab === "Reviews" && <div className="space-y-8">
       <section><h2 className="font-display text-2xl font-extrabold">Missions to review</h2>
         {waitingQuests.length === 0 ? <p className="card mt-3 p-6 text-sm text-ink/55">Nothing waiting. 🎉</p> : <div className="mt-3 space-y-4">{waitingQuests.map(q => <article key={q.id} className="card animate-fade-up p-5">
@@ -169,7 +175,7 @@ export default function MentorPage() {
     {tab === "Journal" && <section>
       <div className="mb-4 flex flex-wrap items-center gap-2"><h2 className="mr-auto font-display text-2xl font-extrabold">Journal &amp; comments</h2><button onClick={() => setOnlyOpen(v => !v)} className={`chip !px-4 !py-2 transition ${onlyOpen ? "bg-ink text-white" : "bg-white/80 text-ink/60 ring-1 ring-ink/5"}`}>{onlyOpen ? "Showing: needs a reply" : "Show only: needs a reply"}</button></div>
       {journal.length === 0 ? <p className="card p-6 text-sm text-ink/55">Nothing to show.</p> : <div className="stagger space-y-4">{journal.map(a => <article key={a.id} className="card p-5">
-        <div className="flex flex-wrap items-center gap-2"><span className="text-xl">{a.feeling.slice(0, 2) || "📝"}</span><h3 className="font-display text-lg font-extrabold">{a.topic}</h3><span className="chip bg-ink/5 text-ink/60">{fmtDay(a.date)}</span>{a.minutes > 0 && <span className="chip bg-brand/10 text-brand">{fmtMinutes(a.minutes)}</span>}{isSample(a) && <span className="chip bg-amber-100 text-amber-900">Sample week</span>}</div>
+        <div className="flex flex-wrap items-center gap-2"><span className="text-xl">{feelingIcon(a.feeling)}</span><h3 className="font-display text-lg font-extrabold">{a.topic}</h3><span className="chip bg-ink/5 text-ink/60">{fmtDay(a.date)}</span>{a.minutes > 0 && <span className="chip bg-brand/10 text-brand">{fmtMinutes(a.minutes)}</span>}{isSample(a) && <span className="chip bg-amber-100 text-amber-900">Sample week</span>}</div>
         {a.did && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{a.did}</p>}
         {a.practiced && <p className="mt-2 text-xs text-ink/55"><b>Practised:</b> {a.practiced}</p>}
         {a.blocker && <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-2.5 text-sm text-amber-950"><HelpCircle size={14} className="mr-1 inline" /><b>Question:</b> {a.blocker}</p>}
@@ -196,6 +202,8 @@ export default function MentorPage() {
         </div>;
       })}</div>
     </section>}
+
+    {tab === "Sync & devices" && <div className="space-y-5"><CloudSetup /><SheetSync /></div>}
 
     {tab === "Message & assign" && <div className="grid gap-6 lg:grid-cols-2">
       <section className="space-y-4">
