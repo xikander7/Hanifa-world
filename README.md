@@ -2,6 +2,12 @@
 
 My Future World is a local-first learning, mentoring, university, scholarship, quest, and time-tracking app for Sikander and Hanifa.
 
+## Live site
+
+https://hanifa-world-vercel-xikander7s-projects.vercel.app
+
+Hosted on Vercel (project `hanifa-world-vercel`). Cloud save is connected through the `NEXT_PUBLIC_CLOUD_URL` environment variable in Vercel's project settings. The project is not linked to GitHub, so a new version has to be deployed by uploading the code.
+
 ## Run locally
 
 ```bash
