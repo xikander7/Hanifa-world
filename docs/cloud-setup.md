@@ -15,7 +15,7 @@ Google account (syedxanshah@gmail.com) and costs nothing.
 ## 2. Set the Mentor PIN
 
 1. Click **Project Settings** (⚙️ on the left) and scroll to **Script Properties**.
-2. Press **Add script property**. Property: `MENTOR_PIN`, Value: your PIN. Press **Save script properties**.
+2. Press **Add script property**. Property: `MENTOR_PIN`, Value: your PIN (6 or more digits is safer than 4). Press **Save script properties**.
 
 Only you can see this, and the PIN is no longer anywhere in the app.
 

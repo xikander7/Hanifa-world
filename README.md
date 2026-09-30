@@ -15,7 +15,7 @@ pnpm install
 pnpm dev
 ```
 
-Open <http://localhost:3000>. It runs without any credentials. Choose “Mentor sign in” in the sidebar and enter the Mentor PIN (Sikander has it; it's deliberately not written in this repo or in the app).
+Open <http://localhost:3000>. It runs without any credentials. Mentor sign-in needs Cloud save: put the web app address in `.env.local` as `NEXT_PUBLIC_CLOUD_URL` (see `docs/cloud-setup.md`), then choose “Mentor sign in” and enter the Mentor PIN.
 
 To share progress between devices, turn on **Cloud save**: follow [docs/cloud-setup.md](docs/cloud-setup.md) (about 10 minutes, once).
 
@@ -82,7 +82,7 @@ Cloud save is a Google Apps Script web app (`apps-script/Code.js`) that runs in 
 - **Two-way sheet sync:** the sheet's own tabs flow into the app (see above), and journal entries written in the app are copied to an **App Journal** tab in the working sheet. A reply typed in its "Sikander's reply" column becomes Sikander's comment in the app.
 - **Mentor PIN:** with Cloud save on, the PIN is checked by the web app (Script Property `MENTOR_PIN`) and is never in the app's code. Five wrong tries lock sign-in for 15 minutes. A successful sign-in gives that device a signed token; switching back to Hanifa removes it.
 - **Mentor-only changes are enforced on the server:** mentor comments, messages, mission approvals and feedback, level verification and Dream notes are refused unless the push carries a valid Mentor token (`mentorOnlyChanges` in `apps-script/Code.js`, tested in `tests/cloudSync.test.ts`).
-- Without Cloud save, the app checks the PIN against a salted SHA-256 hash. That keeps the PIN out of sight but is not real security, because a 4-digit PIN can be guessed from its hash.
+- Without Cloud save there is no Mentor sign-in: the PIN only exists in the web app's Script Properties, never in the app's code or its history.
 - The web app's address is the key to the data: anyone who has it can read the synced data. Only share it through the Mentor Hub link.
 
 ## Product principles

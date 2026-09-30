@@ -118,18 +118,6 @@ function FocusPill() {
   </Link>;
 }
 
-/**
- * Without Cloud save there's no server to ask, so the PIN is checked against a salted hash: it isn't written anywhere in
- * the app. (A 4-digit code can't be truly secret in the browser; with Cloud save on, the web app checks it instead.)
- */
-const PIN_HASH = "removed";
-async function pinMatches(pin: string) {
-  try {
-    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`my-future-world-mentor:${pin}`));
-    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("") === PIN_HASH;
-  } catch { return false; }
-}
-
 function CloudPill() {
   const cloud = useCloudStatus();
   if (cloud.state === "off") return null;
@@ -163,7 +151,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const requestMentor = async (event: FormEvent) => {
     event.preventDefault();
     setChecking(true);
-    const error = cloudUrl() ? await mentorSignIn(pin) : (await pinMatches(pin)) ? "" : "That code didn’t work. Try again.";
+    // The PIN is only ever checked by the Cloud save web app, so it is never in the app's code.
+    const error = cloudUrl() ? await mentorSignIn(pin) : "Mentor sign-in needs Cloud save, and it isn’t set up on this device.";
     setChecking(false);
     if (!error) { switchRole("mentor"); setShowPin(false); setPin(""); setPinError(""); }
     else setPinError(error);
@@ -215,7 +204,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           : <button onClick={() => setShowPin(true)} className="mt-1 flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-left text-xs font-bold text-ink/55"><Lock size={13} />Mentor sign in</button>}
         {showPin && role !== "mentor" && <form onSubmit={requestMentor} className="mt-2 space-y-2 px-1 pb-1">
           <label className="text-xs text-ink/60" htmlFor="mentor-pin">Mentor access code</label>
-          <input id="mentor-pin" autoComplete="off" inputMode="numeric" maxLength={4} value={pin} onChange={e => setPin(e.target.value)} className="field !py-2" placeholder="4-digit code" autoFocus />
+          <input id="mentor-pin" type="password" autoComplete="off" maxLength={32} value={pin} onChange={e => setPin(e.target.value)} className="field !py-2" placeholder="Access code" autoFocus />
           <button disabled={checking} className="btn-dark w-full !py-2 text-xs">{checking ? "Checking…" : "Unlock Mentor"}</button>
           {pinError && <p role="alert" className="text-xs text-rose-600">{pinError}</p>}
         </form>}
