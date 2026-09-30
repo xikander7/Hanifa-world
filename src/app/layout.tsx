@@ -8,6 +8,8 @@ const body = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-body", di
 export const metadata: Metadata = {
   title: "My Future World",
   description: "Hanifa's learning and mentoring journey",
+  // A private learning app for a young person: keep it out of search engines.
+  robots: { index: false, follow: false },
 };
 export const viewport: Viewport = { themeColor: "#d946ef", width: "device-width", initialScale: 1 };
 
