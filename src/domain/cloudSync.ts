@@ -12,7 +12,7 @@ const hasIds = (list: Json[]) => list.length > 0 && list.every(item => isObject(
 
 /**
  * Three-way merge of JSON values. Changes from both sides survive: lists of `{ id }` items merge item by item (so a
- * new journal entry on one phone and a comment from Xander on another both stay), lists of plain values merge as sets,
+ * new journal entry on one phone and a comment from Sikander on another both stay), lists of plain values merge as sets,
  * objects merge key by key, and when both sides changed the same single value, the local one wins.
  * With no base (a device connecting for the first time) it degrades to a union that keeps everything.
  */

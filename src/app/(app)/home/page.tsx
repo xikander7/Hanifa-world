@@ -113,8 +113,8 @@ export default function HomePage() {
       <Reveal delay={80} className="lg:col-span-2"><FocusCard /></Reveal>
     </div>
 
-    {/* ---------- messages from Xander ---------- */}
-    <Reveal><XanderInbox /></Reveal>
+    {/* ---------- messages from Sikander ---------- */}
+    <Reveal><SikanderInbox /></Reveal>
 
     <Reveal className="card flex flex-wrap items-center gap-4 p-5">
       <Nova mood="think" size={64} />
@@ -149,10 +149,10 @@ export default function HomePage() {
         </div>
       </Reveal>
       <Reveal delay={80} className="card p-5">
-        <div className="flex items-center justify-between"><div><p className="eyebrow">Missions</p><h2 className="mt-1 font-display text-xl font-extrabold">From Xander &amp; you</h2></div><Target className="text-brand" /></div>
+        <div className="flex items-center justify-between"><div><p className="eyebrow">Missions</p><h2 className="mt-1 font-display text-xl font-extrabold">From Sikander &amp; you</h2></div><Target className="text-brand" /></div>
         {missions.length ? <ul className="mt-4 space-y-2.5">{missions.slice(0, 3).map(q => <li key={q.id} className="flex items-center gap-3 rounded-2xl bg-white/80 p-3 ring-1 ring-ink/5"><span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10">{q.createdBy === "mentor" ? "📌" : "✨"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{q.title}</span><span className="block text-xs text-ink/50">{q.status}{q.dueDate ? ` · due ${fmtDay(q.dueDate)}` : ""}</span></span><span className="chip bg-brand/10 text-brand">+{q.xp ?? XP.defaultQuest}</span></li>)}</ul>
-          : <div className="mt-4 rounded-2xl border border-dashed border-ink/15 p-6 text-center"><p className="text-3xl">🌤️</p><p className="mt-2 text-sm font-bold">No open missions</p><p className="text-xs text-ink/50">Add your own, or wait for one from Xander.</p></div>}
-        <Link href="/quests" className="btn-soft mt-4 w-full !py-2.5 text-xs">{waiting ? `${waiting} waiting for Xander · ` : ""}Open missions <ArrowRight size={14} /></Link>
+          : <div className="mt-4 rounded-2xl border border-dashed border-ink/15 p-6 text-center"><p className="text-3xl">🌤️</p><p className="mt-2 text-sm font-bold">No open missions</p><p className="text-xs text-ink/50">Add your own, or wait for one from Sikander.</p></div>}
+        <Link href="/quests" className="btn-soft mt-4 w-full !py-2.5 text-xs">{waiting ? `${waiting} waiting for Sikander · ` : ""}Open missions <ArrowRight size={14} /></Link>
       </Reveal>
     </div>
 
@@ -187,10 +187,10 @@ export default function HomePage() {
     <div className="grid gap-6 lg:grid-cols-5">
       <Reveal className="card p-6 lg:col-span-3">
         <div className="flex items-center justify-between"><div><p className="eyebrow">Journal</p><h2 className="mt-1 font-display text-xl font-extrabold">Recent little wins</h2></div><Link href="/time" className="chip bg-brand/10 text-brand">Open journal <ArrowRight size={12} /></Link></div>
-        {recent.length ? <ul className="mt-4 divide-y divide-ink/5">{recent.map(a => <li key={a.id} className="flex gap-3 py-3.5"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand/10 text-lg">{a.attachment ? "📸" : feelingIcon(a.feeling)}</span><div className="min-w-0"><p className="truncate text-sm font-extrabold">{a.topic}</p><p className="line-clamp-2 text-xs leading-5 text-ink/55">{a.did || "Time logged"}</p><p className="mt-1 text-[11px] font-bold text-ink/35">{fmtDay(a.date)}{a.minutes ? ` · ${fmtMinutes(a.minutes)}` : ""}{a.comments?.some(c => c.by === "mentor") || a.mentorNote ? " · 💬 Xander replied" : ""}</p></div></li>)}</ul>
+        {recent.length ? <ul className="mt-4 divide-y divide-ink/5">{recent.map(a => <li key={a.id} className="flex gap-3 py-3.5"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand/10 text-lg">{a.attachment ? "📸" : feelingIcon(a.feeling)}</span><div className="min-w-0"><p className="truncate text-sm font-extrabold">{a.topic}</p><p className="line-clamp-2 text-xs leading-5 text-ink/55">{a.did || "Time logged"}</p><p className="mt-1 text-[11px] font-bold text-ink/35">{fmtDay(a.date)}{a.minutes ? ` · ${fmtMinutes(a.minutes)}` : ""}{a.comments?.some(c => c.by === "mentor") || a.mentorNote ? " · 💬 Sikander replied" : ""}</p></div></li>)}</ul>
           : <div className="mt-4 rounded-2xl border border-dashed border-ink/15 p-7 text-center"><NotebookPen className="mx-auto text-brand" /><p className="mt-2 text-sm font-bold">Your story starts with one line</p><Link href="/time?new=1" className="btn-primary mt-3 !py-2.5 text-xs">Write your first entry</Link></div>}
       </Reveal>
-      <Reveal delay={80} className="lg:col-span-2"><ShareCard goalHours={goalHours} onCopied={() => celebrate({ emoji: "📋", title: "Update copied!", text: "Paste it to Xander on WhatsApp.", confetti: false, sound: "pop" })} /></Reveal>
+      <Reveal delay={80} className="lg:col-span-2"><ShareCard goalHours={goalHours} onCopied={() => celebrate({ emoji: "📋", title: "Update copied!", text: "Paste it to Sikander on WhatsApp.", confetti: false, sound: "pop" })} /></Reveal>
     </div>
   </div>;
 }
@@ -233,8 +233,8 @@ function FocusCard() {
   </div>;
 }
 
-// ------------------------------------------------------------------ messages from Xander
-function XanderInbox() {
+// ------------------------------------------------------------------ messages from Sikander
+function SikanderInbox() {
   const [inbox, setInbox] = useLocalStore<InboxMessage[]>(KEYS.inbox, EMPTY_INBOX);
   const [activity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
   const [seen, setSeen] = useLocalStore<string>(KEYS.inboxSeen, "");
@@ -248,10 +248,10 @@ function XanderInbox() {
 
   return <section className={`card p-6 ${unread ? "ring-2 ring-brand/50" : ""}`}>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <div className="flex items-center gap-3"><span className="relative grid h-11 w-11 place-items-center rounded-2xl bg-ink text-xl text-white"><MessageCircle size={20} />{unread > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[10px] font-extrabold animate-pop">{unread}</span>}</span><div><p className="eyebrow">From Xander</p><h2 className="font-display text-xl font-extrabold">{feed.length ? (unread ? "You have new messages" : "Messages & comments") : "Nothing yet"}</h2></div></div>
+      <div className="flex items-center gap-3"><span className="relative grid h-11 w-11 place-items-center rounded-2xl bg-ink text-xl text-white"><MessageCircle size={20} />{unread > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[10px] font-extrabold animate-pop">{unread}</span>}</span><div><p className="eyebrow">From Sikander</p><h2 className="font-display text-xl font-extrabold">{feed.length ? (unread ? "You have new messages" : "Messages & comments") : "Nothing yet"}</h2></div></div>
       {unread > 0 && <button onClick={() => setSeen(new Date().toISOString())} className="chip bg-ink/5 text-ink/60 hover:bg-ink/10"><Check size={12} />Mark all read</button>}
     </div>
-    {feed.length === 0 ? <p className="mt-3 text-sm text-ink/55">When Xander sends a cheer, a challenge or comments on your journal, it shows up here. 💌</p> :
+    {feed.length === 0 ? <p className="mt-3 text-sm text-ink/55">When Sikander sends a cheer, a challenge or comments on your journal, it shows up here. 💌</p> :
       <ul className="mt-4 space-y-3">{feed.map(m => <li key={m.id} className={`animate-fade-up rounded-2xl p-4 ${m.at > seen ? "bg-brand/10" : "bg-white/80 ring-1 ring-ink/5"}`}>
         <div className="flex gap-3"><span className="text-2xl">{icon(m.kind)}</span><div className="min-w-0 flex-1"><p className="text-sm font-semibold leading-6">{m.text}</p><p className="mt-0.5 text-[11px] font-bold text-ink/40">{m.kind === "comment" ? `On your journal · ${m.topic}` : m.kind === "challenge" ? "Challenge" : "Message"}{m.at ? ` · ${fmtDay(m.at.slice(0, 10), { day: "numeric", month: "short" })}` : ""}</p>
           {m.reply && <p className="mt-2 rounded-2xl bg-white px-3 py-2 text-xs"><b>You:</b> {m.reply}</p>}
@@ -262,7 +262,7 @@ function XanderInbox() {
   </section>;
 }
 
-// ------------------------------------------------------------------ share progress with Xander
+// ------------------------------------------------------------------ share progress with Sikander
 function ShareCard({ goalHours, onCopied }: { goalHours: number; onCopied: () => void }) {
   const game = useGame();
   const [activity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
@@ -281,12 +281,12 @@ function ShareCard({ goalHours, onCopied }: { goalHours: number; onCopied: () =>
       `📚 Studied: ${topics}`,
       `🚀 Levels cleared: ${game.levelsCleared}/20 · Cards mastered: ${game.masteredCards}`,
       `✅ Missions done: ${quests.filter(q => q.status === "Completed").length} · Journal entries this week: ${week.length}`,
-      questions.length ? `\n❓ Questions for Xander:\n${questions.join("\n")}` : "",
+      questions.length ? `\n❓ Questions for Sikander:\n${questions.join("\n")}` : "",
     ].filter(Boolean).join("\n");
   }, [hydrated, activity, quests, game, goalHours]);
   const copy = async () => { try { await navigator.clipboard.writeText(text); onCopied(); } catch { window.prompt("Copy this update:", text); } };
   return <div className="card h-full p-6">
-    <div className="flex items-center justify-between"><div><p className="eyebrow">Share</p><h2 className="mt-1 font-display text-xl font-extrabold">Update Xander</h2></div><Share2 className="text-brand" /></div>
+    <div className="flex items-center justify-between"><div><p className="eyebrow">Share</p><h2 className="mt-1 font-display text-xl font-extrabold">Update Sikander</h2></div><Share2 className="text-brand" /></div>
     <pre className="mt-4 max-h-56 overflow-auto whitespace-pre-wrap rounded-2xl bg-ink/[.04] p-4 font-sans text-xs leading-5 text-ink/70">{text || "…"}</pre>
     <div className="mt-4 grid grid-cols-2 gap-2"><button onClick={copy} className="btn-primary !py-2.5 text-xs"><Copy size={14} />Copy</button><a href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer" className="btn-soft !py-2.5 text-xs">WhatsApp</a></div>
   </div>;

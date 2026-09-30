@@ -61,6 +61,6 @@ The URL stays the same.
 - **Tighter sheet sharing (optional):** the working sheet is currently "Anyone with the link: Editor". Syncing only
   needs "Viewer". Switching to Viewer and adding Hanifa as an editor by email stops strangers who get the link from
   changing it.
-- **Replying from the sheet:** in the **App Journal** tab, type in the yellow "Xander's reply" column. Hanifa sees it in
+- **Replying from the sheet:** in the **App Journal** tab, type in the yellow "Sikander's reply" column. Hanifa sees it in
   the app within a minute or two. Don't edit the other columns: the tab is rewritten from the app whenever she saves an
   entry (your replies are kept).

@@ -15,15 +15,15 @@ import { SectionHeading } from "@/components/SectionHeading";
 const TABS_IN_SHEET = [
   {
     emoji: "📝", name: "Weekly Learning Updates", who: "You fill this in, once a week",
-    what: "A weekly report card written by you. Xander writes his review in the last column. Each row becomes a Weekly reflection in your Journal.",
+    what: "A weekly report card written by you. Sikander writes his review in the last column. Each row becomes a Weekly reflection in your Journal.",
     columns: ["Week: write “week 2”, “week 3” and so on", "Current Topic: what you studied (for example Computer Basics)", "Progress %: how much of that topic you finished", "What I Learned: list the things you learned", "Practice Completed: what you did to practise", "Proof / Link: a link or a note like “sent on WhatsApp”", "Difficulty for you: easy, medium or hard", "Blocker / Questions: what confused you", "Hanifa comments: anything else you want to say"],
   },
   {
     emoji: "⏱️", name: "Time Tracking Daily", who: "You fill this in, every day you study",
     what: "One row for each day. It shows how much time you really spent learning. Each filled row becomes a Time log in your Journal, and every hour is 60 XP.",
-    columns: ["Date and Day are already there", "Hrs: how many hours you studied (for example 1.5)", "What Worked On: one line about what you did", "Hanifa Comments: how it went", "Sikander Comments: Xander writes here"],
+    columns: ["Date and Day are already there", "Hrs: how many hours you studied (for example 1.5)", "What Worked On: one line about what you did", "Hanifa Comments: how it went", "Sikander Comments: Sikander writes here"],
   },
-  { emoji: "🗺️", name: "Hanifa Training Plan", who: "Xander's plan, you can read it", what: "The list of all 20 topics with how long each should take. This is the same plan as the Adventure map in this app.", columns: [] },
+  { emoji: "🗺️", name: "Hanifa Training Plan", who: "Sikander's plan, you can read it", what: "The list of all 20 topics with how long each should take. This is the same plan as the Adventure map in this app.", columns: [] },
   { emoji: "🎓", name: "Pakistan Uni Options", who: "Research for you and your family", what: "Universities compared side by side. You can see the same thing on the Dreams page.", columns: [] },
   { emoji: "💎", name: "Scholarship Links and Scholarship Options Ranking", who: "Research for you and your family", what: "Scholarships and countries to explore, with the official links. They are also on the Dreams page.", columns: [] },
 ];
@@ -53,7 +53,7 @@ export default function SheetPage() {
   const copy = async () => { try { await navigator.clipboard.writeText(WORKING_SHEET_URL); celebrate({ emoji: "🔗", title: "Link copied!", confetti: false, sound: "pop" }); } catch { window.prompt("Copy this link:", WORKING_SHEET_URL); } };
 
   return <div className="max-w-4xl">
-    <SectionHeading eyebrow="Working Excel Sheet · the Google Sheet you and Xander share" title="Your Working Excel Sheet 📊" copy="This is the spreadsheet where your weekly updates and daily time are written down. Whatever you write there shows up in your Journal here, and it counts for XP and your streak." />
+    <SectionHeading eyebrow="Working Excel Sheet · the Google Sheet you and Sikander share" title="Your Working Excel Sheet 📊" copy="This is the spreadsheet where your weekly updates and daily time are written down. Whatever you write there shows up in your Journal here, and it counts for XP and your streak." />
 
     <section className="bg-hero relative mb-6 overflow-hidden rounded-[2.2rem] p-6 text-white shadow-glow sm:p-8">
       <div className="pointer-events-none absolute -right-10 -top-14 h-60 w-60 rounded-full bg-white/10" />
@@ -71,7 +71,7 @@ export default function SheetPage() {
     <section className="card mb-6 p-6">
       <div className="flex items-start gap-4"><Nova mood="think" size={72} /><div>
         <p className="eyebrow">Sheet or this app?</p><h2 className="mt-1 font-display text-xl font-extrabold">Use whichever you like. They stay in sync.</h2>
-        <p className="mt-2 text-[15px] leading-7">Write your weekly update and your daily hours in the sheet, and <b>they appear in your Journal here by themselves</b>, with XP, streaks and badges. Xander's review in the last column shows up as his reply. Or write straight in the Journal, which is quicker on a phone.</p>
+        <p className="mt-2 text-[15px] leading-7">Write your weekly update and your daily hours in the sheet, and <b>they appear in your Journal here by themselves</b>, with XP, streaks and badges. Sikander's review in the last column shows up as his reply. Or write straight in the Journal, which is quicker on a phone.</p>
         <p className="mt-2 text-[15px] leading-7">To change an entry that came from the sheet, change it in the sheet. The app copies the sheet, so the sheet always wins. {role === "mentor" && <Link href="/mentor?tab=sync" className="font-bold text-brand underline">Sync tools for Mentor</Link>}</p>
       </div></div>
       {syncError && <p role="alert" className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{syncError}</p>}

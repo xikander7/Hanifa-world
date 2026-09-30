@@ -2,7 +2,7 @@ import { addDays, isSample, localDate, weekStart } from "./data";
 import type { Activity, Brain, Quest, RoadmapProgress, SkillProofMap } from "./data";
 
 // Everything here is derived from stored data, never stored itself, so XP can't be double-counted
-// and Xander and Hanifa always see the same numbers.
+// and Sikander and Hanifa always see the same numbers.
 
 export const XP = {
   perMinute: 1, minuteCapPerDay: 180, journalEntry: 15, journalCapPerDay: 2,
@@ -86,9 +86,9 @@ export const BADGES: Badge[] = [
   { id: "halfway", emoji: "🏔️", name: "Halfway Hero", hint: "Clear 10 adventure levels", earned: c => c.roadmap.passed.length >= 10 },
   { id: "deep-diver", emoji: "🤿", name: "Deep Diver", hint: "Focus for 2 hours in one day", earned: c => maxDay(c.activity) >= 120 },
   { id: "proof-pro", emoji: "📸", name: "Proof Pro", hint: "Add proof to 3 journal entries", earned: c => realActivity(c.activity).filter(a => a.proof.trim() || a.attachment).length >= 3 },
-  { id: "brave-asker", emoji: "🙋‍♀️", name: "Brave Asker", hint: "Ask Xander 3 questions", earned: c => realActivity(c.activity).filter(a => a.blocker.trim()).length >= 3 },
+  { id: "brave-asker", emoji: "🙋‍♀️", name: "Brave Asker", hint: "Ask Sikander 3 questions", earned: c => realActivity(c.activity).filter(a => a.blocker.trim()).length >= 3 },
   { id: "finisher", emoji: "🏁", name: "Finisher", hint: "Complete a mission", earned: c => c.quests.some(q => q.status === "Completed") },
-  { id: "mentors-pick", emoji: "💌", name: "Mentor's Pick", hint: "Get a verified skill from Xander", earned: c => Object.values(c.skills).some(s => s.verified) || c.mentorNotes > 0 && c.quests.some(q => q.mentorFeedback) },
+  { id: "mentors-pick", emoji: "💌", name: "Mentor's Pick", hint: "Get a verified skill from Sikander", earned: c => Object.values(c.skills).some(s => s.verified) || c.mentorNotes > 0 && c.quests.some(q => q.mentorFeedback) },
   { id: "dream-chaser", emoji: "🎓", name: "Dream Chaser", hint: "Save a scholarship or pick a favourite uni", earned: c => c.savedDreams > 0 },
   { id: "sheet-star", emoji: "📊", name: "Sheet Star", hint: "Fill in your Working Excel Sheet on 3 different days", earned: c => new Set(realActivity(c.activity).filter(a => a.source === "sheet").map(a => a.date)).size >= 3 },
   { id: "weekly-reporter", emoji: "🗞️", name: "Weekly Reporter", hint: "Write 4 weekly updates (in the sheet or the Journal)", earned: c => realActivity(c.activity).filter(a => a.kind === "Weekly reflection" && a.did.trim()).length >= 4 },

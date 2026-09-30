@@ -11,7 +11,7 @@ const FEATURES = [
   { icon: Compass, emoji: "🗺️", title: "An adventure map", copy: "20 levels from computer basics to building and launching real apps. Unlock each world one at a time." },
   { icon: Brain, emoji: "🧠", title: "Brain Gym", copy: "Flip flashcards, beat quizzes and play the Daily 3. Smart repetition helps it actually stick." },
   { icon: Flame, emoji: "🔥", title: "Streaks, XP & badges", copy: "Show up a little every day, level up, and unlock trophies. Your effort always counts." },
-  { icon: MessageCircle, emoji: "💌", title: "A mentor in your corner", copy: "Ask questions, share proof and get comments, cheers and challenges from Xander." },
+  { icon: MessageCircle, emoji: "💌", title: "A mentor in your corner", copy: "Ask questions, share proof and get comments, cheers and challenges from Sikander." },
 ];
 const CHIPS = [["⚡", "+30 XP", "left-[4%] top-[10%]"], ["🔥", "7 day streak", "right-[6%] top-[22%]"], ["🏆", "Quiz Whiz", "left-[10%] bottom-[14%]"], ["🚀", "Level up!", "right-[10%] bottom-[10%]"]];
 

@@ -76,7 +76,7 @@ export default function AdventurePage() {
   };
   const reset = () => { if (window.confirm("Reset all adventure progress on this device? This cannot be undone.")) { setProgress(EMPTY_ROADMAP); setSelectedNumber(1); } };
   const editProof = (changes: Partial<typeof proof>) => setProofs({ ...proofs, [skill.id]: { ...proof, ...changes } });
-  const sendToXander = () => { editProof({ sent: true, sentAt: new Date().toISOString(), verified: false, mentorFeedback: proof.mentorFeedback }); celebrate({ emoji: "📨", title: "Sent to Xander!", text: "He'll review it and leave you a comment.", confetti: false, sound: "pop" }); };
+  const sendToSikander = () => { editProof({ sent: true, sentAt: new Date().toISOString(), verified: false, mentorFeedback: proof.mentorFeedback }); celebrate({ emoji: "📨", title: "Sent to Sikander!", text: "He'll review it and leave you a comment.", confetti: false, sound: "pop" }); };
 
   return <div className="space-y-6 pb-6">
     <SectionHeading eyebrow="Adventure map · 20 levels to your tech future" title="Your Tech Adventure 🗺️" copy="Each level is a world of videos and real missions. Clear them in order to unlock the next. Every resource is free." />
@@ -137,7 +137,7 @@ export default function AdventurePage() {
       <div className="bg-hero p-5 text-white sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2"><span className="chip bg-white/20 text-white">Level {String(selected.number).padStart(2, "0")}</span><span className="chip bg-black/10 text-white"><Clock3 size={12} />{selected.duration}</span>{selectedState === "passed" && <span className="chip bg-emerald-300 text-emerald-950">CLEARED ✓</span>}{proof.verified && <span className="chip bg-white text-brand"><ShieldCheck size={12} />Verified by Xander</span>}</div>
+            <div className="flex flex-wrap items-center gap-2"><span className="chip bg-white/20 text-white">Level {String(selected.number).padStart(2, "0")}</span><span className="chip bg-black/10 text-white"><Clock3 size={12} />{selected.duration}</span>{selectedState === "passed" && <span className="chip bg-emerald-300 text-emerald-950">CLEARED ✓</span>}{proof.verified && <span className="chip bg-white text-brand"><ShieldCheck size={12} />Verified by Sikander</span>}</div>
             <h2 className="mt-3 font-display text-3xl font-extrabold">{lesson.emoji} {selected.title}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/90">{selected.summary}</p>
           </div>
@@ -186,16 +186,16 @@ export default function AdventurePage() {
         </div>
       </div>
 
-      {/* show Xander */}
+      {/* show Sikander */}
       {selectedState !== "locked" && <div className="border-t border-ink/5 bg-brand/5 p-5 sm:p-7">
-        <div className="flex flex-wrap items-center gap-2"><ShieldCheck className="text-brand" size={20} /><h3 className="font-display text-lg font-extrabold">Show Xander what you made</h3>{proof.sent && !proof.verified && <span className="chip bg-amber-100 text-amber-900">Waiting for review</span>}{proof.verified && <span className="chip bg-emerald-100 text-emerald-800">Verified ✓</span>}</div>
-        <p className="mt-1 text-xs text-ink/55">Activity is yours. <b>Verified</b> is Xander’s stamp: only he can give it. Share a link or a few words about what you built.</p>
+        <div className="flex flex-wrap items-center gap-2"><ShieldCheck className="text-brand" size={20} /><h3 className="font-display text-lg font-extrabold">Show Sikander what you made</h3>{proof.sent && !proof.verified && <span className="chip bg-amber-100 text-amber-900">Waiting for review</span>}{proof.verified && <span className="chip bg-emerald-100 text-emerald-800">Verified ✓</span>}</div>
+        <p className="mt-1 text-xs text-ink/55">Activity is yours. <b>Verified</b> is Sikander’s stamp: only he can give it. Share a link or a few words about what you built.</p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <input className="field" placeholder="Proof link (GitHub, Google Doc, screenshot…)" value={proof.proof} onChange={e => editProof({ proof: e.target.value, sent: false })} />
           <input className="field" placeholder="One sentence: what did you make or learn?" value={proof.note} onChange={e => editProof({ note: e.target.value, sent: false })} />
         </div>
-        {proof.mentorFeedback && <p className="animate-pop mt-3 rounded-2xl bg-ink px-4 py-3 text-sm text-white"><b>Xander:</b> {proof.mentorFeedback}</p>}
-        <button onClick={sendToXander} disabled={proof.sent || (!proof.proof.trim() && !proof.note.trim())} className="btn-primary mt-4"><Send size={15} />{proof.sent ? (proof.verified ? "Verified by Xander" : "Sent, waiting for Xander") : "Send to Xander"}</button>
+        {proof.mentorFeedback && <p className="animate-pop mt-3 rounded-2xl bg-ink px-4 py-3 text-sm text-white"><b>Sikander:</b> {proof.mentorFeedback}</p>}
+        <button onClick={sendToSikander} disabled={proof.sent || (!proof.proof.trim() && !proof.note.trim())} className="btn-primary mt-4"><Send size={15} />{proof.sent ? (proof.verified ? "Verified by Sikander" : "Sent, waiting for Sikander") : "Send to Sikander"}</button>
         {proof.sentAt && <span className="ml-3 text-xs text-ink/45">sent {fmtDay(proof.sentAt.slice(0, 10))}</span>}
       </div>}
 

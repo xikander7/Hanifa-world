@@ -60,13 +60,13 @@ function Journal() {
     const previous = editingId ? items.find(i => i.id === editingId) : undefined;
     const entry: Activity = { ...previous, id: editingId || uid(), date: draft.date, kind: draft.kind, topic: draft.topic, minutes, did: draft.did.trim(), practiced: draft.practiced.trim(), feeling: draft.feeling, blocker: draft.blocker.trim(), proof: draft.proof.trim(), attachment: attachment || undefined, source: previous?.source ?? "manual" };
     setItems(editingId ? items.map(i => i.id === editingId ? entry : i) : [...items, entry]);
-    if (!editingId) celebrate({ emoji: draft.blocker.trim() ? "🙋‍♀️" : "📝", title: draft.blocker.trim() ? "Question sent to Xander" : "Entry saved!", text: minutes ? `${fmtMinutes(minutes)} logged on ${draft.topic}` : "Every note counts.", xp: Math.min(minutes, 60) + XP.journalEntry, sound: "win" });
+    if (!editingId) celebrate({ emoji: draft.blocker.trim() ? "🙋‍♀️" : "📝", title: draft.blocker.trim() ? "Question sent to Sikander" : "Entry saved!", text: minutes ? `${fmtMinutes(minutes)} logged on ${draft.topic}` : "Every note counts.", xp: Math.min(minutes, 60) + XP.journalEntry, sound: "win" });
     reset();
   };
   const addComment = (id: string, comment: Comment) => setItems(items.map(i => i.id === id ? { ...i, comments: [...(i.comments ?? []), comment] } : i));
 
   return <div>
-    <SectionHeading eyebrow="Journal · your learning story" title="Every little step counts ✍️" copy="Log time, write what you learned, ask questions, and add proof. Xander reads it all and can reply right here.">
+    <SectionHeading eyebrow="Journal · your learning story" title="Every little step counts ✍️" copy="Log time, write what you learned, ask questions, and add proof. Sikander reads it all and can reply right here.">
       {learner && <button onClick={() => (showForm ? reset() : setShowForm(true))} className="btn-primary"><Plus size={16} />{showForm ? "Close" : "New entry"}</button>}
     </SectionHeading>
 
@@ -102,7 +102,7 @@ function Journal() {
       <label className="mt-4 block text-xs font-bold">What did you learn or do?<textarea className="field mt-1 min-h-24" placeholder="e.g. I learned what a for loop is and wrote one that prints my name 5 times." value={draft.did} onChange={e => setDraft({ ...draft, did: e.target.value })} /></label>
       <label className="mt-4 block text-xs font-bold">What did you practise? <span className="font-medium text-ink/40">(optional)</span><input className="field mt-1" value={draft.practiced} onChange={e => setDraft({ ...draft, practiced: e.target.value })} /></label>
       <div className="mt-4"><p className="text-xs font-bold">How did it feel?</p><div className="mt-2 flex flex-wrap gap-2">{FEELINGS.map(f => <button type="button" key={f.emoji} onClick={() => setDraft({ ...draft, feeling: f.emoji })} aria-pressed={draft.feeling === f.emoji} className={`flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-bold transition hover:-translate-y-0.5 ${draft.feeling === f.emoji ? "bg-brand/15 ring-2 ring-brand" : "bg-white ring-1 ring-ink/10"}`}><span className="text-lg">{f.emoji}</span>{f.label}</button>)}</div></div>
-      <label className="mt-4 block rounded-2xl bg-amber-50 p-4 text-xs font-bold text-amber-950"><span className="flex items-center gap-1.5"><HelpCircle size={14} />Stuck on something? Ask Xander</span><textarea className="field mt-2 min-h-16 font-normal" placeholder="Asking is a superpower. Write your question here." value={draft.blocker} onChange={e => setDraft({ ...draft, blocker: e.target.value })} /></label>
+      <label className="mt-4 block rounded-2xl bg-amber-50 p-4 text-xs font-bold text-amber-950"><span className="flex items-center gap-1.5"><HelpCircle size={14} />Stuck on something? Ask Sikander</span><textarea className="field mt-2 min-h-16 font-normal" placeholder="Asking is a superpower. Write your question here." value={draft.blocker} onChange={e => setDraft({ ...draft, blocker: e.target.value })} /></label>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="text-xs font-bold"><span className="flex items-center gap-1"><Link2 size={12} />Proof link <span className="font-medium text-ink/40">(optional)</span></span><input className="field mt-1" placeholder="https://…" value={draft.proof} onChange={e => setDraft({ ...draft, proof: e.target.value })} /></label>
         <div className="text-xs font-bold"><span className="flex items-center gap-1"><Camera size={12} />Screenshot <span className="font-medium text-ink/40">(optional)</span></span>
@@ -131,7 +131,7 @@ function Journal() {
           </div>
           {a.did && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{a.did}</p>}
           {a.practiced && <p className="mt-2 text-xs text-ink/55"><b>Practised:</b> {a.practiced}</p>}
-          {a.blocker && <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-2.5 text-sm text-amber-950"><b>🙋‍♀️ Question for Xander:</b> {a.blocker}</p>}
+          {a.blocker && <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-2.5 text-sm text-amber-950"><b>🙋‍♀️ Question for Sikander:</b> {a.blocker}</p>}
           {(a.proof || a.attachment) && <div className="mt-3 flex flex-wrap items-center gap-3">{a.proof && (a.proof.startsWith("http") ? <a href={a.proof} target="_blank" rel="noopener noreferrer" className="chip bg-brand/10 text-brand underline">🔗 Proof link</a> : <span className="chip bg-ink/5 text-ink/60">{a.proof}</span>)}{a.attachment && <button type="button" onClick={() => setViewing(a.attachment!)} aria-label="View screenshot"><img src={a.attachment} alt="Screenshot proof" className="h-20 rounded-xl object-cover ring-1 ring-ink/10 transition hover:scale-105" /></button>}</div>}
           <CommentThread comments={a.comments ?? []} legacyMentorNote={a.mentorNote} viewer={learner ? "hanifa" : "mentor"} onAdd={c => addComment(a.id, c)} />
         </article>)}</div>

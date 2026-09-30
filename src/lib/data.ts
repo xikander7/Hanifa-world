@@ -28,7 +28,7 @@ export const KEYS = {
 } as const;
 
 /**
- * What Cloud save shares between devices: Hanifa's progress and everything she and Xander say to each other.
+ * What Cloud save shares between devices: Hanifa's progress and everything she and Sikander say to each other.
  * Per-device things (theme, sound, the running focus timer, which celebrations this screen has shown) stay local.
  */
 export const SYNCED_KEYS: string[] = [

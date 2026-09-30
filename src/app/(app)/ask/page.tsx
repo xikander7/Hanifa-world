@@ -18,7 +18,7 @@ import { SectionHeading } from "@/components/SectionHeading";
 const stageIds = roadmap.map(m => `module-${m.number}`);
 const RULES = [
   { emoji: "🧠", title: "Ask it to teach you", text: "Don't ask it to do your work. You learn by trying it yourself first." },
-  { emoji: "🔍", title: "Check important things", text: "ChatGPT can make mistakes. Check with your lesson, or ask Xander." },
+  { emoji: "🔍", title: "Check important things", text: "ChatGPT can make mistakes. Check with your lesson, or ask Sikander." },
   { emoji: "🔒", title: "Keep secrets secret", text: "Never type passwords, your address, your phone number or private things." },
 ];
 
@@ -111,6 +111,6 @@ function Ask() {
       <div className="mt-5 flex flex-wrap gap-3"><Link href="/time?new=1" className="btn-primary !py-2.5 text-sm">Write it in my Journal <ArrowRight size={15} /></Link><Link href="/home" className="btn-soft !py-2.5 text-sm">Back to Home</Link></div>
     </section>}
 
-    <p className="mt-6 flex items-start gap-2 rounded-2xl bg-white/60 px-4 py-3 text-xs leading-5 text-ink/55"><ShieldAlert size={14} className="mt-0.5 shrink-0 text-brand" />Xander can see which questions you asked here. That way he can help you with the things you find tricky. You won't get in trouble for asking.</p>
+    <p className="mt-6 flex items-start gap-2 rounded-2xl bg-white/60 px-4 py-3 text-xs leading-5 text-ink/55"><ShieldAlert size={14} className="mt-0.5 shrink-0 text-brand" />Sikander can see which questions you asked here. That way he can help you with the things you find tricky. You won't get in trouble for asking.</p>
   </div>;
 }

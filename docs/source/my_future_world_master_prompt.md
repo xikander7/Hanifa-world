@@ -8,7 +8,7 @@ Build a complete, working, mobile-first web application called:
 
 This is a private family mentoring application for exactly two primary users:
 
-1. **Mentor / Admin** — Xander
+1. **Mentor / Admin** — Sikander
 2. **Student / Learner** — Hanifa
 
 Both users will sign in using their own Google/Gmail accounts.
@@ -27,7 +27,7 @@ Its purpose is to make Hanifa’s:
 - tasks,
 - accountability,
 - evidence of progress,
-- and mentoring from Xander
+- and mentoring from Sikander
 
 simple, enjoyable, visual, motivating, and measurable.
 
@@ -35,7 +35,7 @@ The experience for Hanifa should feel like:
 
 **“I am building my future and unlocking my next level.”**
 
-The experience for Xander should feel like:
+The experience for Sikander should feel like:
 
 **“I can clearly see what Hanifa is working on, how much time she is spending, what she has learned, what needs my review, and whether she is truly progressing.”**
 
@@ -351,7 +351,7 @@ Hanifa CANNOT:
 - import Excel
 - change users
 
-## XANDER — Mentor/Admin
+## SIKANDER — Mentor/Admin
 
 Mentor can:
 

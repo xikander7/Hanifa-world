@@ -14,7 +14,7 @@ type Uni = (typeof seed.universities)[number] & { note?: string; chosen?: boolea
 type Scholarship = (typeof seed.scholarships)[number] & { saved?: boolean; note?: string; checked?: string[]; mentorNote?: string };
 const DEFAULT_UNIS: Uni[] = seed.universities.map(u => ({ ...u, chosen: u.name.includes("Sindh") }));
 const DEFAULT_SCHOLARSHIPS: Scholarship[] = seed.scholarships.map(s => ({ ...s, saved: false, checked: [] }));
-const STEPS: [string, string][] = [["Find requirements", "requirements"], ["Check the dates", "dates"], ["Talk with Xander", "mentor"]];
+const STEPS: [string, string][] = [["Find requirements", "requirements"], ["Check the dates", "dates"], ["Talk with Sikander", "mentor"]];
 const TABS = ["My shortlist", "Scholarship hunt", "Compare countries"] as const;
 const flagEmoji: Record<string, string> = { Turkey: "🇹🇷", Germany: "🇩🇪", Hungary: "🇭🇺", China: "🇨🇳", Malaysia: "🇲🇾", "South Korea": "🇰🇷", Japan: "🇯🇵", Italy: "🇮🇹", Cyprus: "🇨🇾" };
 
@@ -35,7 +35,7 @@ export default function DreamsPage() {
   const savedCount = scholarships.filter(s => s.saved).length;
 
   return <div>
-    <SectionHeading eyebrow="Dream Board · big ideas, tiny next steps" title="Your future has options 🌍" copy="Explore, compare and rank. Leave thoughts for Xander whenever something catches your eye." />
+    <SectionHeading eyebrow="Dream Board · big ideas, tiny next steps" title="Your future has options 🌍" copy="Explore, compare and rank. Leave thoughts for Sikander whenever something catches your eye." />
 
     <section className="bg-hero relative mb-8 overflow-hidden rounded-[2.2rem] p-7 text-white shadow-glow sm:p-9">
       <span className="pointer-events-none absolute -right-2 top-2 animate-float text-[7rem] opacity-25 sm:text-[9rem]">🎓</span>
@@ -57,11 +57,11 @@ export default function DreamsPage() {
         </div>
         <p className="mt-4 line-clamp-3 text-sm leading-6 text-ink/65">{u.verdict}</p>
         <div className="mt-4 flex flex-wrap gap-2"><span className="chip bg-ink/5 text-ink/60">💰 {u.cost?.slice(0, 60)}</span><span className="chip bg-brand/10 text-brand">📅 {u.ease}</span></div>
-        {u.mentorNote && <p className="animate-pop mt-3 rounded-2xl bg-ink px-4 py-2.5 text-sm text-white"><b>Xander:</b> {u.mentorNote}</p>}
+        {u.mentorNote && <p className="animate-pop mt-3 rounded-2xl bg-ink px-4 py-2.5 text-sm text-white"><b>Sikander:</b> {u.mentorNote}</p>}
         <button onClick={() => setOpen(open === u.id ? null : u.id)} className="mt-4 text-sm font-bold text-brand">{open === u.id ? "Hide details" : "Explore details & leave a thought →"}</button>
         {open === u.id && <div className="animate-fade-up mt-4 space-y-3 border-t border-ink/5 pt-4">
           <p className="text-sm text-ink/65">{u.bestIf}</p><p className="text-xs text-ink/50">Timing: {u.admissionTiming}</p><p className="text-xs text-ink/50">Future value: {u.futureValue}</p>
-          <label className="block text-xs font-bold">My thought or question<textarea value={u.note || ""} onChange={e => editUni(u.id, { note: e.target.value })} className="field mt-1 min-h-20 font-normal" placeholder="What do you like? What should we ask Xander?" /></label>
+          <label className="block text-xs font-bold">My thought or question<textarea value={u.note || ""} onChange={e => editUni(u.id, { note: e.target.value })} className="field mt-1 min-h-20 font-normal" placeholder="What do you like? What should we ask Sikander?" /></label>
           {mentor && <label className="block text-xs font-bold">Your note for Hanifa<textarea value={u.mentorNote || ""} onChange={e => editUni(u.id, { mentorNote: e.target.value })} className="field mt-1 min-h-16 font-normal" placeholder="Advice, questions, things to check…" /></label>}
           <button onClick={() => { editUni(u.id, { chosen: !u.chosen }); if (!u.chosen) celebrate({ emoji: "⭐", title: "Added to favourites", text: u.name, sound: "pop" }); }} className={`chip !px-4 !py-2 transition ${u.chosen ? "bg-emerald-100 text-emerald-800" : "bg-ink/5 text-ink/60 hover:bg-ink/10"}`}>{u.chosen ? "✓ Favourite" : "♡ Make a favourite"}</button>
         </div>}
@@ -78,7 +78,7 @@ export default function DreamsPage() {
           <p className="mt-2 text-sm leading-6 text-ink/60">{s.howToApply}</p>
           <div className="mt-4"><div className="flex justify-between text-[11px] font-bold text-ink/45"><span>Your progress</span><span>{s.checked?.length ?? 0}/{STEPS.length}</span></div><ProgressBar value={pct} className="mt-1" /></div>
           <div className="mt-3 flex flex-wrap gap-2">{STEPS.map(([label, key]) => { const on = s.checked?.includes(key); return <button key={key} onClick={() => toggleStep(s, key)} className={`chip !px-3 !py-2 transition active:scale-95 ${on ? "bg-emerald-100 text-emerald-800" : "bg-white text-ink/60 ring-1 ring-ink/10 hover:ring-brand/40"}`}>{on ? <CheckCircle2 size={12} /> : "○"} {label}</button>; })}</div>
-          {s.mentorNote && <p className="animate-pop mt-3 rounded-2xl bg-ink px-4 py-2.5 text-sm text-white"><b>Xander:</b> {s.mentorNote}</p>}
+          {s.mentorNote && <p className="animate-pop mt-3 rounded-2xl bg-ink px-4 py-2.5 text-sm text-white"><b>Sikander:</b> {s.mentorNote}</p>}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button onClick={() => { editSch(s.id, { saved: !s.saved }); if (!s.saved) celebrate({ emoji: "💎", title: "Saved to your hunt", text: s.university, confetti: false, sound: "pop" }); }} className={`btn !px-4 !py-2 text-xs ${s.saved ? "bg-brand text-white" : "bg-brand/10 text-brand"}`}><Bookmark size={14} className={s.saved ? "fill-current" : ""} />{s.saved ? "Saved" : "Save this"}</button>
             <button onClick={() => setOpen(open === s.id ? null : s.id)} className="text-xs font-bold text-ink/55">{open === s.id ? "Close" : "Add a note"}</button>

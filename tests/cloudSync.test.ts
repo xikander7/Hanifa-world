@@ -152,7 +152,7 @@ describe("Mentor-only changes", () => {
     expect(phone.data.get(KEYS.skillProof)).toEqual({ s1: { verified: false } });
   });
 
-  it("allows Hanifa's own changes, and Xander's review imported from the sheet", () => {
+  it("allows Hanifa's own changes, and Sikander's review imported from the sheet", () => {
     const sheetEntry = { ...entry("sheet-weekly-2"), source: "sheet", comments: [{ id: "sheet-weekly-2-mentor", by: "mentor", text: "Good" }] };
     expect(server.mentorOnlyChanges(KEYS.activity, [], [entry("a", { blocker: "why?" }), sheetEntry])).toEqual([]);
     expect(server.mentorOnlyChanges(KEYS.inbox, [{ id: "m", text: "hi", kind: "cheer", at: "t" }], [{ id: "m", text: "hi", kind: "cheer", at: "t", reply: "thanks" }])).toEqual([]);
@@ -162,7 +162,7 @@ describe("Mentor-only changes", () => {
 });
 
 describe("the App Journal tab in the working sheet", () => {
-  it("lists her app entries, and turns a reply typed in the sheet into Xander's comment", async () => {
+  it("lists her app entries, and turns a reply typed in the sheet into Sikander's comment", async () => {
     const google = fakeGoogle();
     const phone = device({ [KEYS.activity]: [{ ...entry("import-0") }, { ...entry("sheet-time-2026-09-29"), source: "sheet" }, entry("mine", { did: "=SUM(A1)" })] }, true);
     await sync(phone, google);

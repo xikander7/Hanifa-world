@@ -8,7 +8,7 @@
  *  - Keeps one copy of Hanifa's app data in a private spreadsheet only you can open ("My Future World: app data").
  *    Every device syncs with it, so her phone, her laptop and your laptop all see the same thing.
  *  - Writes every journal entry she makes in the app to an "App Journal" tab in the working sheet. Anything you type in
- *    that tab's "Xander's reply" column shows up in the app as your comment.
+ *    that tab's "Sikander's reply" column shows up in the app as your comment.
  *  - Checks the Mentor PIN here, on Google's side, so it is never inside the app. Changes only a mentor may make
  *    (approving, verifying, messages, mentor comments) are refused unless they come from a device signed in as Mentor.
  *
@@ -104,7 +104,7 @@ function push(req, backend) {
   return { ok: true, mentor, results };
 }
 
-// ------------------------------------------------------------------ what only Xander may change
+// ------------------------------------------------------------------ what only Sikander may change
 const list = value => (Array.isArray(value) ? value : []);
 const byId = value => { const map = {}; list(value).forEach(item => { if (item && item.id) map[item.id] = item; }); return map; };
 const text = value => (value === undefined || value === null ? "" : String(value));
@@ -128,7 +128,7 @@ function mentorOnlyChanges(key, before, after) {
     const old = byId(before);
     list(after).forEach(q => {
       const was = old[q.id];
-      if (!was && q.createdBy === "mentor") problems.push("mission from Xander");
+      if (!was && q.createdBy === "mentor") problems.push("mission from Sikander");
       if (text(q.mentorFeedback) !== text(was && was.mentorFeedback)) problems.push("mission feedback");
       if (q.status === "Needs a tweak" && (!was || was.status !== "Needs a tweak")) problems.push("mission review");
       if (q.status === "Completed" && q.requiresApproval && (!was || was.status !== "Completed")) problems.push("mission approval");
@@ -146,18 +146,18 @@ function mentorOnlyChanges(key, before, after) {
     const old = byId(before);
     list(after).forEach(m => {
       const was = old[m.id];
-      if (!was || text(was.text) !== text(m.text) || was.kind !== m.kind || was.at !== m.at) problems.push("message from Xander");
+      if (!was || text(was.text) !== text(m.text) || was.kind !== m.kind || was.at !== m.at) problems.push("message from Sikander");
     });
   }
   if (key === "future-world-universities" || key === "future-world-scholarships") {
     const old = byId(before);
-    list(after).forEach(item => { if (text(item.mentorNote) !== text(old[item.id] && old[item.id].mentorNote)) problems.push("note from Xander"); });
+    list(after).forEach(item => { if (text(item.mentorNote) !== text(old[item.id] && old[item.id].mentorNote)) problems.push("note from Sikander"); });
   }
   return problems.filter((p, i) => problems.indexOf(p) === i);
 }
 
 // ------------------------------------------------------------------ the "App Journal" tab
-const JOURNAL_HEADER = ["Date", "Type", "Topic", "Minutes", "What I learned / did", "Practised", "Feeling", "Question for Xander", "Proof", "Chat in the app", "✍️ Xander's reply (type here)", "Entry id (don't edit)"];
+const JOURNAL_HEADER = ["Date", "Type", "Topic", "Minutes", "What I learned / did", "Practised", "Feeling", "Question for Sikander", "Proof", "Chat in the app", "✍️ Sikander's reply (type here)", "Entry id (don't edit)"];
 const REPLY_COL = 10, ID_COL = 11; // zero-based
 const replyId = entryId => entryId + "-sheetreply";
 // Text that starts with = + - @ would become a formula in Sheets.
@@ -171,13 +171,13 @@ function journalRows(activity, replies) {
     .map(a => [
       a.date, a.kind, safeCell(a.topic), a.minutes || "", safeCell(a.did), safeCell(a.practiced), text(a.feeling),
       safeCell(a.blocker), safeCell(a.proof) + (a.attachment ? (a.proof ? " · " : "") + "📸 screenshot in the app" : ""),
-      safeCell(list(a.comments).filter(c => c.id !== replyId(a.id)).map(c => (c.by === "mentor" ? "Xander: " : "Hanifa: ") + c.text).join("\n")),
+      safeCell(list(a.comments).filter(c => c.id !== replyId(a.id)).map(c => (c.by === "mentor" ? "Sikander: " : "Hanifa: ") + c.text).join("\n")),
       safeCell(replies[a.id] || ""), "'" + a.id,
     ]);
   return [JOURNAL_HEADER].concat(rows);
 }
 
-/** Turns replies typed in the App Journal tab into Xander's comments on those entries. Returns null when nothing changed. */
+/** Turns replies typed in the App Journal tab into Sikander's comments on those entries. Returns null when nothing changed. */
 function applyJournalReplies(activity, replies, nowIso) {
   let changed = false;
   const next = list(activity).map(entry => {

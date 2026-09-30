@@ -2,7 +2,7 @@
 
 ## Purpose
 
-My Future World is a private, mobile-first mentoring application for exactly two primary users: Xander as Mentor/Admin and Hanifa as Student/Learner. It turns the existing Excel workflow into a daily product for learning, quests, time tracking, evidence, university choices, scholarships, and mentor verification.
+My Future World is a private, mobile-first mentoring application for exactly two primary users: Sikander as Mentor/Admin and Hanifa as Student/Learner. It turns the existing Excel workflow into a daily product for learning, quests, time tracking, evidence, university choices, scholarships, and mentor verification.
 
 The first milestone is a complete local MVP that is useful without cloud credentials. It uses the supplied workbook as initial source data, preserves source values and provenance, and leaves clear adapters for Supabase, Google OAuth, and Vercel deployment.
 
