@@ -66,7 +66,7 @@ function Journal() {
   const addComment = (id: string, comment: Comment) => setItems(items.map(i => i.id === id ? { ...i, comments: [...(i.comments ?? []), comment] } : i));
 
   return <div>
-    <SectionHeading eyebrow="Journal · your learning story" title="Every little step counts ✍️" copy="Log time, write what you learned, ask questions, and add proof. Sikander reads it all and can reply right here.">
+    <SectionHeading eyebrow="My Diary · your learning story" title="Every little step counts ✍️" copy="Log time, write what you learned, ask questions, and add proof. Sikander reads it all and can reply right here.">
       {learner && <button onClick={() => (showForm ? reset() : setShowForm(true))} className="btn-primary"><Plus size={16} />{showForm ? "Close" : "New entry"}</button>}
     </SectionHeading>
 

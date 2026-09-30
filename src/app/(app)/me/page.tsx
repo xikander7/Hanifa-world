@@ -17,9 +17,9 @@ import { ShareCard } from "@/components/ShareCard";
 const DEFAULT_GOAL_HOURS = 5;
 
 const MORE = [
-  { href: "/dreams", emoji: "🌍", title: "Dream board", text: "Universities and scholarships you like." },
-  { href: "/quests", emoji: "🎯", title: "Missions", text: "Little jobs with XP prizes." },
-  { href: "/sheet", emoji: "📊", title: "Working Excel Sheet", text: "The sheet you share with Sikander." },
+  { href: "/dreams", emoji: "🌍", title: "Dream Schools", text: "Universities and scholarships you like." },
+  { href: "/quests", emoji: "🎯", title: "Mini Missions", text: "Little jobs with XP prizes." },
+  { href: "/sheet", emoji: "📊", title: "Study Sheet", text: "The sheet you share with Sikander." },
 ];
 
 /** Hanifa's trophy room: everything she has won, her streak calendar, and a report for Sikander. */
@@ -40,7 +40,7 @@ export default function TrophiesPage() {
       <div className="relative flex flex-wrap items-center gap-6">
         <span className="animate-bounce-soft text-7xl drop-shadow-lg sm:text-8xl">🏆</span>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold uppercase tracking-widest text-white/75">Your trophy room</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-white/75">My Trophies</p>
           <h1 className="mt-1 font-display text-4xl font-extrabold sm:text-5xl">{game.rank.emoji} Level <AnimatedNumber value={game.level} /></h1>
           <p className="mt-1 text-sm text-white/85">{game.rank.title} · <AnimatedNumber value={game.xp} /> XP · {game.xpToNext} XP to the next level</p>
           <ProgressBar value={game.levelProgress} height="h-3" className="mt-3 max-w-md !bg-white/25" />

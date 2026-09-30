@@ -35,7 +35,7 @@ export default function DreamsPage() {
   const savedCount = scholarships.filter(s => s.saved).length;
 
   return <div>
-    <SectionHeading eyebrow="Dream Board · big ideas, tiny next steps" title="Your future has options 🌍" copy="Explore, compare and rank. Leave thoughts for Sikander whenever something catches your eye." />
+    <SectionHeading eyebrow="Dream Schools · big ideas, tiny next steps" title="Your future has options 🌍" copy="Explore, compare and rank. Leave thoughts for Sikander whenever something catches your eye." />
 
     <section className="bg-hero relative mb-8 overflow-hidden rounded-[2.2rem] p-7 text-white shadow-glow sm:p-9">
       <span className="pointer-events-none absolute -right-2 top-2 animate-float text-[7rem] opacity-25 sm:text-[9rem]">🎓</span>

@@ -77,7 +77,7 @@ function Learn() {
   </div>;
 
   return <div>
-    <SectionHeading eyebrow="Brain Gym · 5 minutes a day beats 5 hours once a week" title="Train your brain 🧠" copy="Flip flashcards, beat the quizzes, and lock what you learn into long-term memory. Every answer earns XP." />
+    <SectionHeading eyebrow="Quiz & Cards · 5 minutes a day beats 5 hours once a week" title="Train your brain 🧠" copy="Flip flashcards, beat the quizzes, and lock what you learn into long-term memory. Every answer earns XP." />
 
     <div className="stagger grid gap-4 lg:grid-cols-3">
       <section className="card relative overflow-hidden p-6 lg:col-span-2">

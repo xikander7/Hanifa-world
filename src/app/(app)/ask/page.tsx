@@ -58,7 +58,7 @@ function Ask() {
   };
 
   return <div className="max-w-3xl">
-    <SectionHeading eyebrow="Ask · get help when you're stuck" title="Ask a helper 💬" copy="ChatGPT is like a super patient teacher who is awake any time. Follow the 3 easy steps and we'll write the perfect question for you." />
+    <SectionHeading eyebrow="Ask for Help · get help when you're stuck" title="Ask for help 💬" copy="ChatGPT is like a super patient teacher who is awake any time. Follow the 3 easy steps and we'll write the perfect question for you." />
 
     <section className="bg-hero relative mb-6 overflow-hidden rounded-[2.2rem] p-6 text-white shadow-glow sm:p-8">
       <div className="pointer-events-none absolute -right-10 -top-14 h-60 w-60 rounded-full bg-white/10" />

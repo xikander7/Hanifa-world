@@ -12,8 +12,11 @@
  *  - Checks the Mentor PIN here, on Google's side, so it is never inside the app. Changes only a mentor may make
  *    (approving, verifying, messages, mentor comments) are refused unless they come from a device signed in as Mentor.
  *
+ *  - Emails Sikander when Hanifa needs him: a question, a help request, a mission or level to review, or a reply.
+ *
  * Script Properties (Project Settings → Script Properties):
  *  - MENTOR_PIN   required, your PIN
+ *  - MENTOR_EMAIL optional; alerts go here. Without it they go to the Google account that runs this script
  *  - TOKEN_SECRET created automatically; delete it to sign every Mentor device out
  *  - DATA_SHEET_ID created automatically on first run
  */
@@ -30,6 +33,7 @@ const CHUNK = 45000; // a Sheets cell holds 50,000 characters
 const MAX_VALUE_CHARS = 20000000;
 const MAX_PIN_TRIES = 5; // then a 15-minute pause
 const REPLY_CHECK_SECONDS = 30;
+const APP_URL = "https://hanifa-world-vercel-xikander7s-projects.vercel.app";
 
 // ------------------------------------------------------------------ web app entry points
 function doGet(e) { return respond(handle(e.parameter || {}, sheetsBackend())); }
@@ -86,6 +90,7 @@ function pull(req, backend) {
 function push(req, backend) {
   const mentor = isMentor(req.token, backend);
   const results = {};
+  const alerts = [];
   const changes = Array.isArray(req.changes) ? req.changes : [];
   backend.withLock(() => {
     for (const change of changes) {
@@ -97,10 +102,15 @@ function push(req, backend) {
       const problems = mentor ? [] : mentorOnlyChanges(key, current.value, change.value);
       if (problems.length) { results[key] = { status: "forbidden", rev: current.rev, value: current.value, reason: problems.join("; ") }; continue; }
       backend.save(key, current.rev + 1, change.value);
+      // A key's first save is a device joining, not news: only later changes can send an email.
+      if (!mentor && current.rev > 0) mentorAlerts(key, current.value, change.value).forEach(a => alerts.push(a));
       results[key] = { status: "ok", rev: current.rev + 1 };
       if (key === ACTIVITY_KEY) backend.writeJournal(journalRows(change.value, backend.journalReplies()));
     }
   });
+  if (alerts.length) {
+    try { sendAlertEmail(alerts, backend); } catch (err) { /* a failed email must never lose Hanifa's work */ }
+  }
   return { ok: true, mentor, results };
 }
 
@@ -154,6 +164,52 @@ function mentorOnlyChanges(key, before, after) {
     list(after).forEach(item => { if (text(item.mentorNote) !== text(old[item.id] && old[item.id].mentorNote)) problems.push("note from Sikander"); });
   }
   return problems.filter((p, i) => problems.indexOf(p) === i);
+}
+
+// ------------------------------------------------------------------ emails to Sikander
+/** What Hanifa did in this change that Sikander should hear about, as short lines of text. */
+function mentorAlerts(key, before, after) {
+  const alerts = [];
+  if (key === "future-world-asks-v1") {
+    const old = byId(before);
+    list(after).forEach(a => { if (!old[a.id]) alerts.push("💬 She asked for help with " + text(a.topic) + (text(a.question).trim() ? ": \"" + text(a.question).trim() + "\"" : "") + " (" + text(a.mode) + ")"); });
+  }
+  if (key === ACTIVITY_KEY) {
+    const old = byId(before);
+    list(after).forEach(entry => {
+      const was = old[entry.id] || {};
+      const question = text(entry.blocker).trim();
+      if (question && question !== text(was.blocker).trim()) alerts.push("❓ Question in her diary (" + text(entry.topic) + "): \"" + question + "\"");
+      const oldComments = byId(was.comments);
+      list(entry.comments).forEach(c => {
+        if (c.by === "hanifa" && !fromSheet(entry, c) && !oldComments[c.id]) alerts.push("✍️ She commented on her diary (" + text(entry.topic) + "): \"" + text(c.text) + "\"");
+      });
+    });
+  }
+  if (key === "future-world-quests") {
+    const old = byId(before);
+    list(after).forEach(q => { if (q.status === "Waiting for Mentor" && (!old[q.id] || old[q.id].status !== "Waiting for Mentor")) alerts.push("🎯 Mission ready for your review: " + text(q.title) + (text(q.comment).trim() ? " — \"" + text(q.comment).trim() + "\"" : "")); });
+  }
+  if (key === "future-world-skill-proof-v2") {
+    const old = before && typeof before === "object" ? before : {};
+    Object.keys(after || {}).forEach(id => {
+      const now = after[id] || {}, was = old[id] || {};
+      if (now.sent && (!was.sent || text(now.sentAt) !== text(was.sentAt))) alerts.push("🗺️ Level " + id.replace("module-", "") + " sent for you to verify" + (text(now.proof).trim() ? ": " + text(now.proof).trim() : ""));
+    });
+  }
+  if (key === "future-world-inbox-v1") {
+    const old = byId(before);
+    list(after).forEach(m => { if (text(m.reply).trim() && text(m.reply) !== text(old[m.id] && old[m.id].reply)) alerts.push("💌 She replied to your message \"" + text(m.text) + "\": \"" + text(m.reply) + "\""); });
+  }
+  return alerts;
+}
+
+function sendAlertEmail(alerts, backend) {
+  const to = backend.prop("MENTOR_EMAIL") || backend.ownerEmail();
+  if (!to) return;
+  const subject = alerts.length === 1 ? "Hanifa: " + alerts[0].replace(/^\S+\s/, "").slice(0, 90) : "Hanifa has " + alerts.length + " updates for you";
+  const body = "Hi Sikander,\n\n" + alerts.map(a => "• " + a).join("\n") + "\n\nOpen Mentor Hub: " + APP_URL + "/mentor\n\n— My Future World";
+  backend.sendMail(to, subject, body);
 }
 
 // ------------------------------------------------------------------ the "App Journal" tab
@@ -233,6 +289,8 @@ function sheetsBackend() {
     cacheGet: name => cache.get(name),
     cachePut: (name, value, seconds) => cache.put(name, value, seconds),
     uuid: () => Utilities.getUuid(),
+    ownerEmail: () => Session.getEffectiveUser().getEmail(),
+    sendMail: (to, subject, body) => MailApp.sendEmail({ to: to, subject: subject, body: body, name: "My Future World" }),
     now: () => new Date().toISOString(),
     sign: (value, secret) => Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(value, secret)),
     withLock: fn => { const lock = LockService.getScriptLock(); lock.waitLock(30000); try { return fn(); } finally { lock.releaseLock(); } },
@@ -283,9 +341,10 @@ function setup() {
   const backend = sheetsBackend();
   backend.revs();
   SpreadsheetApp.openById(WORKING_SHEET_ID).getName();
+  MailApp.getRemainingDailyQuota(); // asks for permission to send the alert emails
   if (!backend.prop("MENTOR_PIN")) throw new Error("Add MENTOR_PIN in Project Settings → Script Properties, then run setup again.");
   Logger.log("All set. Private data spreadsheet: https://docs.google.com/spreadsheets/d/" + backend.prop("DATA_SHEET_ID"));
 }
 
 // Lets the app's tests load this file. Apps Script has no `module`, so this line does nothing there.
-if (typeof module !== "undefined") module.exports = { handle, mentorOnlyChanges, journalRows, applyJournalReplies, SYNCED_KEYS, CHUNK };
+if (typeof module !== "undefined") module.exports = { handle, mentorOnlyChanges, mentorAlerts, journalRows, applyJournalReplies, SYNCED_KEYS, CHUNK };

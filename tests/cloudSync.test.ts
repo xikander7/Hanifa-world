@@ -14,6 +14,7 @@ function fakeGoogle(pin = "2468") {
   const props = new Map<string, string>([["MENTOR_PIN", pin]]);
   const cache = new Map<string, string>();
   let journal: unknown[][] = [];
+  const mail: { to: string; subject: string; body: string }[] = [];
   const backend = {
     prop: (name: string) => props.get(name) ?? null,
     setProp: (name: string, value: string) => { props.set(name, value); },
@@ -28,9 +29,11 @@ function fakeGoogle(pin = "2468") {
     save: (key: string, rev: number, value: unknown) => { rows.set(key, { rev, value: roundTrip(value) }); },
     journalReplies: () => Object.fromEntries(journal.slice(1).filter(r => String(r[10]).trim()).map(r => [String(r[11]).replace(/^'/, ""), String(r[10])])),
     writeJournal: (next: unknown[][]) => { journal = next; },
+    ownerEmail: () => "mentor@example.com",
+    sendMail: (to: string, subject: string, body: string) => { mail.push({ to, subject, body }); },
   };
   return {
-    backend, rows,
+    backend, rows, mail,
     journal: () => journal,
     typeReply: (entryId: string, reply: string) => { journal = journal.map(r => (String(r[11]) === `'${entryId}` ? r.map((c, i) => (i === 10 ? reply : c)) : r)); cache.clear(); },
     call: (req: Record<string, unknown>) => roundTrip(server.handle(roundTrip(req), backend)),
@@ -175,5 +178,56 @@ describe("the App Journal tab in the working sheet", () => {
     await sync(phone, google);
     const comments = (phone.data.get(KEYS.activity) as { id: string; comments?: { by: string; text: string }[] }[]).find(a => a.id === "mine")?.comments;
     expect(comments).toEqual([expect.objectContaining({ by: "mentor", text: "Well done! Try the next video." })]);
+  });
+});
+
+describe("Emails to Sikander", () => {
+  const push = (google: Google, key: string, value: unknown, token = "") => {
+    const rev = google.rows.get(key)?.rev ?? 0;
+    return google.call({ action: "push", token, changes: [{ key, baseRev: rev, value }] });
+  };
+
+  it("emails when Hanifa asks for help, but not when a device first joins", () => {
+    const google = fakeGoogle();
+    push(google, KEYS.asks, [{ id: "a1", at: "", module: 1, topic: "Old question", mode: "explain", question: "" }]);
+    expect(google.mail).toHaveLength(0);
+    push(google, KEYS.asks, [{ id: "a1", at: "", module: 1, topic: "Old question", mode: "explain", question: "" }, { id: "a2", at: "", module: 2, topic: "RAM", mode: "error", question: "What is RAM?" }]);
+    expect(google.mail).toHaveLength(1);
+    expect(google.mail[0].to).toBe("mentor@example.com");
+    expect(google.mail[0].body).toContain("What is RAM?");
+    expect(google.mail[0].body).not.toContain("Old question");
+  });
+
+  it("emails for diary questions, missions to review, levels to verify and replies, in one email per push", () => {
+    const google = fakeGoogle();
+    const entry = { id: "e1", date: "2026-09-30", kind: "Time log", topic: "Python", minutes: 20, did: "", practiced: "", feeling: "", blocker: "", proof: "", comments: [] };
+    push(google, KEYS.activity, [entry]);
+    push(google, KEYS.quests, [{ id: "q1", title: "Zip a folder", status: "In Progress" }]);
+    push(google, KEYS.skillProof, { "module-1": { completed: [], note: "", proof: "", sent: false } });
+    // Only Sikander can send a message, so it goes up with his token.
+    push(google, KEYS.inbox, [{ id: "m1", at: "", kind: "note", text: "Well done!" }], google.call({ action: "login", pin: "2468" }).token);
+    expect(google.mail).toHaveLength(0);
+
+    google.call({ action: "push", token: "", changes: [
+      { key: KEYS.activity, baseRev: 1, value: [{ ...entry, blocker: "Why is my loop stuck?", comments: [{ id: "c1", by: "hanifa", text: "Thanks!", at: "" }] }] },
+      { key: KEYS.quests, baseRev: 1, value: [{ id: "q1", title: "Zip a folder", status: "Waiting for Mentor", comment: "Done it" }] },
+      { key: KEYS.skillProof, baseRev: 1, value: { "module-1": { completed: [], note: "", proof: "my link", sent: true, sentAt: "x" } } },
+      { key: KEYS.inbox, baseRev: 1, value: [{ id: "m1", at: "", kind: "note", text: "Well done!", reply: "Thank you" }] },
+    ] });
+    expect(google.mail).toHaveLength(1);
+    const { subject, body } = google.mail[0];
+    expect(subject).toBe("Hanifa has 5 updates for you");
+    for (const bit of ["Why is my loop stuck?", "Thanks!", "Zip a folder", "Level 1", "Thank you"]) expect(body).toContain(bit);
+  });
+
+  it("does not email Sikander about his own changes, and sends to MENTOR_EMAIL when set", () => {
+    const google = fakeGoogle();
+    const token = google.call({ action: "login", pin: "2468" }).token;
+    push(google, KEYS.inbox, [{ id: "m1", at: "", kind: "note", text: "Hi" }], token);
+    push(google, KEYS.inbox, [{ id: "m1", at: "", kind: "note", text: "Hi", reply: "Hello" }], token);
+    expect(google.mail).toHaveLength(0);
+    google.backend.setProp("MENTOR_EMAIL", "sikander@example.com");
+    push(google, KEYS.inbox, [{ id: "m1", at: "", kind: "note", text: "Hi", reply: "Hello again" }]);
+    expect(google.mail.map(m => m.to)).toEqual(["sikander@example.com"]);
   });
 });

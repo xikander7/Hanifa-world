@@ -22,13 +22,13 @@ import { useNow } from "@/lib/useNow";
 const guideItem = { href: "/guide", label: "How to use this app", short: "Help", icon: BookOpen };
 // Hanifa's five tabs. Everything else lives under "More" in the menu, or is one tap away from these pages.
 const learnerNav = [
-  { href: "/home", label: "Home", short: "Home", icon: Home }, { href: "/adventure", label: "Map", short: "Map", icon: Compass },
-  { href: "/learn", label: "Brain Gym", short: "Brain", icon: Brain }, { href: "/time", label: "Journal", short: "Journal", icon: NotebookPen },
-  { href: "/me", label: "Trophies", short: "Trophies", icon: Trophy },
+  { href: "/home", label: "My Day", short: "My Day", icon: Home }, { href: "/adventure", label: "Level Map", short: "Levels", icon: Compass },
+  { href: "/learn", label: "Quiz & Cards", short: "Quiz", icon: Brain }, { href: "/time", label: "My Diary", short: "Diary", icon: NotebookPen },
+  { href: "/me", label: "My Trophies", short: "Trophies", icon: Trophy },
 ];
 const moreNav = [
-  { href: "/quests", label: "Missions", short: "Missions", icon: Target }, { href: "/ask", label: "Ask a Helper", short: "Ask", icon: MessageCircleQuestion },
-  { href: "/dreams", label: "Dreams", short: "Dreams", icon: GraduationCap }, { href: "/sheet", label: "Working Excel Sheet", short: "Sheet", icon: FileSpreadsheet },
+  { href: "/quests", label: "Mini Missions", short: "Missions", icon: Target }, { href: "/ask", label: "Ask for Help", short: "Help", icon: MessageCircleQuestion },
+  { href: "/dreams", label: "Dream Schools", short: "Dreams", icon: GraduationCap }, { href: "/sheet", label: "Study Sheet", short: "Sheet", icon: FileSpreadsheet },
 ];
 const mentorItem = { href: "/mentor", label: "Mentor Hub", short: "Mentor", icon: ShieldCheck };
 
@@ -253,9 +253,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   </CelebrateProvider></RoleContext.Provider>;
 }
 
-/** Nova floats in the corner on every page. Tap her when you're stuck and she opens Ask a Helper. */
+/** Nova floats in the corner on every page. Tap her when you're stuck and she opens Ask for Help. */
 function NovaHelper() {
-  return <Link href="/ask" aria-label="Stuck? Ask a helper" className="group fixed bottom-24 right-4 z-30 flex items-end gap-1 lg:bottom-6 lg:right-6">
+  return <Link href="/ask" aria-label="Stuck? Ask for help" className="group fixed bottom-24 right-4 z-30 flex items-end gap-1 lg:bottom-6 lg:right-6">
     <span className="animate-nova-bubble mb-10 whitespace-nowrap rounded-2xl rounded-br-md bg-white px-3 py-2 text-xs font-extrabold text-ink shadow-pop ring-1 ring-brand/20">Stuck? Ask me! 💬</span>
     <Nova mood="happy" size={64} className="drop-shadow-xl transition group-hover:scale-110 group-active:scale-95" />
   </Link>;

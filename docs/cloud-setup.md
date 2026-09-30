@@ -52,6 +52,14 @@ To connect every device automatically instead, set `NEXT_PUBLIC_CLOUD_URL` to th
 After changing `Code.js`, paste it in again, then **Deploy → Manage deployments → ✏️ → Version: New version → Deploy**.
 The URL stays the same.
 
+## Email alerts
+
+The script emails you when Hanifa needs you: she asks for help, writes a question in her diary, comments on it, sends
+a mission or a level to review, or replies to your message. Everything from one save comes in one email. Alerts go to
+the Google account that runs the script; to use another address, add a Script Property `MENTOR_EMAIL`.
+
+The first time, run `setup` again (it asks for permission to send email), then deploy a new version as above.
+
 ## Good to know
 
 - **Sign every Mentor device out:** delete the `TOKEN_SECRET` script property.
