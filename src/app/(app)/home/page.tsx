@@ -2,9 +2,9 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Brain, Check, Copy, Flame, MessageCircle, NotebookPen, Pause, Play, Send, Share2, Target, Timer, Trophy } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Flame, MessageCircle, Pause, Play, Send, Target, Timer } from "lucide-react";
 import roadmap from "@/data/roadmap.json";
-import { SKILLS, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, IMPORTED_ACTIVITY, KEYS, addDays, feelingIcon, fmtDay, fmtMinutes, localDate, weekStart } from "@/lib/data";
+import { SKILLS, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, IMPORTED_ACTIVITY, KEYS, fmtDay } from "@/lib/data";
 import type { Activity, InboxMessage, Quest, RoadmapProgress } from "@/lib/data";
 import { DAILY_FOCUS_GOAL_MINUTES, XP } from "@/lib/game";
 import { novaSays } from "@/lib/nova";
@@ -21,21 +21,14 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { Reveal } from "@/components/Reveal";
 import { Ring } from "@/components/Ring";
 
-const DEFAULT_GOAL_HOURS = 5;
-
 export default function HomePage() {
   const role = useRole();
   const hydrated = useHydrated();
   const game = useGame();
-  const { celebrate } = useCelebrate();
-  const [activity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
   const [quests] = useLocalStore<Quest[]>(KEYS.quests, EMPTY_QUESTS);
   const [roadmapProgress] = useLocalStore<RoadmapProgress>(KEYS.roadmap, EMPTY_ROADMAP);
-  const [goalHours, setGoalHours] = useLocalStore<number>(KEYS.goal, DEFAULT_GOAL_HOURS);
-  const [editingGoal, setEditingGoal] = useState(false);
   const [guideSeenRaw, setGuideSeen] = useLocalStore<string>(KEYS.guideSeen, "");
   const guideSeen = !hydrated || guideSeenRaw === "yes";
-  const today = hydrated ? localDate() : "";
   const hour = hydrated ? new Date().getHours() : 12;
   const line = novaSays(game, hour);
 
@@ -48,9 +41,6 @@ export default function HomePage() {
 
   const missions = quests.filter(q => q.status !== "Completed");
   const waiting = quests.filter(q => q.status === "Waiting for Mentor").length;
-  const weekGoalMinutes = goalHours * 60;
-  const weekPct = Math.min(100, Math.round((game.weekMinutes / weekGoalMinutes) * 100));
-  const recent = [...activity].filter(a => a.id.startsWith("import-") === false).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
 
   const goals = [
     { done: game.today.brain, emoji: "⚡", title: "Do your Daily 3", sub: `3 brain questions · +${XP.dailyThree} XP`, href: "/learn", cta: "Play" },
@@ -58,17 +48,20 @@ export default function HomePage() {
     { done: game.today.journal, emoji: "📝", title: "Write one line in your journal", sub: `What did you learn? · +${XP.journalEntry} XP`, href: "/time?new=1", cta: "Write" },
   ];
 
+  const stepPct = required ? Math.round((doneSteps / required) * 100) : 0;
+
   return <div className="space-y-6">
     {role === "mentor" && <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-ink px-5 py-3 text-sm font-semibold text-white"><span>👀 You’re viewing Hanifa’s space as Mentor.</span><Link href="/mentor" className="chip bg-white/15 text-white">Open Mentor Hub <ArrowRight size={13} /></Link></div>}
 
     {!guideSeen && role === "learner" && <div className="animate-fade-up flex flex-wrap items-center gap-3 rounded-3xl bg-white/80 px-5 py-3.5 ring-1 ring-brand/30">
-      <span className="text-2xl">👋</span><p className="min-w-0 flex-1 text-sm font-semibold">New here? Read <b>How to use this app</b>. It explains every tab in simple steps (5 minutes).</p>
+      <span className="animate-wave text-2xl">👋</span><p className="min-w-0 flex-1 text-sm font-semibold">New here? Read <b>How to use this app</b>. It takes 3 minutes.</p>
       <Link href="/guide" onClick={() => setGuideSeen("yes")} className="btn-primary !py-2 text-xs"><BookOpen size={14} />Show me</Link><button onClick={() => setGuideSeen("yes")} className="text-xs font-bold text-ink/45 hover:text-ink">Not now</button>
     </div>}
 
     {/* ---------- hero ---------- */}
     <section className="bg-hero relative overflow-hidden rounded-[2.2rem] p-6 text-white shadow-glow sm:p-9">
-      <div className="pointer-events-none absolute -right-10 -top-16 h-72 w-72 rounded-full bg-white/10" /><div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-white/10" />
+      <div className="pointer-events-none absolute -right-10 -top-16 h-72 w-72 animate-float-slow rounded-full bg-white/10" /><div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 animate-float-slow rounded-full bg-white/10" style={{ animationDelay: "-6s" }} />
+      <Sparkles />
       <div className="relative grid items-center gap-6 md:grid-cols-[auto_1fr]">
         <div className="mx-auto md:mx-0"><Nova mood={line.mood} size={112} /></div>
         <div>
@@ -84,14 +77,31 @@ export default function HomePage() {
               <div className="flex justify-between text-xs font-bold text-white/80"><span><AnimatedNumber value={game.xp} /> XP</span><span>{game.xpToNext} to next level</span></div>
               <ProgressBar value={game.levelProgress} height="h-3.5" className="mt-1.5 !bg-white/25" />
             </div>
-            <div className="flex items-center gap-2 rounded-2xl bg-white/15 px-4 py-2.5 backdrop-blur" title="Day streak">
+            <Link href="/me" className="flex items-center gap-2 rounded-2xl bg-white/15 px-4 py-2.5 backdrop-blur transition hover:scale-105 hover:bg-white/25" title="Day streak · see your trophies">
               <Flame size={26} className={game.streak.current ? "animate-flame text-amber-200" : "text-white/50"} />
               <div className="leading-tight"><p className="font-display text-2xl font-extrabold"><AnimatedNumber value={game.streak.current} /></p><p className="text-[10px] font-bold uppercase tracking-wider text-white/70">day streak</p></div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
     </section>
+
+    {/* ---------- the one big next step ---------- */}
+    <Link href="/adventure" className="group card card-hover relative block overflow-hidden p-0">
+      <div className="shine absolute inset-0 opacity-60" aria-hidden />
+      <div className="relative flex flex-wrap items-center gap-5 p-6">
+        <span className="relative grid h-20 w-20 shrink-0 place-items-center">
+          <span className="absolute inset-0 animate-pulse-ring rounded-full bg-brand/30" />
+          <span className="relative grid h-20 w-20 place-items-center rounded-full bg-brand text-white shadow-glow transition group-hover:scale-110"><Play size={34} className="ml-1" fill="currentColor" /></span>
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="eyebrow">Your next quest</p>
+          <h2 className="mt-1 font-display text-2xl font-extrabold sm:text-3xl">Level {current.number} · {current.title}</h2>
+          <div className="mt-3 flex items-center gap-3"><ProgressBar value={stepPct} height="h-3" className="flex-1" /><span className="chip bg-brand/10 text-brand">{doneSteps}/{required} steps</span></div>
+        </div>
+        <span className="btn-primary hidden sm:inline-flex">Let’s go <ArrowRight size={16} className="transition group-hover:translate-x-1" /></span>
+      </div>
+    </Link>
 
     {/* ---------- today's goals + focus ---------- */}
     <div className="grid gap-6 lg:grid-cols-5">
@@ -100,10 +110,10 @@ export default function HomePage() {
           <div><p className="eyebrow">Today’s plan</p><h2 className="mt-1 font-display text-2xl font-extrabold">{game.today.perfect ? "Perfect day! 🌟" : "3 small goals, 1 big day"}</h2><p className="mt-1 text-sm text-ink/55">Finish all three for a <b>+{XP.perfectDay} XP</b> Perfect Day bonus.</p></div>
           <Ring value={(game.today.done / 3) * 100} size={64} stroke={8}><span className="font-display text-lg font-extrabold">{game.today.done}/3</span></Ring>
         </div>
-        <ul className="mt-5 space-y-2.5">
+        <ul className="stagger mt-5 space-y-2.5">
           {goals.map(g => <li key={g.title}>
             <Link href={g.href} className={`group flex items-center gap-3 rounded-2xl p-3.5 transition ${g.done ? "bg-emerald-50" : "bg-white/80 ring-1 ring-ink/5 hover:-translate-y-0.5 hover:ring-brand/40"}`}>
-              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-xl transition ${g.done ? "animate-check-pop bg-emerald-500 text-white" : "bg-brand/10 group-hover:scale-110"}`}>{g.done ? <Check size={22} /> : g.emoji}</span>
+              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-xl transition ${g.done ? "animate-check-pop bg-emerald-500 text-white" : "bg-brand/10 group-hover:scale-110 group-hover:rotate-6"}`}>{g.done ? <Check size={22} /> : g.emoji}</span>
               <span className="min-w-0 flex-1"><span className={`block text-sm font-extrabold ${g.done ? "text-emerald-900 line-through decoration-emerald-400" : ""}`}>{g.title}</span><span className="block text-xs text-ink/50">{g.sub}</span></span>
               {!g.done && <span className="chip bg-brand text-white">{g.cta} <ArrowRight size={12} /></span>}
             </Link>
@@ -113,86 +123,29 @@ export default function HomePage() {
       <Reveal delay={80} className="lg:col-span-2"><FocusCard /></Reveal>
     </div>
 
-    {/* ---------- messages from Sikander ---------- */}
-    <Reveal><SikanderInbox /></Reveal>
-
-    <Reveal className="card flex flex-wrap items-center gap-4 p-5">
-      <Nova mood="think" size={64} />
-      <div className="min-w-0 flex-1"><p className="font-display text-lg font-extrabold">Stuck on something? 🤔</p><p className="text-sm text-ink/60">Ask ChatGPT for help. We write the question for you in 3 easy steps.</p></div>
-      <Link href="/ask" className="btn-primary !py-2.5 text-sm">Ask a helper <ArrowRight size={15} /></Link>
-    </Reveal>
-
-    {/* ---------- stats ---------- */}
-    <Reveal className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <div className="card card-hover p-5"><p className="text-sm font-bold text-ink/55">Today</p><p className="mt-2 font-display text-3xl font-extrabold">{hydrated ? fmtMinutes(game.todayMinutes) : "0m"}</p><p className="mt-1 text-xs text-ink/45">of focused learning</p></div>
-      <div className="card card-hover relative p-5">
-        <div className="flex items-center justify-between"><p className="text-sm font-bold text-ink/55">This week</p><button onClick={() => setEditingGoal(v => !v)} className="text-[11px] font-bold text-brand">{editingGoal ? "Done" : "Edit goal"}</button></div>
-        <p className="mt-2 font-display text-3xl font-extrabold">{hydrated ? fmtMinutes(game.weekMinutes) : "0m"}</p>
-        {editingGoal ? <div className="mt-2 flex items-center gap-2 text-xs font-bold">Goal <input type="number" min={1} max={60} value={goalHours} onChange={e => setGoalHours(Math.max(1, Number(e.target.value) || DEFAULT_GOAL_HOURS))} className="field !w-16 !py-1.5" /> hours</div> : <><ProgressBar value={weekPct} className="mt-2" /><p className="mt-1 text-xs text-ink/45">{weekPct}% of your {goalHours}h goal</p></>}
-      </div>
-      <div className="card card-hover p-5"><p className="text-sm font-bold text-ink/55">Levels cleared</p><p className="mt-2 font-display text-3xl font-extrabold"><AnimatedNumber value={game.levelsCleared} /><span className="text-lg text-ink/35"> / {roadmap.length}</span></p><ProgressBar value={(game.levelsCleared / roadmap.length) * 100} className="mt-2" /></div>
-      <div className="card card-hover p-5"><p className="text-sm font-bold text-ink/55">Cards mastered</p><p className="mt-2 font-display text-3xl font-extrabold"><AnimatedNumber value={game.masteredCards} /></p><p className="mt-1 text-xs text-ink/45">stuck in long-term memory 🧠</p></div>
-    </Reveal>
-
-    {/* ---------- continue learning + missions ---------- */}
+    {/* ---------- messages + missions from Sikander ---------- */}
     <div className="grid gap-6 lg:grid-cols-2">
-      <Reveal className="card overflow-hidden">
-        <div className="bg-brand-gradient p-5 text-white">
-          <p className="text-[11px] font-extrabold uppercase tracking-widest text-white/75">Continue your adventure</p>
-          <h2 className="mt-1 font-display text-2xl font-extrabold">Level {current.number} · {current.title}</h2>
-          <p className="mt-1 text-xs text-white/80">{current.duration} · {doneSteps}/{required} steps done</p>
-          <ProgressBar value={(doneSteps / required) * 100} className="mt-3 !bg-white/25" />
-        </div>
-        <div className="space-y-3 p-5">
-          <p className="line-clamp-3 text-sm leading-6 text-ink/65">{current.summary}</p>
-          <div className="flex flex-wrap gap-2"><Link href="/adventure" className="btn-primary !py-2.5 text-xs">Open this level <ArrowRight size={14} /></Link><Link href={`/learn?m=${current.number}`} className="btn-soft !py-2.5 text-xs"><Brain size={14} />Flashcards for it</Link></div>
-        </div>
-      </Reveal>
-      <Reveal delay={80} className="card p-5">
-        <div className="flex items-center justify-between"><div><p className="eyebrow">Missions</p><h2 className="mt-1 font-display text-xl font-extrabold">From Sikander &amp; you</h2></div><Target className="text-brand" /></div>
-        {missions.length ? <ul className="mt-4 space-y-2.5">{missions.slice(0, 3).map(q => <li key={q.id} className="flex items-center gap-3 rounded-2xl bg-white/80 p-3 ring-1 ring-ink/5"><span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10">{q.createdBy === "mentor" ? "📌" : "✨"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{q.title}</span><span className="block text-xs text-ink/50">{q.status}{q.dueDate ? ` · due ${fmtDay(q.dueDate)}` : ""}</span></span><span className="chip bg-brand/10 text-brand">+{q.xp ?? XP.defaultQuest}</span></li>)}</ul>
-          : <div className="mt-4 rounded-2xl border border-dashed border-ink/15 p-6 text-center"><p className="text-3xl">🌤️</p><p className="mt-2 text-sm font-bold">No open missions</p><p className="text-xs text-ink/50">Add your own, or wait for one from Sikander.</p></div>}
+      <Reveal><SikanderInbox /></Reveal>
+      <Reveal delay={80} className="card p-6">
+        <div className="flex items-center justify-between"><div><p className="eyebrow">Missions</p><h2 className="mt-1 font-display text-xl font-extrabold">Little jobs with prizes</h2></div><Target className="text-brand animate-bounce-soft" /></div>
+        {missions.length ? <ul className="stagger mt-4 space-y-2.5">{missions.slice(0, 3).map(q => <li key={q.id}><Link href="/quests" className="flex items-center gap-3 rounded-2xl bg-white/80 p-3 ring-1 ring-ink/5 transition hover:-translate-y-0.5 hover:ring-brand/40"><span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10">{q.createdBy === "mentor" ? "📌" : "✨"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{q.title}</span><span className="block text-xs text-ink/50">{q.status}{q.dueDate ? ` · due ${fmtDay(q.dueDate)}` : ""}</span></span><span className="chip bg-brand/10 text-brand">+{q.xp ?? XP.defaultQuest}</span></Link></li>)}</ul>
+          : <div className="mt-4 rounded-2xl border border-dashed border-ink/15 p-6 text-center"><p className="animate-bounce-soft text-3xl">🌤️</p><p className="mt-2 text-sm font-bold">No missions right now</p><p className="text-xs text-ink/50">Make your own, or wait for one from Sikander.</p></div>}
         <Link href="/quests" className="btn-soft mt-4 w-full !py-2.5 text-xs">{waiting ? `${waiting} waiting for Sikander · ` : ""}Open missions <ArrowRight size={14} /></Link>
       </Reveal>
     </div>
 
-    {/* ---------- consistency + badges ---------- */}
-    <div className="grid gap-6 lg:grid-cols-5">
-      <Reveal className="card p-6 lg:col-span-2">
-        <div className="flex items-center justify-between"><div><p className="eyebrow">Consistency</p><h2 className="mt-1 font-display text-xl font-extrabold">Your last 4 weeks</h2></div><span className="chip bg-brand/10 text-brand">Best streak {game.streak.best}</span></div>
-        <div className="mt-5 grid grid-cols-7 gap-1.5">
-          {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <span key={i} className="text-center text-[10px] font-extrabold text-ink/35">{d}</span>)}
-          {hydrated && Array.from({ length: 28 }, (_, i) => {
-            const date = addDays(weekStart(today), i - 21);
-            const minutes = game.perDay[date] || 0, active = game.activeDays.has(date), future = date > today, isToday = date === today;
-            const tone = future ? "bg-transparent ring-1 ring-ink/5" : minutes >= 60 ? "bg-brand" : minutes >= 25 ? "bg-brand/60" : active ? "bg-brand/30" : "bg-ink/5";
-            return <div key={date} title={`${fmtDay(date)} · ${fmtMinutes(minutes)}`} className={`aspect-square rounded-xl transition hover:scale-110 ${tone} ${isToday ? "ring-2 ring-ink ring-offset-2" : ""}`} />;
-          })}
-        </div>
-        <p className="mt-4 text-xs text-ink/50">Every coloured square is a day you showed up. Darker means more time.</p>
-      </Reveal>
-      <Reveal delay={80} className="card p-6 lg:col-span-3">
-        <div className="flex items-center justify-between"><div><p className="eyebrow">Trophy shelf</p><h2 className="mt-1 font-display text-xl font-extrabold">{game.earnedBadges.length} of {game.badges.length} badges</h2></div><Trophy className="text-brand" /></div>
-        <div className="mt-5 grid grid-cols-4 gap-3 sm:grid-cols-6">
-          {game.badges.map(b => <div key={b.id} title={b.isEarned ? `${b.name}: ${b.hint}` : `Locked: ${b.hint}`} className={`group flex aspect-square flex-col items-center justify-center rounded-2xl text-center transition ${b.isEarned ? "bg-brand/10 ring-1 ring-brand/30 hover:-translate-y-1 hover:rotate-3" : "bg-ink/5 opacity-50 grayscale"}`}>
-            <span className={`text-2xl sm:text-3xl ${b.isEarned ? "group-hover:animate-wiggle" : ""}`}>{b.isEarned ? b.emoji : "🔒"}</span>
-            <span className="mt-1 hidden px-1 text-[9px] font-extrabold leading-tight sm:block">{b.name}</span>
-          </div>)}
-        </div>
-        {game.badges.some(b => !b.isEarned) && <p className="mt-4 rounded-2xl bg-ink/[.04] px-4 py-3 text-xs text-ink/60">🎯 <b>Next up:</b> {game.badges.find(b => !b.isEarned)?.name} — {game.badges.find(b => !b.isEarned)?.hint}</p>}
-      </Reveal>
-    </div>
-
-    {/* ---------- recent wins + share ---------- */}
-    <div className="grid gap-6 lg:grid-cols-5">
-      <Reveal className="card p-6 lg:col-span-3">
-        <div className="flex items-center justify-between"><div><p className="eyebrow">Journal</p><h2 className="mt-1 font-display text-xl font-extrabold">Recent little wins</h2></div><Link href="/time" className="chip bg-brand/10 text-brand">Open journal <ArrowRight size={12} /></Link></div>
-        {recent.length ? <ul className="mt-4 divide-y divide-ink/5">{recent.map(a => <li key={a.id} className="flex gap-3 py-3.5"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand/10 text-lg">{a.attachment ? "📸" : feelingIcon(a.feeling)}</span><div className="min-w-0"><p className="truncate text-sm font-extrabold">{a.topic}</p><p className="line-clamp-2 text-xs leading-5 text-ink/55">{a.did || "Time logged"}</p><p className="mt-1 text-[11px] font-bold text-ink/35">{fmtDay(a.date)}{a.minutes ? ` · ${fmtMinutes(a.minutes)}` : ""}{a.comments?.some(c => c.by === "mentor") || a.mentorNote ? " · 💬 Sikander replied" : ""}</p></div></li>)}</ul>
-          : <div className="mt-4 rounded-2xl border border-dashed border-ink/15 p-7 text-center"><NotebookPen className="mx-auto text-brand" /><p className="mt-2 text-sm font-bold">Your story starts with one line</p><Link href="/time?new=1" className="btn-primary mt-3 !py-2.5 text-xs">Write your first entry</Link></div>}
-      </Reveal>
-      <Reveal delay={80} className="lg:col-span-2"><ShareCard goalHours={goalHours} onCopied={() => celebrate({ emoji: "📋", title: "Update copied!", text: "Paste it to Sikander on WhatsApp.", confetti: false, sound: "pop" })} /></Reveal>
-    </div>
+    <Link href="/me" className="group card card-hover flex items-center gap-4 p-5">
+      <span className="text-4xl transition group-hover:animate-wiggle">🏆</span>
+      <div className="min-w-0 flex-1"><p className="font-display text-lg font-extrabold">Your trophy room</p><p className="text-sm text-ink/60">{game.earnedBadges.length} of {game.badges.length} badges won · best streak {game.streak.best} days</p></div>
+      <ArrowRight className="text-brand transition group-hover:translate-x-1" />
+    </Link>
   </div>;
+}
+
+/** Little stars twinkling across the hero. */
+function Sparkles() {
+  const spots = [["8%", "18%", "0s"], ["22%", "78%", ".9s"], ["62%", "12%", "1.6s"], ["88%", "62%", ".4s"], ["45%", "88%", "2.1s"]];
+  return <div className="pointer-events-none absolute inset-0" aria-hidden>{spots.map(([left, top, delay]) => <span key={left} className="absolute animate-twinkle text-lg" style={{ left, top, animationDelay: delay }}>✦</span>)}</div>;
 }
 
 // ------------------------------------------------------------------ focus timer
@@ -260,34 +213,4 @@ function SikanderInbox() {
         </div></div>
       </li>)}</ul>}
   </section>;
-}
-
-// ------------------------------------------------------------------ share progress with Sikander
-function ShareCard({ goalHours, onCopied }: { goalHours: number; onCopied: () => void }) {
-  const game = useGame();
-  const [activity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
-  const [quests] = useLocalStore<Quest[]>(KEYS.quests, EMPTY_QUESTS);
-  const hydrated = useHydrated();
-  const text = useMemo(() => {
-    if (!hydrated) return "";
-    const today = localDate(), start = weekStart(today);
-    const week = activity.filter(a => !a.id.startsWith("import-") && a.date >= start && a.date <= today);
-    const topics = [...new Set(week.map(a => a.topic))].join(", ") || "—";
-    const questions = week.filter(a => a.blocker.trim()).map(a => `• ${a.topic}: ${a.blocker.trim()}`);
-    return [
-      `🌸 Hanifa’s update — week of ${fmtDay(start, { day: "numeric", month: "short" })}`,
-      `⏱️ Time: ${fmtMinutes(game.weekMinutes)} of ${goalHours}h goal`,
-      `🔥 Streak: ${game.streak.current} days · Level ${game.level} ${game.rank.title} (${game.xp} XP)`,
-      `📚 Studied: ${topics}`,
-      `🚀 Levels cleared: ${game.levelsCleared}/20 · Cards mastered: ${game.masteredCards}`,
-      `✅ Missions done: ${quests.filter(q => q.status === "Completed").length} · Journal entries this week: ${week.length}`,
-      questions.length ? `\n❓ Questions for Sikander:\n${questions.join("\n")}` : "",
-    ].filter(Boolean).join("\n");
-  }, [hydrated, activity, quests, game, goalHours]);
-  const copy = async () => { try { await navigator.clipboard.writeText(text); onCopied(); } catch { window.prompt("Copy this update:", text); } };
-  return <div className="card h-full p-6">
-    <div className="flex items-center justify-between"><div><p className="eyebrow">Share</p><h2 className="mt-1 font-display text-xl font-extrabold">Update Sikander</h2></div><Share2 className="text-brand" /></div>
-    <pre className="mt-4 max-h-56 overflow-auto whitespace-pre-wrap rounded-2xl bg-ink/[.04] p-4 font-sans text-xs leading-5 text-ink/70">{text || "…"}</pre>
-    <div className="mt-4 grid grid-cols-2 gap-2"><button onClick={copy} className="btn-primary !py-2.5 text-xs"><Copy size={14} />Copy</button><a href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer" className="btn-soft !py-2.5 text-xs">WhatsApp</a></div>
-  </div>;
 }

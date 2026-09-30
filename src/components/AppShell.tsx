@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, FormEvent, useContext, useEffect, useState } from "react";
-import { BookOpen, Brain, Cloud, CloudOff, Compass, FileSpreadsheet, Flame, GraduationCap, HelpCircle, Home, Lock, Menu, MessageCircleQuestion, NotebookPen, ShieldCheck, Target, Timer, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { BookOpen, Brain, Cloud, CloudOff, Compass, FileSpreadsheet, Flame, GraduationCap, HelpCircle, Home, Lock, Menu, MessageCircleQuestion, NotebookPen, ShieldCheck, Target, Timer, Trophy, Volume2, VolumeX, X, Zap } from "lucide-react";
 import type { Role } from "@/domain/types";
 import { KEYS, NOT_SEEN } from "@/lib/data";
 import { seedSheetEntries } from "@/lib/sheetSeed";
@@ -20,12 +20,16 @@ import { useNow } from "@/lib/useNow";
 
 // "How to use this app" comes first so it's the obvious place to start. `short` is the label in the phone's bottom bar.
 const guideItem = { href: "/guide", label: "How to use this app", short: "Help", icon: BookOpen };
+// Hanifa's five tabs. Everything else lives under "More" in the menu, or is one tap away from these pages.
 const learnerNav = [
-  { href: "/home", label: "Home", short: "Home", icon: Home }, { href: "/adventure", label: "Adventure", short: "Map", icon: Compass }, { href: "/learn", label: "Learn", short: "Learn", icon: Brain },
-  { href: "/ask", label: "Ask a Helper", short: "Ask", icon: MessageCircleQuestion },
-  { href: "/quests", label: "Missions", short: "Missions", icon: Target }, { href: "/time", label: "Journal", short: "Journal", icon: NotebookPen }, { href: "/dreams", label: "Dreams", short: "Dreams", icon: GraduationCap },
+  { href: "/home", label: "Home", short: "Home", icon: Home }, { href: "/adventure", label: "Map", short: "Map", icon: Compass },
+  { href: "/learn", label: "Brain Gym", short: "Brain", icon: Brain }, { href: "/time", label: "Journal", short: "Journal", icon: NotebookPen },
+  { href: "/me", label: "Trophies", short: "Trophies", icon: Trophy },
 ];
-const sheetItem = { href: "/sheet", label: "Working Excel Sheet", short: "Sheet", icon: FileSpreadsheet };
+const moreNav = [
+  { href: "/quests", label: "Missions", short: "Missions", icon: Target }, { href: "/ask", label: "Ask a Helper", short: "Ask", icon: MessageCircleQuestion },
+  { href: "/dreams", label: "Dreams", short: "Dreams", icon: GraduationCap }, { href: "/sheet", label: "Working Excel Sheet", short: "Sheet", icon: FileSpreadsheet },
+];
 const mentorItem = { href: "/mentor", label: "Mentor Hub", short: "Mentor", icon: ShieldCheck };
 
 const VIBES = [
@@ -158,8 +162,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     else setPinError(error);
   };
   const becomeHanifa = async () => { if (role === "mentor") { switchRole("learner"); await mentorSignOut(); } setShowPin(false); };
-  const sideNav = role === "mentor" ? [guideItem, mentorItem, ...learnerNav, sheetItem] : [guideItem, ...learnerNav, sheetItem];
-  // Seven learner tabs (including Ask) fill the bar, so Help lives in the top bar's ? button and the side menu.
+  const sideNav = role === "mentor" ? [guideItem, mentorItem, ...learnerNav] : [guideItem, ...learnerNav];
+  // Help lives in the top bar's ? button and the side menu; the "More" pages are in the side menu.
   const mobileNav = role === "mentor" ? [mentorItem, ...learnerNav] : learnerNav;
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
@@ -182,6 +186,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         return <Link key={href} href={href} className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition duration-200 ${active ? "bg-brand text-white shadow-glow" : "text-ink/65 hover:bg-white hover:text-ink"}`}>
           <Icon size={19} className="transition group-hover:scale-110 group-hover:-rotate-6" /><span className="flex-1">{label}</span>
           {href === guideItem.href && !active && hydrated && guideSeen !== "yes" && <span className="rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-brand">Start here</span>}
+        </Link>;
+      })}
+      <p className="px-4 pb-1 pt-4 text-[11px] font-extrabold uppercase tracking-wider text-ink/40">More</p>
+      {moreNav.map(({ href, label, icon: Icon }) => {
+        const active = isActive(href);
+        return <Link key={href} href={href} className={`group flex items-center gap-3 rounded-2xl px-4 py-2 text-[13px] font-bold transition duration-200 ${active ? "bg-brand text-white shadow-glow" : "text-ink/50 hover:bg-white hover:text-ink"}`}>
+          <Icon size={16} className="transition group-hover:scale-110 group-hover:-rotate-6" /><span className="flex-1">{label}</span>
         </Link>;
       })}
     </nav>
@@ -224,7 +235,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="ml-auto flex items-center gap-2">
           <FocusPill />
           <CloudPill />
-          <Link href="/sheet" aria-label="Open the Working Excel Sheet" title="Working Excel Sheet" className="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink/70 ring-1 ring-ink/5 transition hover:scale-110 hover:text-brand lg:hidden"><FileSpreadsheet size={17} /></Link>
           <Link href="/guide" aria-label="How to use this app" title="How to use this app" className="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink/70 ring-1 ring-ink/5 transition hover:scale-110 hover:text-brand"><HelpCircle size={17} /></Link>
           <span className="chip bg-white/80 text-ink ring-1 ring-ink/5" title="Day streak"><Flame size={14} className={`text-brand ${hydrated && game.streak.current > 0 ? "animate-flame" : ""}`} />{hydrated ? game.streak.current : 0}</span>
           <span className="chip bg-white/80 text-ink ring-1 ring-ink/5" title="Total XP"><Zap size={14} className="text-brand" />{hydrated ? game.xp.toLocaleString() : 0}</span>
@@ -236,8 +246,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <nav aria-label="Main mobile" className="glass fixed inset-x-3 bottom-3 z-30 grid grid-flow-col auto-cols-fr rounded-[1.6rem] p-1.5 shadow-pop lg:hidden">
       {mobileNav.map(({ href, short, icon: Icon }) => {
         const active = isActive(href);
-        return <Link key={href} href={href} className={`flex min-w-0 flex-col items-center gap-0.5 rounded-2xl px-0.5 py-2 text-[10px] font-bold transition ${active ? "bg-brand text-white shadow-glow" : "text-ink/55"}`}><Icon size={18} className={active ? "animate-bounce-soft" : ""} /><span className="max-w-full truncate">{short}</span></Link>;
+        return <Link key={href} href={href} className={`flex min-w-0 flex-col items-center gap-0.5 rounded-2xl px-0.5 py-2 text-[11px] font-bold transition duration-300 ${active ? "animate-pop bg-brand text-white shadow-glow" : "text-ink/55 active:scale-90"}`}><Icon size={20} className={active ? "animate-bounce-soft" : ""} /><span className="max-w-full truncate">{short}</span></Link>;
       })}
     </nav>
+    {role === "learner" && !isActive("/ask") && <NovaHelper />}
   </CelebrateProvider></RoleContext.Provider>;
+}
+
+/** Nova floats in the corner on every page. Tap her when you're stuck and she opens Ask a Helper. */
+function NovaHelper() {
+  return <Link href="/ask" aria-label="Stuck? Ask a helper" className="group fixed bottom-24 right-4 z-30 flex items-end gap-1 lg:bottom-6 lg:right-6">
+    <span className="animate-nova-bubble mb-10 whitespace-nowrap rounded-2xl rounded-br-md bg-white px-3 py-2 text-xs font-extrabold text-ink shadow-pop ring-1 ring-brand/20">Stuck? Ask me! 💬</span>
+    <Nova mood="happy" size={64} className="drop-shadow-xl transition group-hover:scale-110 group-active:scale-95" />
+  </Link>;
 }

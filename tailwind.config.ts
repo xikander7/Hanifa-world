@@ -39,6 +39,8 @@ export default {
         zoomIn: { "0%": { opacity: "0", transform: "scale(.7) translateY(20px)" }, "100%": { opacity: "1", transform: "scale(1) translateY(0)" } },
         wave: { "0%,60%,100%": { transform: "rotate(0)" }, "10%,30%": { transform: "rotate(16deg)" }, "20%,40%": { transform: "rotate(-8deg)" }, "50%": { transform: "rotate(10deg)" } },
         shake: { "0%,100%": { transform: "translateX(0)" }, "20%,60%": { transform: "translateX(-7px)" }, "40%,80%": { transform: "translateX(7px)" } },
+        // "Stuck? Ask me!" pops up for a few seconds, then hides, so it never gets in the way for long.
+        novaBubble: { "0%,62%,100%": { opacity: "0", transform: "translateY(8px) scale(.8)" }, "6%,52%": { opacity: "1", transform: "translateY(0) scale(1)" } },
         checkPop: { "0%": { transform: "scale(0) rotate(-40deg)" }, "60%": { transform: "scale(1.3) rotate(8deg)" }, "100%": { transform: "scale(1) rotate(0)" } },
       },
       animation: {
@@ -59,6 +61,7 @@ export default {
         "zoom-in": "zoomIn .55s cubic-bezier(.3,1.3,.5,1) both",
         wave: "wave 2.6s ease-in-out infinite",
         shake: "shake .45s ease both",
+        "nova-bubble": "novaBubble 12s ease-in-out infinite",
         "check-pop": "checkPop .45s cubic-bezier(.3,1.5,.5,1) both",
       },
     },
