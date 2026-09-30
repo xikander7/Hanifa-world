@@ -1,0 +1,1354 @@
+[
+  {
+    "number": 1,
+    "title": "Computer Basics",
+    "duration": "2 weeks",
+    "summary": "hardware vs software, CPU/RAM/storage, OS concepts, files/folders/extensions, installing software, browsers, basic troubleshooting, plus first vocabulary for networking, databases, Git, and cloud (each gets its own full module later: 2, 9, 10, 4).",
+    "resources": [
+      {
+        "id": "m1-r1",
+        "title": "Computer & Technology Basics Course for Absolute Beginners",
+        "description": "Computer & Technology Basics Course for Absolute Beginners — freeCodeCamp, 55 min. Built on the GCFGlobal curriculum: computer types, ports, OS basics, applications, connecting to the internet, the cloud, basic security. Best starting point — pure beginner pace.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/computer-basics-for-absolute-beginners/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Computer+%26+Technology+Basics+Course+for+Absolute+Beginners"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m1-r2",
+        "title": "GCFGlobal Computer Basics",
+        "description": "GCFGlobal Computer Basics — free, self-paced reading + short videos from the same nonprofit that made the course above. Use this to re-read anything that moved too fast in the video.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://edu.gcfglobal.org/en/computerbasics/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=GCFGlobal+Computer+Basics"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m1-r3",
+        "title": "Crash Course Computer Science",
+        "description": "Crash Course Computer Science — PBS Digital Studios, 40 episodes (~11 min each). Deeper but still beginner-friendly: CPU, memory, operating systems, the internet, databases, cybersecurity, AI — the exact vocabulary the rest of this roadmap builds on. Watch episodes 1–17 now (hardware/OS); the internet, database, and security episodes double as previews for Modules 2, 9, and 18.",
+        "links": [
+          {
+            "label": "Watch on YouTube",
+            "url": "https://www.youtube.com/playlist?list=PL8dPuuaLjXtNlUrzyH5r6jN9ulIgZBpdo"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m1-p1",
+        "text": "Open Task Manager (Windows) or Activity Monitor (Mac): identify which processes use the most CPU and RAM."
+      },
+      {
+        "id": "m1-p2",
+        "text": "Create, rename, move, and zip/unzip a folder from the file explorer."
+      },
+      {
+        "id": "m1-p3",
+        "text": "Write a one-page personal glossary (in Google Docs or Notion) defining 20 terms pulled from the videos above — this becomes a running reference she'll add to in every later module."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 2,
+    "title": "Internet + Networking Basics",
+    "duration": "2–3 weeks",
+    "summary": "IP address, Wi-Fi, router, modem, LAN/WAN, DNS, HTTP/HTTPS, ports, client/server, VPN. Concepts only — no CCNA-level depth yet.",
+    "resources": [
+      {
+        "id": "m2-r1",
+        "title": "PowerCert Animated Videos (YouTube channel)",
+        "description": "PowerCert Animated Videos (YouTube channel) — short (5–10 min), clearly animated explainers that are the easiest entry point into this topic. Search the channel for: \"How Does the Internet Work?\", \"IP Address Explained\", \"What is DNS?\", \"What is a VPN?\", \"Router vs Switch vs Hub\", \"Public vs Private IP Address\". Watch these first, in that order.",
+        "links": [
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=PowerCert+Animated+Videos+%28YouTube+channel%29"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m2-r2",
+        "title": "Computer Networking Course – Network Engineering",
+        "description": "Computer Networking Course – Network Engineering (CompTIA Network+ Exam Prep) — freeCodeCamp, taught by Brian Ferrill, 9h 24m on the freeCodeCamp.org YouTube channel. This is full CompTIA-certification depth — don't watch it end to end yet. Use it as a reference and only watch the sections on: Intro to Network Devices, DHCP, Introduction to the DNS Service, Introduction to IPv4, and Network Topologies.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/free-computer-networking-course/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Computer+Networking+Course"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m2-r3",
+        "title": "MDN — An overview of HTTP",
+        "description": "MDN — An overview of HTTP — short official reference for client/server, request/response, and HTTP vs HTTPS. Read after the videos above to firm up the vocabulary in writing.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=MDN"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m2-p1",
+        "text": "Find your own computer's local (private) IP and public IP; explain the difference out loud."
+      },
+      {
+        "id": "m2-p2",
+        "text": "Run ping google.com and nslookup google.com (or ipconfig/ifconfig) in a terminal and explain what each output line means."
+      },
+      {
+        "id": "m2-p3",
+        "text": "Draw (on paper or in a slide) a simple diagram: laptop → Wi-Fi router → modem → ISP → internet → website server, labeling where DNS and HTTP fit in."
+      }
+    ],
+    "notes": [
+      "Open item: Sikander noted he wants to send additional up-to-date networking videos for this module — leave room to slot his picks in above once shared."
+    ]
+  },
+  {
+    "number": 3,
+    "title": "Excel / Google Sheets",
+    "duration": "2 weeks",
+    "summary": "rows/columns, formulas, sorting/filtering, SUM/IF, XLOOKUP/VLOOKUP, pivot tables, CSV files.",
+    "resources": [
+      {
+        "id": "m3-r1",
+        "title": "Learn Microsoft Excel",
+        "description": "Learn Microsoft Excel – Full Course for Beginners — freeCodeCamp, taught by Shad Sluiter (professor, Grand Canyon University), 2.5 hours, built around 6 real projects (Payroll, Gradebook, Sales Database, Car Inventory, etc.). Covers formulas, relative vs absolute references, charts, VLOOKUP, and pivot tables. freeCodeCamp notes most of it transfers directly to Google Sheets.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/learn-microsoft-excel/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Learn+Microsoft+Excel"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m3-r2",
+        "title": "Top Excel Formulas & Functions You Need to Know",
+        "description": "Top Excel Formulas & Functions You Need to Know — freeCodeCamp, by Grant Huang, 75 min. Narrower follow-up focused specifically on formula-writing (relative/absolute referencing, lookups) — use it to cement XLOOKUP/VLOOKUP once the full course is done.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/tag/excel/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Top+Excel+Formulas+%26+Functions+You+Need+to+Know"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m3-r3",
+        "title": "Google Sheets Training",
+        "description": "Google Sheets Training — Google Workspace Learning Center's own free quickstart, for the handful of things that differ from Excel (sharing, IMPORTRANGE, Google-specific functions).",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://workspace.google.com/learning/content/sheets-quickstart"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Google+Sheets+Training"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m3-p1",
+        "text": "Build a personal expense tracker: raw data on one sheet, a pivot table on another summarizing spend by category and month."
+      },
+      {
+        "id": "m3-p2",
+        "text": "Use XLOOKUP (or VLOOKUP) to pull a value from one table into another using a shared ID column."
+      },
+      {
+        "id": "m3-p3",
+        "text": "Export the tracker as a .csv and open it in a plain text editor to see what a CSV actually looks like underneath — this sets up Module 13 (JSON/CSV) and Module 9 (databases)."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 4,
+    "title": "Cloud & Cloud-Networking Concepts",
+    "duration": "1–2 weeks",
+    "summary": "what cloud means, servers, storage, databases, regions, public/private cloud, basic virtual networks. Concepts only — no AWS/Azure/GCP depth yet, that comes with real projects much later.",
+    "resources": [
+      {
+        "id": "m4-r1",
+        "title": "Cloud Computing In 6 Minutes",
+        "description": "Cloud Computing In 6 Minutes — Simplilearn. Fast plain-language overview: what \"the cloud\" actually is, IaaS/PaaS/SaaS, public vs private vs hybrid.",
+        "links": [
+          {
+            "label": "Search YouTube",
+            "url": "https://www.youtube.com/results?search_query=Simplilearn+Cloud+Computing+In+6+Minutes"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m4-r2",
+        "title": "AWS Cloud Practitioner Essentials",
+        "description": "AWS Cloud Practitioner Essentials — AWS's own free official course (AWS Skill Builder, no cost tier). Just watch Module 1: Introduction to Cloud Computing — it defines regions, availability zones, storage vs compute vs database services, in AWS's own vocabulary.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://aws.amazon.com/training/learn-about/cloud-practitioner/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=AWS+Cloud+Practitioner+Essentials"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m4-r3",
+        "title": "Microsoft Azure Fundamentals (AZ-900)",
+        "description": "Microsoft Azure Fundamentals (AZ-900) — Microsoft Learn, official and free, no login required to read. Skim the \"Describe cloud concepts\" module only, to see the same ideas in Azure's terms (resource groups, regions).",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://learn.microsoft.com/en-us/training/paths/azure-fundamentals/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Microsoft+Azure+Fundamentals+%28AZ-900%29"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m4-r4",
+        "title": "Google Cloud Digital Leader learning path",
+        "description": "Google Cloud Digital Leader learning path — Google Cloud Skills Boost, free courses. Skim the intro course for GCP's version of the same vocabulary (projects, zones/regions).",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.cloudskillsboost.google/paths/9"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Google+Cloud+Digital+Leader+learning+path"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m4-r5",
+        "title": "AWS Certified Cloud Practitioner Certification Course (CLF-C02)",
+        "description": "Save for later: AWS Certified Cloud Practitioner Certification Course (CLF-C02) — freeCodeCamp, ~14 hours, full certification depth. Come back to this once a project (Module 15 or 20) actually needs a real AWS account.",
+        "links": [
+          {
+            "label": "Search YouTube",
+            "url": "https://www.youtube.com/results?search_query=freeCodeCamp+AWS+Certified+Cloud+Practitioner+CLF-C02"
+          }
+        ],
+        "optional": true
+      }
+    ],
+    "practice": [
+      {
+        "id": "m4-p1",
+        "text": "In plain words, explain to someone else the difference between \"a server\" and \"the cloud.\""
+      },
+      {
+        "id": "m4-p2",
+        "text": "List 3 things a person could rent from a cloud provider (e.g., a computer, a place to store files, a ready-made database) and match each to what it's called in AWS, Azure, and GCP."
+      },
+      {
+        "id": "m4-p3",
+        "text": "Sign up for a free-tier account on one provider (AWS Free Tier is the most common) — no need to launch anything yet, just see the console."
+      }
+    ],
+    "notes": [
+      "Seeing the same five ideas (compute, storage, database, region, network) named slightly differently by three providers is the point of this module — it's why the original plan lists AWS/Azure/GCP together instead of picking one yet."
+    ]
+  },
+  {
+    "number": 5,
+    "title": "Linux + Terminal Basics",
+    "duration": "2–3 weeks",
+    "summary": "pwd, cd, ls, mkdir, copying/deleting files, paths, permissions, installing packages. Goal: the terminal stops being scary.",
+    "resources": [
+      {
+        "id": "m5-r1",
+        "title": "Command Line Basics for Beginners",
+        "description": "Command Line Basics for Beginners — freeCodeCamp, Beau Carnes, 1 hour. Exactly this module's scope: navigating the file tree, managing files and directories, reading/writing data.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/command-line-basics-for-beginners"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Command+Line+Basics+for+Beginners"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m5-r2",
+        "title": "Introduction to Linux",
+        "description": "Introduction to Linux – Full Course for Beginners (search \"Introduction to Linux Full Course freeCodeCamp\" on the freeCodeCamp.org YouTube channel) — 6h 07m. Go deeper once the basics feel comfortable: GUI vs CLI, file operations, text editors, permissions, processes, network operations.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Introduction+to+Linux"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m5-r3",
+        "title": "The Linux Command Line by William Shotts",
+        "description": "The Linux Command Line by William Shotts — free, legally-distributed PDF book (also sold in print, but the author has always offered the PDF free). The single best reference to keep open in a tab while practicing; the early chapters (navigation, file manipulation, permissions) map directly onto this module.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "http://linuxcommand.org/tlcl.php"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=The+Linux+Command+Line+by+William+Shotts"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m5-p1",
+        "text": "Windows: install WSL (Windows Subsystem for Linux) via wsl --install in PowerShell, or use Git Bash. Mac: use the built-in Terminal app (already real Unix)."
+      },
+      {
+        "id": "m5-p2",
+        "text": "Navigate to a folder, create a nested directory structure with mkdir -p, create a few files with touch, then copy, move, rename, and delete them using cp, mv, and rm."
+      },
+      {
+        "id": "m5-p3",
+        "text": "Run ls -l on a folder and explain what the permission string (e.g. -rwxr-xr-x) means."
+      },
+      {
+        "id": "m5-p4",
+        "text": "Install one package with the system package manager (apt install on WSL/Ubuntu, brew install on Mac) to see how software installation works outside a GUI app store."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 6,
+    "title": "VS Code",
+    "duration": "3–5 days",
+    "summary": "opening folders/projects, creating files, extensions, integrated terminal, running and debugging code. This becomes her main coding workspace for every module from here on.",
+    "resources": [
+      {
+        "id": "m6-r1",
+        "title": "VS Code in 100 Seconds",
+        "description": "VS Code in 100 Seconds — Fireship. A fast, fun 2-minute orientation to what VS Code is and why it's the default editor almost everyone uses.",
+        "links": [
+          {
+            "label": "Watch on YouTube",
+            "url": "https://www.youtube.com/@Fireship"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m6-r2",
+        "title": "Visual Studio Code Docs",
+        "description": "Visual Studio Code Docs — Getting Started — the official documentation from Microsoft, including short official \"Getting Started\" videos (interface tour, setup, running code) linked right on that page. This is the single most reliable source since it's maintained by the VS Code team itself and never goes out of date.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://code.visualstudio.com/docs"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m6-r3",
+        "title": "Official VS Code YouTube channel (search \"Code\" YouTube VS Code or visit youtube.com/@code)",
+        "description": "Official VS Code YouTube channel (search \"Code\" YouTube VS Code or visit youtube.com/@code) — look for \"Learn Visual Studio Code\" and \"Tips and Tricks\" — short official videos on the integrated terminal, extensions, and debugging.",
+        "links": [
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Official+VS+Code+YouTube+channel+%28search+%22Code%22+YouTube+VS+Code+or+visit+youtube.com%2F%40code%29"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m6-p1",
+        "text": "Install VS Code, open a folder as a project, create a new file, save it, and delete it."
+      },
+      {
+        "id": "m6-p2",
+        "text": "Install two extensions: Python (Microsoft) and one theme/icon pack of her choice."
+      },
+      {
+        "id": "m6-p3",
+        "text": "Open the integrated terminal (Ctrl+`) inside VS Code and run a simple command from Module 5 in it — the point is realizing the terminal she learned is the same one living inside the editor."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 7,
+    "title": "Programming Logic",
+    "duration": "2 weeks",
+    "summary": "variables, data types, if/else, loops, functions, input/output, problem solving. Teach the logic before any language's syntax.",
+    "resources": [
+      {
+        "id": "m7-r1",
+        "title": "Scratch (MIT Media Lab)",
+        "description": "Scratch (MIT Media Lab) — free, browser-based, block-based programming. Spend 3–4 days here before any real syntax: build one project using loops (e.g. a shape-drawing pattern) and one using if/else + variables (e.g. a simple quiz or a catch-the-falling-object game). Seeing \"loop\" and \"if\" as physical puzzle pieces makes Python's syntax much less intimidating in Module 8.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://scratch.mit.edu/"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m7-r2",
+        "title": "Introduction to Computer Programming and Computer Science Course",
+        "description": "Introduction to Computer Programming and Computer Science Course — freeCodeCamp. Covers exactly this module's scope in plain language: what data structures are, what recursion is, what pseudocode is, and how to choose a first language — deliberately light on any one language's syntax.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/introduction-to-computer-programming-and-computer-science-course/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Introduction+to+Computer+Programming+and+Computer+Science+Course"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m7-r3",
+        "title": "CS50's Introduction to Computer Science, Week 0 only (Scratch lecture)",
+        "description": "CS50's Introduction to Computer Science, Week 0 only (Scratch lecture) — Harvard's CS50, free, hosted in full on the freeCodeCamp.org YouTube channel (\"Harvard CS50 – Full Computer Science University Course\"). Just watch the first lecture; the rest of CS50 is optional enrichment, not part of this roadmap.",
+        "links": [
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=CS50%27s+Introduction+to+Computer+Science%2C+Week+0+only+%28Scratch+lecture%29"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m7-p1",
+        "text": "Write pseudocode (plain English steps, no real syntax) for three everyday tasks: making tea, checking if a number is even, sorting five playing cards by value."
+      },
+      {
+        "id": "m7-p2",
+        "text": "Finish the two Scratch projects above and be able to point to where the loop and the if/else live in each."
+      },
+      {
+        "id": "m7-p3",
+        "text": "Explain out loud, in her own words, the difference between a variable and a function."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 8,
+    "title": "Python",
+    "duration": "6–8 weeks",
+    "summary": "variables, strings, lists, dictionaries, loops, functions, files, errors, libraries, basic OOP, simple automation. This is the main language — spend the most time here of any module.",
+    "resources": [
+      {
+        "id": "m8-r1",
+        "title": "Python for Everybody · Weeks 1–4",
+        "description": "Weeks 1–4 — Python for Everybody (Dr. Charles Severance, University of Michigan). Free, at py4e.com: full video lectures, the textbook, and auto-graded exercises, all free (the paid Coursera version is the same content packaged with a certificate). Gentle pace, aimed squarely at true beginners — variables, strings, lists, dictionaries, loops, functions, files.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.py4e.com/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Weeks+1%E2%80%934"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m8-r2",
+        "title": "CS50P · Weeks 5–8",
+        "description": "Weeks 5–8 — CS50's Introduction to Programming with Python (CS50P) — Harvard, Professor David J. Malan. Free to audit on edX and free in full on the freeCodeCamp.org YouTube channel (~50 hours, harder problem sets than py4e). Covers exactly what's left on this module's list: exceptions/error handling, libraries, unit testing, file I/O, and object-oriented programming. Do the problem sets, not just the watching — that's where the real learning happens.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://cs50.harvard.edu/python/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Weeks+5%E2%80%938"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m8-r3",
+        "title": "The Python Tutorial",
+        "description": "The Python Tutorial — official Python documentation. Not to read cover to cover, but the reference to search when a video moves too fast on a specific syntax point.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://docs.python.org/3/tutorial/"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m8-r4",
+        "title": "Automate the Boring Stuff with Python by Al Sweigart",
+        "description": "Automate the Boring Stuff with Python by Al Sweigart — the entire book is free to read online (also sold in print). Start dipping into this in week 7–8 for practical, funny, real-world scripts (renaming files, working with spreadsheets, sending emails) — it's the direct bridge into Modules 15 and 20 later.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://automatetheboringstuff.com/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Automate+the+Boring+Stuff+with+Python+by+Al+Sweigart"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m8-p1",
+        "text": "Complete CS50P's problem sets through at least the OOP and file I/O weeks — don't skip the exceptions/error-handling set."
+      },
+      {
+        "id": "m8-p2",
+        "text": "Write one script from scratch (no tutorial open) that reads a list of numbers from a text file and prints their sum, average, min, and max."
+      },
+      {
+        "id": "m8-p3",
+        "text": "Build one small OOP project: a Book or Student class with a couple of attributes and methods, and create 3 instances of it in a loop."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 9,
+    "title": "SQL + Databases + PostgreSQL",
+    "duration": "4–6 weeks",
+    "summary": "tables, rows, columns, primary/foreign keys, SELECT, WHERE, JOIN, GROUP BY, INSERT/UPDATE/DELETE, relationships. Treat SQL and PostgreSQL as one subject — no need for MySQL or SQL Server too.",
+    "resources": [
+      {
+        "id": "m9-r1",
+        "title": "freeCodeCamp — Relational Database Certification",
+        "description": "freeCodeCamp — Relational Database Certification — free, official freeCodeCamp certification, entirely hands-on inside VS Code (using Docker + the CodeRoad extension — good timing right after Modules 5 and 6). Fully project-based: she'll build a Mario-characters database, a world database, a celestial-bodies database, and a bike-rental-shop database while picking up Bash, Git, and PostgreSQL together. This is the primary spine for this module.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/learn/relational-database/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=freeCodeCamp"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m9-r2",
+        "title": "Learn PostgreSQL Tutorial",
+        "description": "Learn PostgreSQL Tutorial — Full Course for Beginners — freeCodeCamp, ~4 hours. Use this as a video companion whenever a certification step needs more explanation than the written instructions give: creating tables/databases, CRUD, filtering, joins, aggregate functions, constraints.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/postgresql-full-course/"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m9-r3",
+        "title": "PostgreSQL Tutorial",
+        "description": "PostgreSQL Tutorial — the official PostgreSQL documentation's own tutorial. Dense, but the definitive reference once she's past pure-beginner syntax questions.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.postgresql.org/docs/current/tutorial.html"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m9-p1",
+        "text": "Finish all four projects in the freeCodeCamp Relational Database certification."
+      },
+      {
+        "id": "m9-p2",
+        "text": "Design a small database (3–4 tables with foreign keys) from scratch for something personal — e.g. a recipe box (recipes, ingredients, categories) or a movie-watchlist tracker."
+      },
+      {
+        "id": "m9-p3",
+        "text": "Import the CSV expense tracker built in Module 3 into a PostgreSQL table and write 3 queries against it (a filter, a JOIN if there's a second table, and a GROUP BY with an aggregate)."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 10,
+    "title": "Git + GitHub",
+    "duration": "2 weeks",
+    "summary": "repository, clone, commit, push, pull, branches basics, README, uploading projects. Extremely important for the portfolio she'll build from here on.",
+    "resources": [
+      {
+        "id": "m10-r1",
+        "title": "GitHub Skills",
+        "description": "GitHub Skills — Introduction to GitHub — official, free, interactive courses built by GitHub itself, run inside your own copy of a real repository with a bot giving instant feedback. Start with \"Introduction to GitHub\" (under an hour), then \"Communicate using Markdown\" for README-writing.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://skills.github.com/"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m10-r2",
+        "title": "Git & GitHub Crash Course for Beginners (search \"Git and GitHub Crash Course freeCodeCamp\" on the freeCodeCamp.org YouTube channel)",
+        "description": "Git & GitHub Crash Course for Beginners (search \"Git and GitHub Crash Course freeCodeCamp\" on the freeCodeCamp.org YouTube channel) — video walkthrough of the same concepts (clone, commit, push, pull, branches) for anyone who wants a talked-through version alongside the hands-on GitHub Skills course.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Git+%26+GitHub+Crash+Course+for+Beginners+%28search+%22Git+and+GitHub+Crash+Course+freeCodeCamp%22+on+the+freeCodeCamp.org+YouTube+channel%29"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m10-r3",
+        "title": "Pro Git",
+        "description": "Pro Git — the official Git book, free online, written by Scott Chacon and Ben Straub. Not for cover-to-cover reading; use Chapters 1–3 (Getting Started, Basics, Branching) as the reference when a command's behavior is unclear.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://git-scm.com/book/en/v2"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Pro+Git"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m10-p1",
+        "text": "Create a free GitHub account and a first repository containing the personal glossary from Module 1, with a proper README explaining what it is."
+      },
+      {
+        "id": "m10-p2",
+        "text": "Make at least 5 separate commits with clear messages, create one branch, make a change on it, and merge it back."
+      },
+      {
+        "id": "m10-p3",
+        "text": "Upload the SQL projects from Module 9 and any Python scripts from Module 8 to their own repositories — this is the start of her portfolio, referenced again in Module 16."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 11,
+    "title": "HTML + CSS Basics",
+    "duration": "2–3 weeks",
+    "summary": "HTML structure, headings, forms, links, images, CSS layout/styling. Only enough to understand how websites are built — AI tools can carry more of the visual-design weight later.",
+    "resources": [
+      {
+        "id": "m11-r1",
+        "title": "freeCodeCamp — Responsive Web Design",
+        "description": "freeCodeCamp — Responsive Web Design — free, official certification. Work through the HTML and basic CSS sections only for now (skip Sass, accessibility deep-dives, and the full 5-project exam requirement unless she wants the certificate) — that's the scope this module needs.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/learn/2022/responsive-web-design/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=freeCodeCamp"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m11-r2",
+        "title": "Web Development with HTML & CSS",
+        "description": "Web Development with HTML & CSS – Full Course for Beginners — freeCodeCamp, ~19.5 hours. A talked-through video companion; watch the HTML section and the CSS basics/box-model/layout sections.",
+        "links": [
+          {
+            "label": "Search YouTube",
+            "url": "https://www.youtube.com/results?search_query=freeCodeCamp+Web+Development+HTML+CSS+Full+Course+for+Beginners"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m11-r3",
+        "title": "MDN",
+        "description": "MDN — Learn web development: HTML basics / CSS basics — the internet's most authoritative free reference for web standards, written by the people who build browsers. Use for anything the videos gloss over.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=MDN"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m11-r4",
+        "title": "Kevin Powell (YouTube channel)",
+        "description": "Kevin Powell (YouTube channel) — the best-known free channel specifically for CSS. Search his channel for \"CSS Box Model\", \"Flexbox\", and \"CSS Grid\" once the fundamentals feel shaky.",
+        "links": [
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Kevin+Powell+%28YouTube+channel%29"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m11-p1",
+        "text": "Build a single static HTML page for herself (a mini personal profile page): headings, a paragraph, an image, a list, a link, and a simple contact form."
+      },
+      {
+        "id": "m11-p2",
+        "text": "Style that page with CSS: colors, fonts, spacing, and one flexbox or grid layout."
+      },
+      {
+        "id": "m11-p3",
+        "text": "Push the page to a GitHub repository (Module 10 skill) — this becomes the site actually deployed in Module 16."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 12,
+    "title": "JavaScript Basics",
+    "duration": "3–4 weeks",
+    "summary": "variables, functions, arrays/objects, events, the DOM, and fetch(). Keep it basic — Python stays her main language; this is just enough JavaScript to make a web page interactive.",
+    "resources": [
+      {
+        "id": "m12-r1",
+        "title": "JavaScript in 100 Seconds",
+        "description": "JavaScript in 100 Seconds — Fireship. A 2-minute teaser for what JavaScript is actually for, before the full course.",
+        "links": [
+          {
+            "label": "Watch on YouTube",
+            "url": "https://www.youtube.com/@Fireship"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m12-r2",
+        "title": "JavaScript Programming",
+        "description": "JavaScript Programming – Full Course (search \"freeCodeCamp JavaScript Programming Full Course\" — also runnable interactively at scrimba.com/learn/learnjavascript) — freeCodeCamp, ~7h44m, solves 100+ coding challenges from scratch. The Scrimba version lets her edit the instructor's code live in the browser, which suits a beginner better than passive watching.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/"
+          },
+          {
+            "label": "Open resource",
+            "url": "https://scrimba.com/learn/learnjavascript"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=JavaScript+Programming"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m12-r3",
+        "title": "freeCodeCamp — JavaScript Algorithms and Data Structures",
+        "description": "freeCodeCamp — JavaScript Algorithms and Data Structures — free, official, interactive, no setup required. Work through the Basic JavaScript section only for now (skip ES6, regular expressions, and OOP/functional programming sections — those aren't in this module's scope).",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/learn/javascript-algorithms-and-data-structures/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=freeCodeCamp"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m12-r4",
+        "title": "MDN",
+        "description": "MDN — JavaScript Guide — the standard reference for anything the videos don't explain clearly enough.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=MDN"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m12-p1",
+        "text": "Add a button to the HTML page from Module 11 that changes some text or styling on the page when clicked (DOM manipulation + an event listener)."
+      },
+      {
+        "id": "m12-p2",
+        "text": "Write a small script using fetch() to pull data from a free public API (e.g. a joke API or a cat-facts API) and display the result on the page — this previews Module 13 (JSON + APIs)."
+      },
+      {
+        "id": "m12-p3",
+        "text": "Build one array of objects (e.g. a list of favorite movies with title/year/rating) and use a loop to print them to the page."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 13,
+    "title": "JSON + APIs",
+    "duration": "2 weeks",
+    "summary": "JSON objects/arrays, request/response, GET/POST, endpoints, status codes, API keys. This is the module that ties everything since Module 2 (HTTP) together — modern apps and AI tools all talk through APIs.",
+    "resources": [
+      {
+        "id": "m13-r1",
+        "title": "Learn JSON",
+        "description": "Learn JSON – Full Crash Course for Beginners — freeCodeCamp, ~12 minutes. Pure JSON syntax: objects, arrays, nesting, data types — fast and to the point.",
+        "links": [
+          {
+            "label": "Search YouTube",
+            "url": "https://www.youtube.com/results?search_query=freeCodeCamp+Learn+JSON+Full+Crash+Course+for+Beginners"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m13-r2",
+        "title": "APIs for Beginners",
+        "description": "APIs for Beginners – How to Use an API (Full Course) — freeCodeCamp, ~3 hours (2023 updated version). Covers what an API is, remote APIs, how the web works, REST constraints, exploring an API in the browser and the command line, and using Postman — this overlaps into Module 14, so watching it here means Postman will feel familiar already.",
+        "links": [
+          {
+            "label": "Watch on YouTube",
+            "url": "https://youtu.be/WXsD0ZgxjRw"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m13-r3",
+        "title": "MDN — JSON & HTTP status-code references",
+        "description": "MDN — Working with JSON and MDN — HTTP response status codes — short official references for JSON syntax and the meaning of codes like 200, 404, and 500.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/JSON"
+          },
+          {
+            "label": "Open resource",
+            "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=MDN"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m13-p1",
+        "text": "Pick a free public API that needs no key (e.g. a jokes, cat-facts, or open-weather API) and, in Python, request data from it and print the parsed JSON."
+      },
+      {
+        "id": "m13-p2",
+        "text": "Deliberately request a URL that returns a 404, and one that returns a 500 if possible — get comfortable reading status codes as information, not just errors."
+      },
+      {
+        "id": "m13-p3",
+        "text": "Convert one of her own Excel/CSV datasets (Module 3) into a small JSON file by hand, to see the two formats side by side."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 14,
+    "title": "Postman",
+    "duration": "3–5 days",
+    "summary": "sending GET/POST requests, headers, body, authorization, inspecting responses. A small subject, but Module 13 already introduced it, so this is mostly hands-on repetition with a proper tool instead of the command line.",
+    "resources": [
+      {
+        "id": "m14-r1",
+        "title": "Postman Beginner's Course",
+        "description": "Postman Beginner's Course – API Testing — the official course on Postman's own YouTube channel (search \"Postman Beginner's Course API Testing\" — it's Postman's highest-viewed official tutorial, ~2 hours). Straight from the company that makes the tool.",
+        "links": [
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Postman+Beginner%27s+Course"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m14-r2",
+        "title": "Postman Learning Center",
+        "description": "Postman Learning Center — official documentation, with short interactive guides for sending your first request, using variables, and organizing requests into collections.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://learning.postman.com/"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m14-p1",
+        "text": "Install Postman and send a GET request to the same free public API used in Module 13; inspect the response body, headers, and status code inside Postman's UI instead of the command line."
+      },
+      {
+        "id": "m14-p2",
+        "text": "Send a POST request to a test API (e.g. reqres.in or a similar public sandbox) with a JSON body."
+      },
+      {
+        "id": "m14-p3",
+        "text": "Save both requests into a Postman \"Collection\" with a sensible name — this is the same organizing habit used constantly in real API work."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 15,
+    "title": "Simple Application Project Creation",
+    "duration": "2–3 weeks",
+    "summary": "combining Python + PostgreSQL + an API + a simple webpage. This is where everything from Modules 8–14 starts connecting.",
+    "resources": [
+      {
+        "id": "m15-r1",
+        "title": "Learn the Flask Python Web Framework by Building a Market Platform",
+        "description": "Learn the Flask Python Web Framework by Building a Market Platform — freeCodeCamp, by JimShapedCoding, 6 hours. Builds a small e-commerce platform: templates, models/databases, model relationships, forms and validation, user authentication. It defaults to SQLite — as a deliberate extra step, swap the database connection string for the PostgreSQL database from Module 9 (this is a very realistic real-world adjustment).",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/learn-the-flask-python-web-framework-by-building-a-market-platform/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Learn+the+Flask+Python+Web+Framework+by+Building+a+Market+Platform"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m15-r2",
+        "title": "Flask Quickstart",
+        "description": "Flask Quickstart — official Flask documentation, for whenever the video moves faster than the reasoning behind a piece of syntax.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://flask.palletsprojects.com/en/latest/quickstart/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Flask+Quickstart"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m15-r3",
+        "title": "CS50's Web Programming with Python and Flask lecture, free on the freeCodeCamp.org YouTube channel",
+        "description": "Optional alternative: CS50's Web Programming with Python and Flask lecture, free on the freeCodeCamp.org YouTube channel — a more academic, slower-paced alternative covering the same territory if the market-platform project feels too advanced at first.",
+        "links": [
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=CS50%27s+Web+Programming+with+Python+and+Flask+lecture%2C+free+on+the+freeCodeCamp.org+YouTube+channel"
+          }
+        ],
+        "optional": true
+      }
+    ],
+    "practice": [
+      {
+        "id": "m15-p1",
+        "text": "Build one small personal web app end to end: a Flask backend, a PostgreSQL database with at least two related tables (reusing Module 9 skills), at least one page that calls a free public API and displays the result (reusing Module 13 skills), and basic HTML/CSS styling (Module 11)."
+      },
+      {
+        "id": "m15-p2",
+        "text": "Good project ideas: a personal recipe box, a simple book/movie tracker, or a mini expense tracker that replaces the Excel version from Module 3."
+      },
+      {
+        "id": "m15-p3",
+        "text": "Push the whole project to GitHub with a clear README explaining what it does and how to run it."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 16,
+    "title": "Vercel / Basic Deployment",
+    "duration": "3–5 days",
+    "summary": "GitHub → Vercel, deploying a simple website/app, environment variables, production vs local. The point is putting something online for the world to actually use.",
+    "resources": [
+      {
+        "id": "m16-r1",
+        "title": "Vercel Documentation",
+        "description": "Vercel Documentation — official docs. Vercel is free on its Hobby plan for personal projects: unlimited personal projects, automatic HTTPS, and automatic deployment on every GitHub push. Read the \"Deployments\" getting-started section.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://vercel.com/docs"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m16-r2",
+        "title": "Any current, well-reviewed \"Deploy your website with GitHub + Vercel\" walkthrough on YouTube (search that exact phrase",
+        "description": "Any current, well-reviewed \"Deploy your website with GitHub + Vercel\" walkthrough on YouTube (search that exact phrase — there are many short, up-to-date ones since the workflow itself rarely changes: connect GitHub account → import repository → Vercel auto-detects the framework → deploy).",
+        "links": [
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Any+current%2C+well-reviewed+%22Deploy+your+website+with+GitHub+%2B+Vercel%22+walkthrough+on+YouTube+%28search+that+exact+phrase"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m16-p1",
+        "text": "Deploy the HTML/CSS page from Module 11 (or the Flask project from Module 15, if it's a static-friendly piece of it) to Vercel by connecting the GitHub repo directly — no manual file upload."
+      },
+      {
+        "id": "m16-p2",
+        "text": "Make a small change locally, commit, and push it to GitHub; confirm Vercel automatically redeploys the live site."
+      },
+      {
+        "id": "m16-p3",
+        "text": "Set one environment variable in the Vercel project settings and explain, in her own words, why secrets shouldn't be hard-coded into the pushed code — this connects directly into Module 18 (API keys and secrets)."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 17,
+    "title": "Docker Basics",
+    "duration": "1–2 weeks",
+    "summary": "container, image, Dockerfile, ports, why containers are useful. Conceptual/basic level only — no orchestration or advanced DevOps yet.",
+    "resources": [
+      {
+        "id": "m17-r1",
+        "title": "Docker in 100 Seconds",
+        "description": "Docker in 100 Seconds — Fireship. The fastest possible \"why does this exist\" primer.",
+        "links": [
+          {
+            "label": "Watch on YouTube",
+            "url": "https://www.youtube.com/@Fireship"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m17-r2",
+        "title": "Docker Full Course",
+        "description": "Docker Full Course — freeCodeCamp, taught by Eissa (DolfinEd). Covers exactly this module's scope: the shift from physical servers to VMs to containers, Dockerfiles, image creation, managing images on Docker Hub, and basic networking/storage/volumes — stop there, before the course's more advanced orchestration sections.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/docker-full-course"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Docker+Full+Course"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m17-r3",
+        "title": "Docker",
+        "description": "Docker — Get Started — official Docker documentation. The canonical walkthrough of building and running your first container, from Docker itself.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://docs.docker.com/get-started/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Docker"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m17-p1",
+        "text": "Install Docker Desktop, pull an existing image (e.g. postgres or python), and run it as a container."
+      },
+      {
+        "id": "m17-p2",
+        "text": "Write a simple Dockerfile that takes one of her own Python scripts from Module 8 and packages it into an image; run it as a container."
+      },
+      {
+        "id": "m17-p3",
+        "text": "Explain out loud, in her own words, why \"it works on my machine\" stops being a problem once something runs in a container."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 18,
+    "title": "Cybersecurity Basics",
+    "duration": "1–2 weeks",
+    "summary": "passwords, MFA, phishing, permissions, API keys, secrets, HTTPS, basic encryption concepts. Every IT person needs this regardless of specialty.",
+    "resources": [
+      {
+        "id": "m18-r1",
+        "title": "CS50's Introduction to Cybersecurity",
+        "description": "CS50's Introduction to Cybersecurity — Harvard, David J. Malan, free on the freeCodeCamp.org YouTube channel (8 hours total). This module doesn't need all 8 hours — just watch the Securing Accounts and Securing Data sections (passwords, MFA, phishing, encryption basics); Securing Systems/Software and Preserving Privacy are good optional extensions later.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/learn-cybersecurity-from-harvard-university/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=CS50%27s+Introduction+to+Cybersecurity"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m18-r2",
+        "title": "Have I Been Pwned",
+        "description": "Have I Been Pwned — a free, well-known, legitimate tool (run by security researcher Troy Hunt) to check whether an email address has appeared in a known data breach. Use it as a live demonstration of why unique passwords per site matter, not just theory.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://haveibeenpwned.com/"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m18-p1",
+        "text": "Set up a password manager (Bitwarden's free tier is a common choice) and turn on MFA on at least 3 real accounts (email, GitHub, and one more)."
+      },
+      {
+        "id": "m18-p2",
+        "text": "Look at one of her own scripts from Module 8 or 15 and find any place a password, API key, or secret was ever typed directly into the code — move it into an environment variable instead, and explain why that matters (this connects directly to Module 16's environment-variables practice)."
+      },
+      {
+        "id": "m18-p3",
+        "text": "Identify 3 warning signs in a sample phishing email (mismatched sender domain, urgency language, a suspicious link) — Google's own Phishing Quiz is a free, well-known interactive way to practice this."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 19,
+    "title": "AI-Assisted Vibe Coding",
+    "duration": "ongoing",
+    "summary": "asking AI to explain code, generate small pieces, debug errors, review code, and document projects — while actually understanding what the generated code does. This module doesn't end; it's a habit that runs alongside everything from here on.",
+    "resources": [
+      {
+        "id": "m19-r1",
+        "title": "AI Coding Assistants for Beginners: How to Learn Without Losing Your Skills",
+        "description": "AI Coding Assistants for Beginners: How to Learn Without Losing Your Skills — Frontend Mentor, by Matt Studdert. The clearest free write-up of the core risk (three months of pasting fixes without learning to code) and the fix: the \"Ask-Don't-Copy\" principle. Includes a stage-based framework for the first 18 months and a \"red flag\" self-check for spotting over-reliance.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.frontendmentor.io/articles/ai-coding-assistants-for-beginners"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m19-r2",
+        "title": "Anthropic — Prompt Engineering Overview",
+        "description": "Anthropic — Prompt Engineering Overview — official documentation on how to write clear, effective prompts. Directly useful since she'll likely be using Claude or a similar assistant throughout this whole roadmap, not just this module.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Anthropic"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m19-p1",
+        "text": "Before asking AI to fix a bug, spend at least 10 minutes trying herself and read the actual error message first (Module 1's skill, still paying off)."
+      },
+      {
+        "id": "m19-p2",
+        "text": "When AI gives working code, don't move on until she can explain what every line does, out loud or in writing — dissect it the way Module 7's pseudocode practice trained her to."
+      },
+      {
+        "id": "m19-p3",
+        "text": "Ask AI \"why\" a piece of code works, not just \"how to fix it\" — the goal is transferable understanding, not a one-off patch."
+      },
+      {
+        "id": "m19-p4",
+        "text": "Use AI to draft comments/documentation for one already-working script, then personally verify every line of that documentation is actually true."
+      }
+    ],
+    "notes": []
+  },
+  {
+    "number": 20,
+    "title": "Automation with Python + APIs + AI",
+    "duration": "3–4 weeks",
+    "summary": "reading files, processing Excel/CSV, calling APIs, automating repetitive tasks, simple AI integrations. The final stage — it combines almost everything from the previous 19 modules.",
+    "resources": [
+      {
+        "id": "m20-r1",
+        "title": "Automate Your Life with Python",
+        "description": "Automate Your Life with Python — freeCodeCamp, by Frank Andrade (data scientist), ~3 hours, project-based. Covers table extraction from websites/CSVs/PDFs, web scraping basics, automating a script to run daily, and — very relevant to her background in Module 3 — generating full Excel reports (pivot tables, charts, formulas) straight from Python.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://www.freecodecamp.org/news/automate-your-life-with-python/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Automate+Your+Life+with+Python"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m20-r2",
+        "title": "Automate the Boring Stuff with Python (revisit from Module 8)",
+        "description": "Automate the Boring Stuff with Python (revisit from Module 8) — go back to the chapters not yet covered: working with Excel spreadsheets, CSV/JSON files, and sending emails.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://automatetheboringstuff.com/"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Automate+the+Boring+Stuff+with+Python+%28revisit+from+Module+8%29"
+          }
+        ],
+        "optional": false
+      },
+      {
+        "id": "m20-r3",
+        "title": "Anthropic — Claude API Quickstart",
+        "description": "Anthropic — Get Started with the Claude API — official documentation for calling an AI model from Python code. This is the \"simple AI integrations\" piece: a script that reads some data and asks an AI model to summarize, classify, or transform it.",
+        "links": [
+          {
+            "label": "Open resource",
+            "url": "https://docs.claude.com/en/docs/get-started"
+          },
+          {
+            "label": "Find on YouTube",
+            "url": "https://www.youtube.com/results?search_query=Anthropic"
+          }
+        ],
+        "optional": false
+      }
+    ],
+    "practice": [
+      {
+        "id": "m20-p1",
+        "text": "Build one real automation script that: reads data from a CSV or Excel file (Modules 3, 9), calls a real API to enrich or process that data — either a public API (Module 13) or the Claude API (above) — and writes the result to a new file or a simple report."
+      },
+      {
+        "id": "m20-p2",
+        "text": "Schedule it to run automatically using cron (Mac/Linux) or Task Scheduler (Windows) — a direct callback to Module 1's OS fundamentals and Module 5's terminal skills."
+      },
+      {
+        "id": "m20-p3",
+        "text": "Push the finished project to GitHub with a clear README (Module 10) — this closes the loop on the entire 20-module roadmap and becomes the centerpiece of her portfolio."
+      }
+    ],
+    "notes": []
+  }
+]

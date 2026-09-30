@@ -1,0 +1,8 @@
+node_modules/
+.next/
+.next-production/
+*.tsbuildinfo
+.env
+.env.local
+coverage/
+src/data/seed.local.json
