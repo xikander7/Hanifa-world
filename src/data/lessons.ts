@@ -1,0 +1,373 @@
+// Bite-sized teaching content for each of the 20 adventure levels.
+// Every level: a one-line hook, 6 flashcards ([front, back]) and a 4-question quiz.
+
+export type QuizQuestion = { q: string; options: string[]; answer: number; why: string };
+export type Lesson = { module: number; emoji: string; hook: string; cards: [string, string][]; quiz: QuizQuestion[] };
+
+export const lessons: Lesson[] = [
+  {
+    module: 1, emoji: "🖥️",
+    hook: "A computer is a super-fast helper that only follows instructions. Hardware is its body, software is its instructions, and the operating system is the manager.",
+    cards: [
+      ["CPU", "The processor, the 'brain' that runs instructions. More cores means it can work on more things at the same time."],
+      ["RAM", "Short-term memory. Very fast, but it empties when the power goes off. More RAM means more apps open smoothly."],
+      ["SSD vs HDD", "Both keep files when the power is off. An SSD has no moving parts so it's much faster. An HDD spins a disk and is cheaper per GB."],
+      ["Operating system", "The manager software (Windows, macOS, Linux) that shares the hardware between apps and gives you files, windows and settings."],
+      ["File extension", "The letters after the dot (.pdf, .png, .py). They tell the computer what kind of file it is and which app should open it."],
+      ["Process", "A program that is currently running. Task Manager or Activity Monitor shows which processes use the most CPU and RAM."],
+    ],
+    quiz: [
+      { q: "Which of these loses everything stored in it when the computer is switched off?", options: ["SSD", "RAM", "HDD", "USB drive"], answer: 1, why: "RAM is temporary working memory. Storage like SSD, HDD and USB keeps files without power." },
+      { q: "What is the main job of an operating system?", options: ["Making the screen brighter", "Connecting to Wi-Fi only", "Managing hardware and running apps", "Storing all your photos"], answer: 2, why: "The OS sits between your apps and the hardware and shares resources fairly." },
+      { q: "In the file name notes.txt, what is '.txt'?", options: ["A file extension", "The folder name", "The file size", "A virus warning"], answer: 0, why: "The extension tells the computer it's a plain text file." },
+      { q: "Your laptop suddenly feels slow. Where do you look first to see what's using CPU and RAM?", options: ["Recycle Bin", "Screen settings", "The keyboard", "Task Manager / Activity Monitor"], answer: 3, why: "Task Manager (Windows) and Activity Monitor (Mac) list every running process and what it uses." },
+    ],
+  },
+  {
+    module: 2, emoji: "🌐",
+    hook: "The internet is a network of networks. Sending a request is like posting a letter: it needs an address, and routers are the post offices that pass it along.",
+    cards: [
+      ["IP address", "A number that identifies a device on a network, like a home address for data. Example: 192.168.1.10."],
+      ["DNS", "The internet's phonebook. It turns a name like google.com into the IP address computers actually use."],
+      ["HTTP vs HTTPS", "Both are the rules for loading web pages. HTTPS adds encryption so nobody in the middle can read or change what you send."],
+      ["Client & server", "The client (your browser) asks for something. The server (another computer) answers. That is a request and a response."],
+      ["Port", "A numbered door on a computer where one service listens. HTTP uses 80, HTTPS uses 443."],
+      ["localhost", "A special name (127.0.0.1) that always means 'this computer'. Perfect for testing your own apps."],
+    ],
+    quiz: [
+      { q: "What does DNS do?", options: ["Makes Wi-Fi faster", "Turns website names into IP addresses", "Blocks viruses", "Stores your passwords"], answer: 1, why: "DNS looks up the IP address for a name so your browser knows where to go." },
+      { q: "Why is HTTPS safer than HTTP?", options: ["It loads faster", "It hides ads", "It encrypts the data between you and the site", "It works without internet"], answer: 2, why: "The 'S' means secure: traffic is encrypted, so others on the network can't read it." },
+      { q: "You run a website on your own laptop. Which address reaches it from that same laptop?", options: ["localhost", "google.com", "192.168.0.255", "https://www"], answer: 0, why: "localhost always points back to your own machine." },
+      { q: "In a web request, who sends the first message?", options: ["The server", "The router", "The client", "The DNS"], answer: 2, why: "The client asks, the server responds." },
+    ],
+  },
+  {
+    module: 3, emoji: "📊",
+    hook: "A spreadsheet is a grid where every box can think. Type a formula once and it keeps itself up to date.",
+    cards: [
+      ["Formula", "Always starts with =. Example: =B2*C2 multiplies two cells and updates if either changes."],
+      ["Range", "A block of cells written with a colon. B2:B10 means every cell from B2 down to B10."],
+      ["SUM / AVERAGE", "=SUM(B2:B10) adds a range. =AVERAGE(B2:B10) finds the mean."],
+      ["IF", "Makes a decision. =IF(B2>=50,\"Pass\",\"Retry\") shows Pass when B2 is 50 or more."],
+      ["$ (absolute reference)", "$A$1 stays locked to A1 when you copy a formula. Without $, the reference moves with the copy."],
+      ["Pivot table", "Summarises lots of rows by grouping them, like total sales per month, in a few clicks."],
+    ],
+    quiz: [
+      { q: "What must every spreadsheet formula start with?", options: ["=", "#", "@", "$"], answer: 0, why: "The = sign tells the sheet 'calculate this'." },
+      { q: "What does =SUM(B2:B6) do?", options: ["Counts the cells", "Adds up B2 through B6", "Multiplies B2 by B6", "Finds the biggest of B2 and B6"], answer: 1, why: "B2:B6 is the range, and SUM adds every number in it." },
+      { q: "You copy a formula that contains $A$1 down ten rows. What happens to $A$1?", options: ["It becomes A2, A3...", "It turns into a zero", "It stays locked on A1", "The formula deletes itself"], answer: 2, why: "The dollar signs lock both the column and the row." },
+      { q: "Which tool is best for summarising thousands of rows into totals by category?", options: ["Spell check", "Pivot table", "Merge cells", "Freeze panes"], answer: 1, why: "Pivot tables group and total data for you." },
+    ],
+  },
+  {
+    module: 4, emoji: "☁️",
+    hook: "The cloud is just renting someone else's computers over the internet instead of buying your own.",
+    cards: [
+      ["Cloud computing", "Using servers, storage and software over the internet and paying for what you use, instead of owning hardware."],
+      ["IaaS / PaaS / SaaS", "IaaS: rent raw servers. PaaS: rent a platform to run your code. SaaS: use a finished app, like Gmail or Google Docs."],
+      ["Region & zone", "A region is a geographic area with data centres. Zones inside it are separate buildings, so one failure doesn't take everything down."],
+      ["Elasticity", "Adding or removing computing power automatically as demand rises and falls. Like a shop adding tills when it's busy."],
+      ["Virtual network (VPC)", "Your own private network inside the cloud, where you decide what can talk to what."],
+      ["Object storage", "Cloud storage for files (photos, backups) kept as objects with a name. Amazon S3 and Google Cloud Storage work this way."],
+    ],
+    quiz: [
+      { q: "Gmail is an example of which cloud model?", options: ["IaaS", "PaaS", "SaaS", "None of them"], answer: 2, why: "SaaS is software delivered as a ready-made service." },
+      { q: "Why do cloud providers have multiple availability zones?", options: ["To look bigger", "So your app can keep running if one data centre fails", "To make files smaller", "To add more ads"], answer: 1, why: "Spreading across zones means one outage doesn't stop everything." },
+      { q: "What does 'elastic' mean in cloud computing?", options: ["Resources scale up and down with demand", "Servers can stretch cables", "Files shrink over time", "Prices never change"], answer: 0, why: "Elasticity matches capacity to demand, so you only pay for what you need." },
+      { q: "Where would you store millions of photos cheaply in the cloud?", options: ["A spreadsheet", "A text editor", "An email draft", "Object storage"], answer: 3, why: "Object storage is built for huge amounts of files." },
+    ],
+  },
+  {
+    module: 5, emoji: "🐧",
+    hook: "The terminal lets you talk to your computer with typed commands, like giving voice commands but written down.",
+    cards: [
+      ["pwd · ls · cd", "pwd shows where you are. ls lists what's here. cd folder moves in. cd .. goes back up."],
+      ["mkdir · touch", "mkdir makes a new folder. touch makes an empty file."],
+      ["rm", "Deletes files for good. There is no Recycle Bin in the terminal, so check twice before using it."],
+      ["Permissions (rwx)", "Every file says who can read (r), write (w) or execute (x) it. chmod changes those permissions."],
+      ["sudo", "Runs a command with administrator (root) power. Very useful, and risky if you don't understand the command."],
+      ["Pipe |", "Sends the output of one command into the next. ls | grep py shows only the files with 'py' in the name."],
+    ],
+    quiz: [
+      { q: "Which command shows the folder you are currently in?", options: ["ls", "cd", "pwd", "rm"], answer: 2, why: "pwd means 'print working directory'." },
+      { q: "What is special about rm?", options: ["It renames files", "It deletes permanently with no Recycle Bin", "It copies files", "It opens files"], answer: 1, why: "Files removed with rm don't go to a trash folder, so be careful." },
+      { q: "What does cd .. do?", options: ["Moves up one folder", "Creates a folder called ..", "Lists hidden files", "Closes the terminal"], answer: 0, why: "Two dots always mean the parent folder." },
+      { q: "What does sudo do?", options: ["Shuts down the computer", "Searches the internet", "Shows file sizes", "Runs a command as administrator"], answer: 3, why: "sudo means 'superuser do': run this with admin rights." },
+    ],
+  },
+  {
+    module: 6, emoji: "🧰",
+    hook: "VS Code is your code workshop: editor, file tree, terminal and helpers, all in one window.",
+    cards: [
+      ["Open a folder", "Open the whole project folder (not one file) so you get the file explorer, search and project settings."],
+      ["Command Palette", "Ctrl/Cmd + Shift + P. Type what you want to do and VS Code finds the command. Nothing to memorise."],
+      ["Quick Open", "Ctrl/Cmd + P. Type part of a file name and jump straight to it."],
+      ["Integrated terminal", "Ctrl + ` opens a terminal inside VS Code, already in your project folder."],
+      ["Extensions", "Add-ons for languages, themes, formatters and helpers. Example: Python, Prettier, GitLens."],
+      ["Source Control panel", "Shows which files changed and lets you stage, commit and push with Git without leaving the editor."],
+    ],
+    quiz: [
+      { q: "Which shortcut opens the Command Palette?", options: ["Ctrl/Cmd + S", "Ctrl/Cmd + Shift + P", "Ctrl/Cmd + Z", "Alt + F4"], answer: 1, why: "Shift + P opens the palette where you can search every command." },
+      { q: "Why open a whole folder instead of a single file?", options: ["You get the explorer, search and project-wide tools", "It makes the computer faster", "Single files can't be saved", "It removes errors"], answer: 0, why: "Projects have many files. Opening the folder lets VS Code understand them all." },
+      { q: "What do extensions do?", options: ["Make the screen bigger", "Delete old files", "Add features like language support and themes", "Connect to the internet"], answer: 2, why: "Extensions customise VS Code for your language and workflow." },
+      { q: "What is the benefit of the integrated terminal?", options: ["It is faster than any other terminal", "It only works offline", "It replaces the editor", "You can run commands without leaving your code"], answer: 3, why: "It starts in your project folder so you can run and test in one window." },
+    ],
+  },
+  {
+    module: 7, emoji: "🧠",
+    hook: "Programming logic is recipe-writing. You give steps in the exact order you want, and the computer does precisely that.",
+    cards: [
+      ["Variable", "A named box that holds a value. age = 17 stores 17 in a box called age."],
+      ["Condition (if / else)", "Lets code choose a path. If it's raining take an umbrella, else take sunglasses."],
+      ["Loop", "Repeats steps so you don't write them again and again. 'For each student, print the name.'"],
+      ["Function", "A reusable named block of steps. Give it inputs, get an output. Write once, use many times."],
+      ["Algorithm", "A step-by-step method for solving a problem, like a recipe that always gives the right result."],
+      ["Debugging", "Finding and fixing bugs. Read the error, reproduce the problem, change one thing, test again."],
+    ],
+    quiz: [
+      { q: "When should you use a loop?", options: ["To name a variable", "To stop a program", "To repeat steps many times", "To store a password"], answer: 2, why: "Loops repeat work so you don't copy and paste code." },
+      { q: "Which of these is a condition?", options: ["if age >= 18", "name = 'Hanifa'", "print('hi')", "def greet()"], answer: 0, why: "A condition checks whether something is true so the program can choose a path." },
+      { q: "What is the main purpose of a function?", options: ["To make code look colourful", "To hold a reusable set of steps", "To delete variables", "To speed up the internet"], answer: 1, why: "Functions let you reuse the same logic with different inputs." },
+      { q: "You find a bug. What is the smartest first step?", options: ["Delete everything", "Restart the computer", "Ask someone to do it for you", "Read the error message and reproduce the problem"], answer: 3, why: "You can't fix what you can't see. Understand the error first, then change one thing at a time." },
+    ],
+  },
+  {
+    module: 8, emoji: "🐍",
+    hook: "Python reads almost like English, which makes it one of the friendliest languages for learning to think like a programmer.",
+    cards: [
+      ["List", "An ordered, changeable collection: fruits = ['apple', 'pear']. Counting starts at 0, so fruits[0] is 'apple'."],
+      ["Dictionary", "Stores key → value pairs: student = {'name': 'Hanifa'}. Get a value with student['name']."],
+      ["for loop", "for name in names: print(name) runs the indented steps once for every item."],
+      ["def (function)", "def greet(name): return 'Hi ' + name. Define once, call many times with greet('Sam')."],
+      ["Indentation", "Python uses indentation (spaces) to group code in blocks. Wrong spacing is a real error."],
+      ["f-string", "f'Hi {name}!' drops variables straight into text. Much tidier than joining strings with +."],
+    ],
+    quiz: [
+      { q: "If nums = [10, 20, 30], what is nums[0]?", options: ["20", "30", "10", "0"], answer: 2, why: "Python counts from 0, so index 0 is the first item." },
+      { q: "What does len([4, 5, 6]) return?", options: ["6", "3", "4", "15"], answer: 1, why: "len counts the items in the list: there are 3." },
+      { q: "How does Python group lines of code into a block?", options: ["Curly braces { }", "Semicolons", "Indentation", "Parentheses"], answer: 2, why: "Consistent indentation is part of Python's syntax." },
+      { q: "With d = {'name': 'Hanifa'}, how do you get 'Hanifa'?", options: ["d.name()", "d(0)", "d->name", "d['name']"], answer: 3, why: "Dictionaries are read by their key in square brackets." },
+    ],
+  },
+  {
+    module: 9, emoji: "🗃️",
+    hook: "A database is a super-organised set of spreadsheets that software can search in milliseconds. SQL is the language you use to ask it questions.",
+    cards: [
+      ["Table, row, column", "A table is a grid. Each row is one record (a student) and each column is one field (name, age)."],
+      ["SELECT … WHERE", "SELECT name FROM students WHERE age > 16; picks the columns you want from only the rows that match."],
+      ["Primary key", "A column (often id) that is unique for every row, so each record can be found exactly."],
+      ["JOIN", "Combines rows from two tables that are connected by a key, like students and their courses."],
+      ["UPDATE / DELETE", "Change or remove rows. Always include WHERE, or it affects every row in the table."],
+      ["Index", "A shortcut like the index at the back of a book. It makes searching a big table much faster."],
+    ],
+    quiz: [
+      { q: "What does SELECT name FROM students WHERE age > 16; return?", options: ["All students", "Names of students older than 16", "The number of students", "Ages of all students"], answer: 1, why: "SELECT picks columns, WHERE filters rows." },
+      { q: "What is the purpose of a primary key?", options: ["To make a table look neat", "To encrypt data", "To uniquely identify each row", "To sort names alphabetically"], answer: 2, why: "No two rows share the same primary key, so you can always find the exact record." },
+      { q: "What does DELETE FROM students; (with no WHERE) do?", options: ["Nothing", "Deletes one student", "Shows an error only", "Deletes every row in the table"], answer: 3, why: "Without WHERE there is no filter, so every row is affected. Always double-check." },
+      { q: "When would you use a JOIN?", options: ["To combine related data from two tables", "To delete duplicate tables", "To back up a database", "To rename a column"], answer: 0, why: "JOIN connects tables through matching keys." },
+    ],
+  },
+  {
+    module: 10, emoji: "🐙",
+    hook: "Git is a time machine for your code. GitHub is where you keep a safe copy online and work with others.",
+    cards: [
+      ["git add", "Puts changes on the 'stage', the list of things that will go into your next save point."],
+      ["Commit", "A saved snapshot with a message. Write messages like 'Add login form', not 'stuff'."],
+      ["Branch", "A separate line of work where you can experiment without breaking the main code."],
+      ["Push / Pull", "Push sends your commits up to GitHub. Pull brings other people's changes down to you."],
+      ["Pull request", "A proposal to merge your branch into the main one. Others can review and comment first."],
+      [".gitignore", "A list of files Git should never track, such as passwords, .env files and node_modules."],
+    ],
+    quiz: [
+      { q: "What is the difference between Git and GitHub?", options: ["Git is a tool on your computer, GitHub hosts repositories online", "They are the same thing", "GitHub is a programming language", "Git only works online"], answer: 0, why: "Git tracks changes locally. GitHub is a website for storing and sharing repos." },
+      { q: "Which order saves and shares your work?", options: ["push, commit, add", "commit, push, add", "add, commit, push", "add, push, commit"], answer: 2, why: "Stage with add, save with commit, then upload with push." },
+      { q: "What is a branch useful for?", options: ["Deleting old files", "Trying changes safely away from the main code", "Making the repo private", "Speeding up your laptop"], answer: 1, why: "Branches let you experiment without risking the working version." },
+      { q: "Why would you put .env in .gitignore?", options: ["To make it load faster", "To rename it", "To compress it", "To keep secrets like passwords out of GitHub"], answer: 3, why: "Anything committed can be seen in the history. Secrets must never be committed." },
+    ],
+  },
+  {
+    module: 11, emoji: "🎨",
+    hook: "HTML is the skeleton of a web page. CSS is the style: colours, spacing and layout.",
+    cards: [
+      ["HTML element", "A tag with content, like <h1>Hello</h1>. Tags describe what something is (heading, paragraph, link)."],
+      ["Link & image", "<a href=\"url\">text</a> makes a link. <img src=\"pic.png\" alt=\"description\"> shows an image. Always write alt text."],
+      ["CSS selector", "Chooses what to style. p {} targets paragraphs, .card {} targets class='card', #top {} targets id='top'."],
+      ["Box model", "Every element is a box: content, then padding (inside space), border, then margin (outside space)."],
+      ["Flexbox", "display: flex lines children up in a row or column. justify-content and align-items control spacing."],
+      ["Responsive design", "Layouts that adapt to phones and laptops using flexible sizes and media queries."],
+    ],
+    quiz: [
+      { q: "Which tag creates a link?", options: ["<p>", "<a>", "<img>", "<h1>"], answer: 1, why: "<a href=\"...\"> is the anchor tag that makes links." },
+      { q: "In CSS, how do you select every element with class='card'?", options: [".card", "#card", "card()", "<card>"], answer: 0, why: "A dot selects classes, a hash selects ids." },
+      { q: "In the box model, what is the space INSIDE the border around the content called?", options: ["Margin", "Outline", "Padding", "Gap"], answer: 2, why: "Padding is inside the border and margin is outside it." },
+      { q: "What does display: flex do?", options: ["Hides the element", "Makes text bold", "Adds animation", "Lays out children in a flexible row or column"], answer: 3, why: "Flexbox is the go-to tool for aligning and spacing items." },
+    ],
+  },
+  {
+    module: 12, emoji: "⚡",
+    hook: "JavaScript makes pages come alive. It can react to clicks, change what's on screen and talk to servers.",
+    cards: [
+      ["let vs const", "const can't be reassigned, let can. Use const by default and let only when the value must change."],
+      ["Arrow function", "A short way to write a function: const double = n => n * 2."],
+      ["map & filter", "map transforms every item: [1,2,3].map(n => n*2) gives [2,4,6]. filter keeps matches: [1,2,3].filter(n => n>1) gives [2,3]."],
+      ["DOM", "The page as a tree of objects that JavaScript can read and change, like swapping a heading's text."],
+      ["Event listener", "Code that waits for something to happen: button.addEventListener('click', doThing)."],
+      ["=== vs ==", "=== compares value and type, so 5 === '5' is false. Prefer === to avoid surprises."],
+    ],
+    quiz: [
+      { q: "Which variable can NOT be reassigned later?", options: ["let", "var", "const", "all of them"], answer: 2, why: "const locks the variable to its first value." },
+      { q: "What does [1, 2, 3].map(n => n * 2) return?", options: ["[1, 2, 3]", "[2, 4, 6]", "6", "[3, 2, 1]"], answer: 1, why: "map runs the function on each item and returns the new list." },
+      { q: "What is the DOM?", options: ["The page's structure that JavaScript can read and change", "A database", "A type of CSS", "A code editor"], answer: 0, why: "Document Object Model: your HTML as objects JavaScript can work with." },
+      { q: "What is the result of 5 === '5' in JavaScript?", options: ["true", "5", "an error", "false"], answer: 3, why: "=== checks type as well. A number is not a string." },
+    ],
+  },
+  {
+    module: 13, emoji: "🔌",
+    hook: "An API is like a waiter: you order from a fixed menu, and it brings back exactly what the kitchen (another app) makes. JSON is the language on the tray.",
+    cards: [
+      ["JSON", "A text format for data: {\"name\": \"Hanifa\", \"age\": 17}. Keys in double quotes, easy for humans and code to read."],
+      ["API", "A set of rules for one program to ask another for data or actions, without knowing how it works inside."],
+      ["Endpoint", "A specific URL of an API, like https://api.example.com/users, where you send your request."],
+      ["GET vs POST", "GET reads data. POST sends new data to be created or processed."],
+      ["Status codes", "200 OK, 201 Created, 400 bad request, 401 not allowed, 404 not found, 500 server error."],
+      ["API key", "A secret pass that tells the API who you are. Never share it or put it in public code."],
+    ],
+    quiz: [
+      { q: "What does the HTTP status code 404 mean?", options: ["Not found", "Success", "Server crashed", "Not allowed"], answer: 0, why: "404 means the thing you asked for doesn't exist at that URL." },
+      { q: "You want to fetch a list of users from an API. Which method fits best?", options: ["DELETE", "POST", "PATCH", "GET"], answer: 3, why: "GET is for reading data." },
+      { q: "Which is valid JSON?", options: ["{name: Hanifa}", "{\"name\": \"Hanifa\"}", "name = 'Hanifa'", "<name>Hanifa</name>"], answer: 1, why: "JSON needs double-quoted keys and strings." },
+      { q: "Where should an API key NEVER appear?", options: ["An .env file", "A password manager", "Public code on GitHub", "Server settings"], answer: 2, why: "Anyone who sees the key can use your account. Keep it in private environment variables." },
+    ],
+  },
+  {
+    module: 14, emoji: "📮",
+    hook: "Postman is a test kitchen for APIs. You can send a request, see the reply, and save it, all without writing code.",
+    cards: [
+      ["Request", "Choose a method (GET, POST...) and a URL, then press Send. The response shows below."],
+      ["Headers", "Extra info sent with the request, such as Content-Type: application/json or Authorization: Bearer token."],
+      ["Body", "The data you send with POST or PUT, usually raw JSON."],
+      ["Collection", "A folder of saved requests, so you can organise and re-run your API tests."],
+      ["Environment variable", "Reusable values like {{base_url}} so you can switch between local and live servers in one click."],
+      ["Status & time", "Every response shows the status code, how long it took and how big it was. Check these first."],
+    ],
+    quiz: [
+      { q: "To create something new on an API with JSON data, which setup is right?", options: ["GET with no body", "DELETE with headers only", "POST with a JSON body", "Send without a URL"], answer: 2, why: "POST sends data, and the JSON goes in the body." },
+      { q: "What is a Postman collection?", options: ["A list of passwords", "A folder of saved requests", "A type of API", "A coding language"], answer: 1, why: "Collections keep related requests organised and re-runnable." },
+      { q: "What does {{base_url}} represent?", options: ["A variable taken from your environment", "A broken link", "A CSS class", "A code comment"], answer: 0, why: "Double curly braces insert a variable." },
+      { q: "Which header tells the server you're sending JSON?", options: ["Accept-Language", "Cache-Control", "Host", "Content-Type: application/json"], answer: 3, why: "Content-Type describes the format of the body you are sending." },
+    ],
+  },
+  {
+    module: 15, emoji: "🛠️",
+    hook: "Building an app is easier when you start tiny. Plan the smallest version that works, then grow it.",
+    cards: [
+      ["MVP", "Minimum Viable Product: the smallest version that solves the core problem. Ship it, then improve."],
+      ["User story", "'As a student, I want to log my study time so that I can see my progress.' It keeps you focused on real needs."],
+      ["Wireframe", "A quick sketch of each screen before you code. Cheap to change, expensive to fix later."],
+      ["Frontend & backend", "Frontend is what users see and click. Backend is the server and database that do the work behind it."],
+      ["Small tasks", "Break the project into tiny steps you can finish in under an hour, and commit after each one."],
+      ["README", "The front page of your project: what it does, how to run it and a screenshot."],
+    ],
+    quiz: [
+      { q: "What is an MVP?", options: ["The most expensive version", "The smallest version that solves the core problem", "A finished, perfect product", "A type of database"], answer: 1, why: "An MVP gets you feedback quickly with the least work." },
+      { q: "Which part of an app does the user see and click?", options: ["Backend", "Database", "Server", "Frontend"], answer: 3, why: "The frontend is the interface: pages, buttons and forms." },
+      { q: "A good user story says...", options: ["Which colour to use", "Who wants what and why", "How many lines of code to write", "Which laptop to buy"], answer: 1, why: "'As a ___ I want ___ so that ___' keeps the goal clear." },
+      { q: "Why write a README?", options: ["It makes the app faster", "It explains what the project is and how to run it", "It hides the code", "It is required by Python"], answer: 1, why: "Future you, and everyone else, will thank you." },
+    ],
+  },
+  {
+    module: 16, emoji: "🚀",
+    hook: "Deployment is moving your app from your laptop to the internet so anyone with the link can use it.",
+    cards: [
+      ["Deploy", "Publishing your app so it runs on a server that people can reach online."],
+      ["Build step", "Turning your source code into the optimised files that run in production. Failed builds show errors in the logs."],
+      ["Environment variables", "Secret or changing settings (API keys, database URLs) stored in Vercel's settings, not in your code."],
+      ["Preview deployment", "Every branch or pull request gets its own temporary URL so you can test before going live."],
+      ["Production", "The live version real users see. Development is your local version for experimenting."],
+      ["Logs", "The record of what your app and build did. First place to look when something breaks."],
+    ],
+    quiz: [
+      { q: "Where should you put secret API keys for a Vercel project?", options: ["In the README", "In your public code", "In a screenshot", "In the project's Environment Variables settings"], answer: 3, why: "Environment variables keep secrets out of your repository." },
+      { q: "What is a preview deployment?", options: ["A deleted project", "A temporary URL to test a branch or pull request", "A paid plan", "A backup of your database"], answer: 1, why: "Previews let you check changes safely before they go live." },
+      { q: "Your deploy failed. What do you check first?", options: ["The build logs", "Your wallpaper", "Your keyboard", "Your email"], answer: 0, why: "The logs tell you exactly which step failed and why." },
+      { q: "What is 'production'?", options: ["Your test folder", "A type of CSS", "The live version used by real users", "A code editor"], answer: 2, why: "Production is what the world sees, so changes there need care." },
+    ],
+  },
+  {
+    module: 17, emoji: "🐳",
+    hook: "Docker packs your app and everything it needs into a box that runs the same everywhere. It ends the 'but it works on my machine' problem.",
+    cards: [
+      ["Image", "A read-only blueprint containing your app, its tools and settings. Like a recipe."],
+      ["Container", "A running instance of an image. Like the dish made from the recipe, and you can run many from one image."],
+      ["Dockerfile", "A text file of instructions for building an image: start from Python, copy my code, install packages, run."],
+      ["Port mapping", "docker run -p 8080:80 connects port 8080 on your computer to port 80 inside the container."],
+      ["Volume", "Storage that lives outside the container, so data survives when the container is removed."],
+      ["Docker Compose", "A single file (docker-compose.yml) that starts several containers together, like an app plus its database."],
+    ],
+    quiz: [
+      { q: "What is the difference between an image and a container?", options: ["An image is a blueprint, a container is a running instance", "They are identical", "A container is a file, an image is a server", "Images only run on Linux"], answer: 0, why: "You build an image once and start many containers from it." },
+      { q: "What does -p 8080:80 do?", options: ["Sets a password", "Pauses the container", "Maps your computer's port 8080 to the container's port 80", "Prints 8080 lines"], answer: 2, why: "The format is host:container." },
+      { q: "You remove a container. What happens to data stored inside it (with no volume)?", options: ["It is emailed to you", "It is lost", "It moves to the cloud", "Nothing, it is always kept"], answer: 1, why: "Containers are disposable. Use volumes for data you want to keep." },
+      { q: "What is a Dockerfile?", options: ["A database", "A log file", "A Docker account", "Instructions for building an image"], answer: 3, why: "Each line in a Dockerfile adds a step to the image." },
+    ],
+  },
+  {
+    module: 18, emoji: "🛡️",
+    hook: "Good security is mostly good habits. Most attacks work because someone clicked, reused a password or skipped an update.",
+    cards: [
+      ["Phishing", "Fake emails or messages pretending to be someone you trust, trying to make you click or share a password. Check the sender and link first."],
+      ["MFA", "Multi-factor authentication. You prove who you are with something extra (a code on your phone), so a stolen password isn't enough."],
+      ["Password manager", "Creates and remembers long, unique passwords for every site. You only remember one strong master password."],
+      ["Updates", "Updates fix known security holes. Delaying them leaves the door open."],
+      ["Least privilege", "Give people and programs only the access they need and nothing more."],
+      ["Secrets stay secret", "Never put passwords or API keys in code, screenshots or chats. Use environment variables."],
+    ],
+    quiz: [
+      { q: "What is phishing?", options: ["A type of firewall", "Fake messages that trick you into giving information", "A fast internet plan", "A password manager"], answer: 1, why: "Attackers pretend to be trusted senders to steal logins or money." },
+      { q: "What does MFA add to a login?", options: ["A second proof of identity, like a phone code", "A longer username", "A faster website", "A free trial"], answer: 0, why: "Even if someone gets your password, they still need your second factor." },
+      { q: "What is the best way to handle passwords?", options: ["Use the same one everywhere", "Write it on a sticky note", "Use long unique passwords stored in a password manager", "Use your birthday"], answer: 2, why: "Unique passwords mean one leak can't open all your accounts." },
+      { q: "What does 'least privilege' mean?", options: ["Everyone is admin", "Nobody can log in", "Use the cheapest tools", "Give only the access that's needed"], answer: 3, why: "Less access means less damage if an account is compromised." },
+    ],
+  },
+  {
+    module: 19, emoji: "🤖",
+    hook: "AI is a brilliant, very fast assistant that sometimes makes things up. You are still the builder. Direct it, check it and learn from it.",
+    cards: [
+      ["Clear prompts", "Say what you want, who it's for, and what good looks like. 'Build a login form in React with email validation' beats 'make login'."],
+      ["Give context", "Share the error message, the relevant code and what you already tried. More context, better answers."],
+      ["Small steps", "Ask for one feature at a time, test it, then continue. Big all-at-once requests are harder to debug."],
+      ["Read & test it", "Never paste code you don't understand. Read it, run it and ask the AI to explain anything unclear."],
+      ["AI can be wrong", "AI can sound confident and still be incorrect, called hallucination. Verify facts and check the docs."],
+      ["Protect secrets", "Never paste passwords, API keys or private data into a prompt."],
+    ],
+    quiz: [
+      { q: "Which prompt will most likely give a useful answer?", options: ["'make app'", "'fix it'", "'Build a to-do list in JavaScript with add and delete buttons, and explain each part'", "'code'"], answer: 2, why: "Specific, goal-focused prompts give specific, useful results." },
+      { q: "AI gives you code that looks right. What should you do?", options: ["Paste it straight into production", "Run it, read it and test it", "Assume it's perfect", "Delete your old code first"], answer: 1, why: "You are responsible for what ships, so understand and test it." },
+      { q: "What is an AI 'hallucination'?", options: ["A confident answer that is actually wrong or made up", "A slow response", "A picture generator", "A coding shortcut"], answer: 0, why: "Models can invent facts, functions or libraries that don't exist." },
+      { q: "Which of these should never go into an AI prompt?", options: ["A code snippet", "An error message", "A question about Python", "Your API key"], answer: 3, why: "Anything you paste may be stored. Keep secrets out." },
+    ],
+  },
+  {
+    module: 20, emoji: "🦾",
+    hook: "Automation means teaching the computer to do your boring repeat jobs. Once you can script, APIs and AI make those scripts powerful.",
+    cards: [
+      ["Automation", "Using code to do a repetitive task automatically, like renaming 500 files or sending a daily summary."],
+      ["Script", "A small program that does one job from start to finish. A .py file you can run whenever you need it."],
+      ["requests.get()", "Python's simple way to call an API: requests.get(url).json() fetches data and turns it into Python objects."],
+      ["Scheduling", "Running a script automatically at set times, using cron on Linux/Mac, Task Scheduler on Windows or cloud schedulers."],
+      ["try / except", "Catches errors so the script doesn't crash: try the risky step, handle the problem in except."],
+      ["Rate limits & humans", "APIs limit how often you can call them. For important actions, let a human approve before the script acts."],
+    ],
+    quiz: [
+      { q: "Which task is the best candidate for automation?", options: ["A one-time decision", "Renaming 500 files in the same pattern", "Writing a personal diary", "Choosing a university"], answer: 1, why: "Repetitive, rule-based tasks are where automation shines." },
+      { q: "Which Python line fetches data from an API URL?", options: ["requests.get(url)", "print(url)", "open(url)", "len(url)"], answer: 0, why: "The requests library sends the HTTP call." },
+      { q: "Why wrap risky steps in try / except?", options: ["To make code run slower", "To hide all bugs forever", "To handle errors without crashing the whole script", "To add comments"], answer: 2, why: "Real-world APIs fail sometimes, and good scripts handle it gracefully." },
+      { q: "An API says '429 Too Many Requests'. What does it mean?", options: ["The file was deleted", "You've hit the rate limit, so slow down", "Your password is wrong", "The server is on fire"], answer: 1, why: "429 tells you to wait and retry later." },
+    ],
+  },
+];
+
+export const lessonFor = (moduleNumber: number) => lessons.find(l => l.module === moduleNumber);
+export const cardId = (moduleNumber: number, index: number) => `m${moduleNumber}-c${index + 1}`;
+export const allCards = () => lessons.flatMap(l => l.cards.map(([front, back], i) => ({ id: cardId(l.module, i), module: l.module, front, back })));
+export const TOTAL_CARDS = lessons.reduce((sum, l) => sum + l.cards.length, 0);

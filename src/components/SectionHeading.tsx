@@ -1,1 +1,10 @@
-export function SectionHeading({ eyebrow, title, copy }: { eyebrow?: string; title: string; copy?: string }) { return <div className="mb-6"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-700">{eyebrow}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>{copy && <p className="mt-3 max-w-2xl text-slate-600">{copy}</p>}</div>; }
+export function SectionHeading({ eyebrow, title, copy, children }: { eyebrow?: string; title: string; copy?: string; children?: React.ReactNode }) {
+  return <div className="mb-7 flex flex-wrap items-end justify-between gap-4 animate-fade-up">
+    <div className="min-w-0">
+      {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+      <h1 className="mt-1.5 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">{title}</h1>
+      {copy && <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/60 sm:text-base">{copy}</p>}
+    </div>
+    {children}
+  </div>;
+}

@@ -1,44 +1,138 @@
 "use client";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { CalendarDays, Camera, Clock3, ImagePlus, MessageCircle, Plus, Sparkles, Pencil, Trash2 } from "lucide-react";
-import seed from "@/data/seed.json";
+
+import { ChangeEvent, FormEvent, Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { CalendarDays, Camera, HelpCircle, ImagePlus, Link2, Pencil, Plus, Trash2 } from "lucide-react";
+import { FEELINGS, IMPORTED_ACTIVITY, KEYS, SKILLS, addDays, fileToCompressedDataUrl, fmtDay, fmtMinutes, isSample, localDate, uid } from "@/lib/data";
+import type { Activity, Comment } from "@/lib/data";
+import { XP } from "@/lib/game";
+import { useGame } from "@/lib/useGame";
+import { useHydrated, useLocalStore } from "@/lib/store";
+import { useRole } from "@/components/AppShell";
+import { useCelebrate } from "@/components/Celebrate";
+import { CommentThread } from "@/components/CommentThread";
+import { Nova } from "@/components/Nova";
 import { SectionHeading } from "@/components/SectionHeading";
 
-type Activity = { id: string; date: string; sourceWeek?: string; kind: "Time log" | "Learning update" | "Weekly reflection"; topic: string; minutes: number; did: string; practiced: string; feeling: string; blocker: string; proof: string; attachment?: string; mentorNote?: string; };
-const KEY = "future-world-activity-v2";
-const today = () => new Date().toISOString().slice(0, 10);
-const imported: Activity[] = seed.weeklyReviews.map((r, i) => { const match = r.week.match(/(\d{1,2})\s*[-–]\s*\d{1,2}\s+([A-Za-z]+)\s+(\d{4})/); const date = match ? new Date(`${match[1]} ${match[2]} ${match[3]}`).toISOString().slice(0, 10) : today(); return { id: `import-${i}`, date, sourceWeek: r.week, kind: "Weekly reflection", topic: r.currentTopic, minutes: 0, did: r.learned, practiced: r.practice, feeling: r.difficulty || "", blocker: r.blockers || "", proof: r.proofLink || "", mentorNote: r.mentorReview || "" }; });
-const initialForm = { date: today(), topic: seed.skills[0]?.topic || "", hours: "", minutes: "30", did: "", practiced: "", feeling: "✨ In the zone", blocker: "", proof: "", cadence: "Learning update" as Activity["kind"] };
+const FILTERS = ["All", "Time log", "Learning update", "Weekly reflection"] as const;
+const QUICK_MINUTES = [15, 30, 45, 60, 90];
+const blank = () => ({ date: localDate(), topic: SKILLS[0].topic, minutes: "30", did: "", practiced: "", feeling: "✨", blocker: "", proof: "", kind: "Learning update" as Activity["kind"] });
 
-export default function TimePage() {
-  const [items, setItems] = useState<Activity[]>(imported);
+export default function TimePage() { return <Suspense fallback={null}><Journal /></Suspense>; }
+
+function Journal() {
+  const role = useRole();
+  const hydrated = useHydrated();
+  const params = useSearchParams();
+  const { celebrate } = useCelebrate();
+  const game = useGame();
+  const [items, setItems] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
   const [showForm, setShowForm] = useState(false);
-  const [filter, setFilter] = useState("All activity");
-  const [draft, setDraft] = useState(initialForm);
-  const [attachment, setAttachment] = useState("");
-  const [attachmentName, setAttachmentName] = useState("");
-  const [notice, setNotice] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  useEffect(() => { const saved = localStorage.getItem(KEY); if (saved) setItems(JSON.parse(saved)); }, []);
-  const save = (next: Activity[]) => { setItems(next); localStorage.setItem(KEY, JSON.stringify(next)); };
+  const [draft, setDraft] = useState(blank);
+  const [attachment, setAttachment] = useState("");
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const [error, setError] = useState("");
+  const today = hydrated ? localDate() : "";
+  const learner = role === "learner";
+
+  useEffect(() => { if (params.get("new") === "1" && learner) setShowForm(true); }, [params, learner]);
+
+  const filtered = items.filter(i => filter === "All" || i.kind === filter);
+  const groups = Object.entries(filtered.reduce<Record<string, Activity[]>>((acc, item) => { (acc[item.date] ||= []).push(item); return acc; }, {})).sort((a, b) => b[0].localeCompare(a[0]));
+  const last14 = useMemo(() => hydrated ? Array.from({ length: 14 }, (_, i) => { const d = addDays(today, i - 13); return { d, m: game.perDay[d] || 0 }; }) : [], [hydrated, today, game.perDay]);
+  const maxMinutes = Math.max(30, ...last14.map(x => x.m));
+  const entryCount = items.filter(i => !isSample(i)).length;
+
+  const reset = () => { setShowForm(false); setEditingId(null); setDraft(blank()); setAttachment(""); setError(""); };
+  const edit = (a: Activity) => { setEditingId(a.id); setDraft({ date: a.date, topic: a.topic, minutes: String(a.minutes), did: a.did, practiced: a.practiced, feeling: a.feeling, blocker: a.blocker, proof: a.proof, kind: a.kind }); setAttachment(a.attachment || ""); setShowForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const remove = (a: Activity) => { if (window.confirm("Delete this journal entry? This cannot be undone.")) { setItems(items.filter(x => x.id !== a.id)); if (editingId === a.id) reset(); } };
   const attach = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
-    if (!file.type.startsWith("image/")) { setNotice("Choose an image or screenshot file."); return; }
-    const url = URL.createObjectURL(file); const image = new Image(); image.src = url;
-    await new Promise(resolve => { image.onload = resolve; image.onerror = resolve; });
-    const scale = Math.min(1, 1100 / Math.max(image.width, image.height)); const canvas = document.createElement("canvas"); canvas.width = Math.max(1, Math.round(image.width * scale)); canvas.height = Math.max(1, Math.round(image.height * scale));
-    canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height); setAttachment(canvas.toDataURL("image/jpeg", 0.72)); setAttachmentName(file.name); URL.revokeObjectURL(url); setNotice("Screenshot attached 📸");
+    if (!file.type.startsWith("image/")) { setError("Choose an image or screenshot file."); return; }
+    setAttachment(await fileToCompressedDataUrl(file)); setError("");
   };
-  const edit = (item: Activity) => { setEditingId(item.id); setDraft({ date: item.date, topic: item.topic, hours: String(Math.floor(item.minutes / 60)), minutes: String(item.minutes % 60), did: item.did, practiced: item.practiced, feeling: item.feeling, blocker: item.blocker, proof: item.proof, cadence: item.kind }); setAttachment(item.attachment || ""); setAttachmentName(item.attachment ? "Existing screenshot attached" : ""); setShowForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const cancelEdit = () => { setEditingId(null); setDraft(initialForm); setAttachment(""); setAttachmentName(""); setShowForm(false); };
-  const remove = (item: Activity) => { if (!window.confirm("Delete this journal entry? This cannot be undone.")) return; save(items.filter(entry => entry.id !== item.id)); if (editingId === item.id) cancelEdit(); setNotice("Journal entry deleted."); };
-  const submit = (e: FormEvent) => { e.preventDefault(); const hours = Number(draft.hours) || 0; const minutes = hours * 60 + (Number(draft.minutes) || 0); if (!draft.did.trim() && minutes === 0) { setNotice("Add a little note or some time before saving."); return; } const previous = editingId ? items.find(item => item.id === editingId) : undefined; const item: Activity = { ...previous, id: editingId || crypto.randomUUID(), date: draft.date, kind: draft.cadence, topic: draft.topic, minutes, did: draft.did.trim(), practiced: draft.practiced.trim(), feeling: draft.feeling, blocker: draft.blocker.trim(), proof: draft.proof.trim(), attachment, mentorNote: previous?.mentorNote, sourceWeek: previous?.sourceWeek }; save((editingId ? items.map(entry => entry.id === editingId ? item : entry) : [item, ...items]).sort((a, b) => b.date.localeCompare(a.date))); setDraft(initialForm); setAttachment(""); setAttachmentName(""); setEditingId(null); setShowForm(false); setNotice(editingId ? "Your correction is saved ✨" : "Saved to your activity journal 🌟"); };
-  const filtered = filter === "All activity" ? items : items.filter(i => i.kind === filter);
-  const totalMinutes = useMemo(() => items.filter(i => i.date === today()).reduce((n, i) => n + i.minutes, 0), [items]);
-  const weekly = useMemo(() => items.filter(i => { const d = new Date(`${i.date}T00:00:00`); return (Date.now() - d.getTime()) <= 7 * 86400000 && d.getTime() <= Date.now(); }).reduce((n, i) => n + i.minutes, 0), [items]);
-  const groups = Object.entries(filtered.reduce<Record<string, Activity[]>>((acc, item) => { (acc[item.date] ||= []).push(item); return acc; }, {}));
-  return <div><SectionHeading eyebrow="Updates & Time · your progress journal" title="Every little step counts" copy="Add a time log when you study, or write a bigger update whenever it feels useful. Your proof and Mentor’s notes stay together."/><div className="grid gap-3 sm:grid-cols-3"><div className="rounded-3xl bg-fuchsia-50 p-5"><p className="text-sm text-fuchsia-900/70">Today’s time</p><p className="mt-2 text-3xl font-semibold">{Math.floor(totalMinutes / 60)}h {totalMinutes % 60}m</p><p className="mt-1 text-xs text-fuchsia-900/60">Time logs and updates</p></div><div className="rounded-3xl bg-sky-50 p-5"><p className="text-sm text-sky-900/70">This week</p><p className="mt-2 text-3xl font-semibold">{Math.floor(weekly / 60)}h {weekly % 60}m</p><p className="mt-1 text-xs text-sky-900/60">A rhythm that works for you</p></div><button onClick={() => setShowForm(!showForm)} className="flex items-center justify-center gap-3 rounded-3xl bg-slate-900 p-5 text-left text-white"><span className="grid h-11 w-11 place-items-center rounded-full bg-white/15"><Plus/></span><span><strong className="block">Add to my journal</strong><small className="text-slate-300">Time log, learning note, or weekly check-in</small></span></button></div>
-  {notice && <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</p>}
-  {showForm && <form onSubmit={submit} className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-center gap-2"><Sparkles className="text-fuchsia-600" size={19}/><h2 className="text-xl font-semibold">{editingId ? "Edit your journal entry" : "What did you do?"}</h2></div><p className="mt-1 text-sm text-slate-500">An update can be a quick time entry or a once-a-week reflection. No daily form to keep up with.</p><div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><label className="text-sm font-medium">Entry type<select value={draft.cadence} onChange={e => setDraft({ ...draft, cadence: e.target.value as Activity["kind"] })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3">{["Time log", "Learning update", "Weekly reflection"].map(x => <option key={x}>{x}</option>)}</select></label><label className="text-sm font-medium">Date<input required type="date" value={draft.date} onChange={e => setDraft({ ...draft, date: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3"/></label><label className="text-sm font-medium">Learning topic<select value={draft.topic} onChange={e => setDraft({ ...draft, topic: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3">{seed.skills.map(s => <option key={s.id}>{s.topic}</option>)}</select></label><div className="grid grid-cols-2 gap-2"><label className="text-sm font-medium">Hours<input type="number" min="0" value={draft.hours} onChange={e => setDraft({ ...draft, hours: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3" placeholder="0"/></label><label className="text-sm font-medium">Minutes<input type="number" min="0" max="59" step="5" value={draft.minutes} onChange={e => setDraft({ ...draft, minutes: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3"/></label></div></div><div className="mt-4 grid gap-4 md:grid-cols-2"><label className="text-sm font-medium">What did you work on?<textarea value={draft.did} onChange={e => setDraft({ ...draft, did: e.target.value })} className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="Watched a lesson, read about RAM, built…"/></label><label className="text-sm font-medium">What did you practice or learn?<textarea value={draft.practiced} onChange={e => setDraft({ ...draft, practiced: e.target.value })} className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="One small thing you can explain now…"/></label></div><div className="mt-4 grid gap-4 sm:grid-cols-3"><label className="text-sm font-medium">How did it feel?<select value={draft.feeling} onChange={e => setDraft({ ...draft, feeling: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3">{["🌱 Gentle start", "✨ In the zone", "🧩 A bit tricky", "🎉 Nailed it", "😴 Low energy but showed up"].map(x => <option key={x}>{x}</option>)}</select></label><label className="text-sm font-medium">Anything tricky? (optional)<input value={draft.blocker} onChange={e => setDraft({ ...draft, blocker: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="A question or blocker…"/></label><label className="text-sm font-medium">Proof link (optional)<input value={draft.proof} onChange={e => setDraft({ ...draft, proof: e.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="GitHub, Drive, lesson…"/></label></div><div className="mt-4 flex flex-wrap items-center justify-between gap-3"><label className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium"><Camera size={16}/>Add screenshot<input type="file" accept="image/*" onChange={attach} className="sr-only"/></label><span className="text-xs text-slate-500">{attachmentName || "Optional · screenshots are resized before saving"}</span><button className="ml-auto rounded-full bg-fuchsia-600 px-5 py-3 text-sm font-semibold text-white">{editingId ? "Save changes" : "Save in my journal"}</button><button type="button" onClick={cancelEdit} className="rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold">Cancel</button></div></form>}
-  <div className="mt-8 flex flex-wrap items-center gap-2"><h2 className="mr-auto text-2xl font-semibold">My story so far</h2>{["All activity", "Time log", "Learning update", "Weekly reflection"].map(x => <button key={x} onClick={() => setFilter(x)} className={`rounded-full px-3 py-2 text-xs font-semibold ${filter === x ? "bg-slate-900 text-white" : "border border-slate-200 bg-white"}`}>{x}</button>)}</div><div className="mt-5 space-y-7">{groups.map(([date, entries]) => <section key={date}><h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-500"><CalendarDays size={15}/>{entries.find(e => e.sourceWeek)?.sourceWeek || new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</h3><div className="space-y-3">{entries.map(item => <article key={item.id} className="rounded-3xl border border-slate-200 bg-white p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><span className="rounded-full bg-fuchsia-50 px-3 py-1 text-xs font-semibold text-fuchsia-800">{item.kind}</span><h4 className="mt-3 text-lg font-semibold">{item.topic || "Open reflection"}</h4></div>{item.minutes > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-2 text-sm font-semibold"><Clock3 size={15}/>{Math.floor(item.minutes / 60) ? `${Math.floor(item.minutes / 60)}h ` : ""}{item.minutes % 60}m</span>}</div>{item.did && <p className="mt-4 text-sm text-slate-700">{item.did}</p>}{item.practiced && <p className="mt-2 text-sm text-slate-500">Practiced / learned: {item.practiced}</p>}<div className="mt-3 flex flex-wrap gap-2">{item.feeling && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs">{item.feeling}</span>}{item.blocker && <span className="rounded-full bg-rose-50 px-3 py-1 text-xs text-rose-700">Question: {item.blocker}</span>}{item.proof && <a href={item.proof.startsWith("http") ? item.proof : undefined} className="rounded-full bg-sky-50 px-3 py-1 text-xs text-sky-800">🔗 View proof</a>}</div>{item.attachment && <a href={item.attachment} target="_blank" className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-slate-50 p-2 text-xs text-slate-600"><img src={item.attachment} className="h-16 w-16 rounded-xl object-cover" alt="Attached screenshot"/><ImagePlus size={14}/>Open screenshot</a>}{item.mentorNote && <div className="mt-4 rounded-2xl bg-violet-50 p-4"><p className="flex items-center gap-2 text-xs font-semibold text-violet-900"><MessageCircle size={14}/>Mentor says</p><p className="mt-2 text-sm text-violet-900">{item.mentorNote}</p></div>}<div className="mt-4 flex justify-end gap-2 border-t border-slate-100 pt-3"><button onClick={() => edit(item)} className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700"><Pencil size={13}/>Edit</button><button onClick={() => remove(item)} className="inline-flex items-center gap-1 rounded-full border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700"><Trash2 size={13}/>Delete</button></div></article>)}</div></section>)}</div>{groups.length === 0 && <div className="mt-5 rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center"><span className="text-4xl">📔</span><h3 className="mt-3 text-lg font-semibold">Your first page is waiting</h3><p className="mt-2 text-sm text-slate-500">Log a study session or add a reflection when you’re ready.</p></div>}</div>;
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const minutes = Math.max(0, Number(draft.minutes) || 0);
+    if (!draft.did.trim() && minutes === 0) { setError("Add a few words or some time before saving."); return; }
+    const previous = editingId ? items.find(i => i.id === editingId) : undefined;
+    const entry: Activity = { ...previous, id: editingId || uid(), date: draft.date, kind: draft.kind, topic: draft.topic, minutes, did: draft.did.trim(), practiced: draft.practiced.trim(), feeling: draft.feeling, blocker: draft.blocker.trim(), proof: draft.proof.trim(), attachment: attachment || undefined, source: "manual" };
+    setItems(editingId ? items.map(i => i.id === editingId ? entry : i) : [...items, entry]);
+    if (!editingId) celebrate({ emoji: draft.blocker.trim() ? "🙋‍♀️" : "📝", title: draft.blocker.trim() ? "Question sent to Xander" : "Entry saved!", text: minutes ? `${fmtMinutes(minutes)} logged on ${draft.topic}` : "Every note counts.", xp: Math.min(minutes, 60) + XP.journalEntry, sound: "win" });
+    reset();
+  };
+  const addComment = (id: string, comment: Comment) => setItems(items.map(i => i.id === id ? { ...i, comments: [...(i.comments ?? []), comment] } : i));
+
+  return <div>
+    <SectionHeading eyebrow="Journal · your learning story" title="Every little step counts ✍️" copy="Log time, write what you learned, ask questions, and add proof. Xander reads it all and can reply right here.">
+      {learner && <button onClick={() => (showForm ? reset() : setShowForm(true))} className="btn-primary"><Plus size={16} />{showForm ? "Close" : "New entry"}</button>}
+    </SectionHeading>
+
+    <div className="grid gap-4 lg:grid-cols-3">
+      <div className="card p-5 lg:col-span-1">
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div><p className="font-display text-2xl font-extrabold">{hydrated ? fmtMinutes(game.todayMinutes) : "0m"}</p><p className="text-[11px] font-bold text-ink/45">today</p></div>
+          <div><p className="font-display text-2xl font-extrabold">{hydrated ? fmtMinutes(game.weekMinutes) : "0m"}</p><p className="text-[11px] font-bold text-ink/45">this week</p></div>
+          <div><p className="font-display text-2xl font-extrabold">{hydrated ? entryCount : 0}</p><p className="text-[11px] font-bold text-ink/45">entries</p></div>
+        </div>
+        <p className="mt-4 rounded-2xl bg-brand/10 px-4 py-2.5 text-center text-xs font-bold text-brand">🔥 {game.streak.current}-day streak · best {game.streak.best}</p>
+      </div>
+      <div className="card p-5 lg:col-span-2">
+        <p className="eyebrow">Last 14 days</p>
+        <div className="mt-3 flex h-28 items-end gap-1.5" role="img" aria-label="Minutes studied per day for the last 14 days">
+          {last14.map((x, i) => <div key={x.d} className="group relative flex h-full flex-1 flex-col items-center justify-end" title={`${fmtDay(x.d)} · ${fmtMinutes(x.m)}`}>
+            <div className={`w-full rounded-t-lg ${x.m ? "bg-brand-gradient" : "bg-ink/5"} ${x.d === today ? "ring-2 ring-ink/30" : ""}`} style={{ height: `${Math.max(6, (x.m / maxMinutes) * 100)}%`, animation: `fadeUp .7s ${i * 40}ms cubic-bezier(.2,.8,.2,1) both`, transformOrigin: "bottom" }} />
+          </div>)}
+        </div>
+        <div className="mt-1 flex justify-between text-[10px] font-bold text-ink/35"><span>{last14[0] ? fmtDay(last14[0].d, { day: "numeric", month: "short" }) : ""}</span><span>today</span></div>
+      </div>
+    </div>
+
+    {showForm && learner && <form onSubmit={submit} className="card animate-fade-up mt-6 p-5 sm:p-7">
+      <div className="flex items-center gap-3"><Nova size={48} float={false} mood="happy" /><div><h2 className="font-display text-xl font-extrabold">{editingId ? "Edit your entry" : "What did you do?"}</h2><p className="text-xs text-ink/50">Quick is fine. A few words and a time is a great entry.</p></div></div>
+      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+        <label className="text-xs font-bold">Topic<select className="field mt-1" value={draft.topic} onChange={e => setDraft({ ...draft, topic: e.target.value })}>{SKILLS.map(s => <option key={s.id}>{s.topic}</option>)}</select></label>
+        <label className="text-xs font-bold">Date<input type="date" max={localDate()} className="field mt-1" value={draft.date} onChange={e => setDraft({ ...draft, date: e.target.value })} /></label>
+        <label className="text-xs font-bold">Type<select className="field mt-1" value={draft.kind} onChange={e => setDraft({ ...draft, kind: e.target.value as Activity["kind"] })}><option>Learning update</option><option>Time log</option><option>Weekly reflection</option></select></label>
+      </div>
+      <div className="mt-4"><p className="text-xs font-bold">How long did you study?</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">{QUICK_MINUTES.map(m => <button type="button" key={m} onClick={() => setDraft({ ...draft, minutes: String(m) })} className={`chip !px-3.5 !py-2 transition ${Number(draft.minutes) === m ? "bg-brand text-white shadow-glow" : "bg-ink/5 text-ink/60 hover:bg-ink/10"}`}>{fmtMinutes(m)}</button>)}<span className="mx-1 text-xs text-ink/40">or</span><input type="number" min={0} className="field !w-24 !py-2" value={draft.minutes} onChange={e => setDraft({ ...draft, minutes: e.target.value })} aria-label="Minutes" /><span className="text-xs text-ink/50">min</span></div></div>
+      <label className="mt-4 block text-xs font-bold">What did you learn or do?<textarea className="field mt-1 min-h-24" placeholder="e.g. I learned what a for loop is and wrote one that prints my name 5 times." value={draft.did} onChange={e => setDraft({ ...draft, did: e.target.value })} /></label>
+      <label className="mt-4 block text-xs font-bold">What did you practise? <span className="font-medium text-ink/40">(optional)</span><input className="field mt-1" value={draft.practiced} onChange={e => setDraft({ ...draft, practiced: e.target.value })} /></label>
+      <div className="mt-4"><p className="text-xs font-bold">How did it feel?</p><div className="mt-2 flex flex-wrap gap-2">{FEELINGS.map(f => <button type="button" key={f.emoji} onClick={() => setDraft({ ...draft, feeling: f.emoji })} aria-pressed={draft.feeling === f.emoji} className={`flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-bold transition hover:-translate-y-0.5 ${draft.feeling === f.emoji ? "bg-brand/15 ring-2 ring-brand" : "bg-white ring-1 ring-ink/10"}`}><span className="text-lg">{f.emoji}</span>{f.label}</button>)}</div></div>
+      <label className="mt-4 block rounded-2xl bg-amber-50 p-4 text-xs font-bold text-amber-950"><span className="flex items-center gap-1.5"><HelpCircle size={14} />Stuck on something? Ask Xander</span><textarea className="field mt-2 min-h-16 font-normal" placeholder="Asking is a superpower. Write your question here." value={draft.blocker} onChange={e => setDraft({ ...draft, blocker: e.target.value })} /></label>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <label className="text-xs font-bold"><span className="flex items-center gap-1"><Link2 size={12} />Proof link <span className="font-medium text-ink/40">(optional)</span></span><input className="field mt-1" placeholder="https://…" value={draft.proof} onChange={e => setDraft({ ...draft, proof: e.target.value })} /></label>
+        <div className="text-xs font-bold"><span className="flex items-center gap-1"><Camera size={12} />Screenshot <span className="font-medium text-ink/40">(optional)</span></span>
+          <label className="btn-soft mt-1 w-full cursor-pointer !py-3"><ImagePlus size={15} />{attachment ? "Change screenshot" : "Add a screenshot"}<input type="file" accept="image/*" className="sr-only" onChange={attach} /></label></div>
+      </div>
+      {attachment && <div className="animate-pop mt-3 flex items-center gap-3"><img src={attachment} alt="Attached screenshot" className="h-20 rounded-xl object-cover ring-1 ring-ink/10" /><button type="button" onClick={() => setAttachment("")} className="text-xs font-bold text-rose-600">Remove</button></div>}
+      {error && <p role="alert" className="mt-3 rounded-2xl bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700">{error}</p>}
+      <div className="mt-5 flex gap-3"><button className="btn-primary">{editingId ? "Save changes" : "Save entry"}</button><button type="button" onClick={reset} className="btn-soft">Cancel</button></div>
+    </form>}
+
+    <div className="mb-4 mt-9 flex flex-wrap items-center gap-2"><h2 className="mr-auto font-display text-2xl font-extrabold">My story so far</h2>
+      {FILTERS.map(f => <button key={f} onClick={() => setFilter(f)} className={`chip !px-3.5 !py-2 transition ${filter === f ? "bg-ink text-white" : "bg-white/80 text-ink/60 ring-1 ring-ink/5 hover:bg-white"}`}>{f}</button>)}</div>
+
+    {groups.length === 0 ? <div className="card p-10 text-center"><Nova mood="happy" size={96} className="mx-auto" /><p className="mt-3 font-display text-xl font-extrabold">Your journal is ready</p><p className="mt-1 text-sm text-ink/55">Write your first entry and Nova will do a happy dance. 💃</p></div> :
+      <div className="space-y-8">{groups.map(([date, entries]) => <section key={date}>
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-extrabold text-ink/50"><CalendarDays size={15} />{fmtDay(date, { weekday: "long", day: "numeric", month: "long" })}{date === today && <span className="chip bg-brand text-white">Today</span>}</h3>
+        <div className="stagger space-y-4">{entries.map(a => <article key={a.id} className="card p-5">
+          <div className="flex items-start gap-3">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand/10 text-2xl">{a.feeling.slice(0, 2) || "📝"}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2"><span className="chip bg-brand/10 text-brand">{a.kind}</span>{a.minutes > 0 && <span className="chip bg-ink/5 text-ink/60">{fmtMinutes(a.minutes)}</span>}{a.source === "focus" && <span className="chip bg-ink/5 text-ink/60">⏱️ Focus timer</span>}{isSample(a) && <span className="chip bg-amber-100 text-amber-900">Sample week · not counted</span>}</div>
+              <h4 className="mt-2 font-display text-lg font-extrabold">{a.topic}</h4>
+            </div>
+            {learner && !isSample(a) && <div className="flex gap-1"><button onClick={() => edit(a)} className="grid h-9 w-9 place-items-center rounded-xl text-ink/45 transition hover:bg-ink/5 hover:text-ink" aria-label="Edit entry"><Pencil size={15} /></button><button onClick={() => remove(a)} className="grid h-9 w-9 place-items-center rounded-xl text-ink/45 transition hover:bg-rose-50 hover:text-rose-600" aria-label="Delete entry"><Trash2 size={15} /></button></div>}
+          </div>
+          {a.did && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{a.did}</p>}
+          {a.practiced && <p className="mt-2 text-xs text-ink/55"><b>Practised:</b> {a.practiced}</p>}
+          {a.blocker && <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-2.5 text-sm text-amber-950"><b>🙋‍♀️ Question for Xander:</b> {a.blocker}</p>}
+          {(a.proof || a.attachment) && <div className="mt-3 flex flex-wrap items-center gap-3">{a.proof && (a.proof.startsWith("http") ? <a href={a.proof} target="_blank" rel="noopener noreferrer" className="chip bg-brand/10 text-brand underline">🔗 Proof link</a> : <span className="chip bg-ink/5 text-ink/60">{a.proof}</span>)}{a.attachment && <a href={a.attachment} target="_blank" rel="noopener noreferrer"><img src={a.attachment} alt="Screenshot proof" className="h-20 rounded-xl object-cover ring-1 ring-ink/10 transition hover:scale-105" /></a>}</div>}
+          <CommentThread comments={a.comments ?? []} legacyMentorNote={a.mentorNote} viewer={learner ? "hanifa" : "mentor"} onAdd={c => addComment(a.id, c)} />
+        </article>)}</div>
+      </section>)}</div>}
+  </div>;
 }

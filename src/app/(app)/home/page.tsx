@@ -1,141 +1,287 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, CalendarDays, Check, CheckCircle2, ChevronRight, Clock3, Compass, Flame, GraduationCap, Heart, MessageCircle, Plus, Sparkles, Target, Trophy } from "lucide-react";
-import seed from "@/data/seed.json";
+import { ArrowRight, BookOpen, Brain, Check, Copy, Flame, MessageCircle, NotebookPen, Pause, Play, Send, Share2, Target, Timer, Trophy } from "lucide-react";
+import roadmap from "@/data/roadmap.json";
+import { SKILLS, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, IMPORTED_ACTIVITY, KEYS, addDays, fmtDay, fmtMinutes, localDate, weekStart } from "@/lib/data";
+import type { Activity, InboxMessage, Quest, RoadmapProgress } from "@/lib/data";
+import { DAILY_FOCUS_GOAL_MINUTES, XP } from "@/lib/game";
+import { novaSays } from "@/lib/nova";
+import { finishFocus, useFocusTimer } from "@/lib/useFocus";
+import { useGame } from "@/lib/useGame";
+import { useNow } from "@/lib/useNow";
+import { getStageState } from "@/lib/roadmap-progress";
+import { useHydrated, useLocalStore } from "@/lib/store";
 import { useRole } from "@/components/AppShell";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { useCelebrate } from "@/components/Celebrate";
+import { Nova } from "@/components/Nova";
+import { ProgressBar } from "@/components/ProgressBar";
+import { Reveal } from "@/components/Reveal";
+import { Ring } from "@/components/Ring";
 
-type Quest = { id: string; title: string; status: string; minutes: number; dueDate: string; dueTime?: string; category: string; requiresApproval?: boolean; };
-type Activity = { id: string; date: string; kind?: string; minutes: number; topic: string; did: string; blocker?: string; mentorNote?: string; proof?: string; attachment?: string; };
-type Skill = (typeof seed.skills)[number] & { activityPercent: number; completed?: string[] };
-const QUEST_KEY = "future-world-quests";
-const ACTIVITY_KEY = "future-world-activity-v2";
-const SKILL_KEY = "future-world-skills";
-const GOAL_KEY = "future-world-weekly-goal-hours";
-const localDate = (date = new Date()) => { const local = new Date(date); local.setMinutes(local.getMinutes() - local.getTimezoneOffset()); return local.toISOString().slice(0, 10); };
-const fmtMinutes = (value: number) => value < 60 ? `${value}m` : `${Math.floor(value / 60)}h ${value % 60 ? `${value % 60}m` : ""}`.trim();
-const beginningOfWeek = (date: Date) => { const result = new Date(date); result.setHours(0, 0, 0, 0); result.setDate(result.getDate() - ((result.getDay() + 6) % 7)); return result; };
-const DAY_MS = 86_400_000;
-
-function MetricCard({ icon, label, value, note, tint }: { icon: React.ReactNode; label: string; value: string; note: string; tint: string }) {
-  return <article className={`relative overflow-hidden rounded-[1.7rem] border border-white/80 p-5 shadow-sm ${tint}`}><div className="flex items-center justify-between"><p className="text-sm font-medium text-slate-600">{label}</p><span className="grid h-10 w-10 place-items-center rounded-2xl bg-white/75 text-slate-700 shadow-sm">{icon}</span></div><p className="mt-5 text-3xl font-semibold tracking-tight text-slate-900">{value}</p><p className="mt-1 text-xs text-slate-600">{note}</p></article>;
-}
+const DEFAULT_GOAL_HOURS = 5;
 
 export default function HomePage() {
   const role = useRole();
-  const [quests, setQuests] = useState<Quest[]>([]);
-  const [activity, setActivity] = useState<Activity[]>([]);
-  const [skills, setSkills] = useState<Skill[]>(seed.skills as Skill[]);
-  const [weeklyGoal, setWeeklyGoal] = useState<number | null>(null);
-  const [goalDraft, setGoalDraft] = useState("");
+  const hydrated = useHydrated();
+  const game = useGame();
+  const { celebrate } = useCelebrate();
+  const [activity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
+  const [quests] = useLocalStore<Quest[]>(KEYS.quests, EMPTY_QUESTS);
+  const [roadmapProgress] = useLocalStore<RoadmapProgress>(KEYS.roadmap, EMPTY_ROADMAP);
+  const [goalHours, setGoalHours] = useLocalStore<number>(KEYS.goal, DEFAULT_GOAL_HOURS);
   const [editingGoal, setEditingGoal] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(localDate());
-  const [celebration, setCelebration] = useState("");
+  const [guideSeenRaw, setGuideSeen] = useLocalStore<string>(KEYS.guideSeen, "");
+  const guideSeen = !hydrated || guideSeenRaw === "yes";
+  const today = hydrated ? localDate() : "";
+  const hour = hydrated ? new Date().getHours() : 12;
+  const line = novaSays(game, hour);
 
-  useEffect(() => {
-    const load = () => {
-      const q = localStorage.getItem(QUEST_KEY); if (q) setQuests(JSON.parse(q));
-      const a = localStorage.getItem(ACTIVITY_KEY); if (a) setActivity(JSON.parse(a));
-      const s = localStorage.getItem(SKILL_KEY); if (s) setSkills(JSON.parse(s));
-      const g = localStorage.getItem(GOAL_KEY); if (g) { setWeeklyGoal(Number(g)); setGoalDraft(g); }
-    };
-    load();
-    window.addEventListener("focus", load);
-    window.addEventListener("storage", load);
-    return () => { window.removeEventListener("focus", load); window.removeEventListener("storage", load); };
-  }, []);
+  const stageIds = roadmap.map(m => `module-${m.number}`);
+  const readyIndex = stageIds.findIndex((_, i) => getStageState(i, stageIds, roadmapProgress.passed) === "ready");
+  const current = roadmap[readyIndex >= 0 ? readyIndex : roadmap.length - 1];
+  const currentId = `module-${current.number}`;
+  const required = current.resources.filter(r => !r.optional).length + current.practice.length;
+  const doneSteps = (roadmapProgress.resources[currentId] || []).filter(id => current.resources.some(r => r.id === id && !r.optional)).length + (roadmapProgress.practice[currentId] || []).length;
 
-  const today = localDate();
-  const weekStart = beginningOfWeek(new Date());
-  const thisWeekActivity = activity.filter(item => item.date >= localDate(weekStart) && item.date <= today);
-  const weekMinutes = thisWeekActivity.reduce((sum, item) => sum + (item.minutes || 0), 0);
-  const todayMinutes = activity.filter(item => item.date === today).reduce((sum, item) => sum + (item.minutes || 0), 0);
-  const completedQuests = quests.filter(q => q.status === "Completed").length;
-  const openQuests = quests.filter(q => ["Today", "Upcoming", "Needs a tweak", "In Progress", "in_progress"].includes(q.status));
-  const waitingQuests = quests.filter(q => q.status === "Waiting for Mentor");
-  const skillWithProgress = skills.find(s => s.activityPercent > 0 && s.activityPercent < 100) || skills.find(s => s.activityPercent < 100) || skills[0];
-  const verifiedCount = skills.filter(s => s.verifiedStage === "proven").length;
-  const allFocusMinutes = activity.reduce((sum, item) => sum + (item.minutes || 0), 0);
-  const adventurePoints = Math.floor(allFocusMinutes / 10) + completedQuests * 25 + verifiedCount * 100;
-  const level = Math.floor(adventurePoints / 250) + 1;
-  const levelProgress = adventurePoints % 250;
-  const rank = level >= 8 ? "LEGEND" : level >= 5 ? "INNOVATOR" : level >= 3 ? "MAKER" : "EXPLORER";
-  const questionCount = activity.filter(item => item.blocker?.trim()).length;
-  const proofCount = activity.filter(item => item.proof || item.attachment).length;
-  const recentActivity = [...activity].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
-  const selectedActivity = activity.filter(item => item.date === selectedDate);
-  const visibleQuests = [...openQuests].sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999")).slice(0, 4);
-  const daySeries = useMemo(() => Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(weekStart); date.setDate(date.getDate() + index); const key = localDate(date);
-    const dayActivity = activity.filter(item => item.date === key);
-    const dayQuests = quests.filter(q => q.dueDate === key || q.status === "Completed" && q.dueDate === key);
-    return { key, label: date.toLocaleDateString(undefined, { weekday: "short" }), minutes: dayActivity.reduce((sum, item) => sum + (item.minutes || 0), 0), quests: dayQuests.length, entries: dayActivity.length };
-  }), [activity, quests, weekStart]);
-  const streak = useMemo(() => {
-    const activeDays = new Set(activity.filter(item => item.minutes > 0 || item.did?.trim()).map(item => item.date));
-    let date = new Date(); let count = 0;
-    if (!activeDays.has(localDate(date))) date.setDate(date.getDate() - 1);
-    while (activeDays.has(localDate(date))) { count += 1; date.setDate(date.getDate() - 1); }
-    return count;
-  }, [activity]);
-  const maxMinutes = Math.max(60, ...daySeries.map(day => day.minutes));
-  const activityTotal = thisWeekActivity.length;
-  const weeklyProgress = weeklyGoal ? Math.min(100, Math.round(weekMinutes / (weeklyGoal * 60) * 100)) : 0;
+  const missions = quests.filter(q => q.status !== "Completed");
+  const waiting = quests.filter(q => q.status === "Waiting for Mentor").length;
+  const weekGoalMinutes = goalHours * 60;
+  const weekPct = Math.min(100, Math.round((game.weekMinutes / weekGoalMinutes) * 100));
+  const recent = [...activity].filter(a => a.id.startsWith("import-") === false).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
 
-  const saveGoal = () => {
-    const value = Number(goalDraft);
-    if (!Number.isFinite(value) || value <= 0) return;
-    localStorage.setItem(GOAL_KEY, String(value)); setWeeklyGoal(value); setEditingGoal(false);
+  const goals = [
+    { done: game.today.brain, emoji: "⚡", title: "Do your Daily 3", sub: `3 brain questions · +${XP.dailyThree} XP`, href: "/learn", cta: "Play" },
+    { done: game.today.focus, emoji: "⏱️", title: `Focus for ${DAILY_FOCUS_GOAL_MINUTES} minutes`, sub: `${Math.min(game.todayMinutes, DAILY_FOCUS_GOAL_MINUTES)}/${DAILY_FOCUS_GOAL_MINUTES} min today`, href: "#focus", cta: "Start" },
+    { done: game.today.journal, emoji: "📝", title: "Write one line in your journal", sub: `What did you learn? · +${XP.journalEntry} XP`, href: "/time?new=1", cta: "Write" },
+  ];
+
+  return <div className="space-y-6">
+    {role === "mentor" && <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-ink px-5 py-3 text-sm font-semibold text-white"><span>👀 You’re viewing Hanifa’s space as Mentor.</span><Link href="/mentor" className="chip bg-white/15 text-white">Open Mentor Hub <ArrowRight size={13} /></Link></div>}
+
+    {!guideSeen && role === "learner" && <div className="animate-fade-up flex flex-wrap items-center gap-3 rounded-3xl bg-white/80 px-5 py-3.5 ring-1 ring-brand/30">
+      <span className="text-2xl">👋</span><p className="min-w-0 flex-1 text-sm font-semibold">New here? Read <b>How to use me</b>. It explains every tab in simple steps (5 minutes).</p>
+      <Link href="/guide" onClick={() => setGuideSeen("yes")} className="btn-primary !py-2 text-xs"><BookOpen size={14} />Show me</Link><button onClick={() => setGuideSeen("yes")} className="text-xs font-bold text-ink/45 hover:text-ink">Not now</button>
+    </div>}
+
+    {/* ---------- hero ---------- */}
+    <section className="bg-hero relative overflow-hidden rounded-[2.2rem] p-6 text-white shadow-glow sm:p-9">
+      <div className="pointer-events-none absolute -right-10 -top-16 h-72 w-72 rounded-full bg-white/10" /><div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-white/10" />
+      <div className="relative grid items-center gap-6 md:grid-cols-[auto_1fr]">
+        <div className="mx-auto md:mx-0"><Nova mood={line.mood} size={112} /></div>
+        <div>
+          <div className="animate-pop relative rounded-3xl rounded-bl-md bg-white px-5 py-4 text-ink shadow-pop" key={line.text}>
+            <p className="text-sm font-semibold leading-6 sm:text-base">{line.text}</p>
+          </div>
+          <div className="mt-5 flex flex-wrap items-end gap-x-6 gap-y-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-white/70">{game.rank.emoji} {game.rank.title}</p>
+              <p className="font-display text-5xl font-extrabold leading-none">Level <AnimatedNumber value={game.level} /></p>
+            </div>
+            <div className="min-w-[12rem] flex-1">
+              <div className="flex justify-between text-xs font-bold text-white/80"><span><AnimatedNumber value={game.xp} /> XP</span><span>{game.xpToNext} to next level</span></div>
+              <ProgressBar value={game.levelProgress} height="h-3.5" className="mt-1.5 !bg-white/25" />
+            </div>
+            <div className="flex items-center gap-2 rounded-2xl bg-white/15 px-4 py-2.5 backdrop-blur" title="Day streak">
+              <Flame size={26} className={game.streak.current ? "animate-flame text-amber-200" : "text-white/50"} />
+              <div className="leading-tight"><p className="font-display text-2xl font-extrabold"><AnimatedNumber value={game.streak.current} /></p><p className="text-[10px] font-bold uppercase tracking-wider text-white/70">day streak</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ---------- today's goals + focus ---------- */}
+    <div className="grid gap-6 lg:grid-cols-5">
+      <Reveal className="card p-6 lg:col-span-3">
+        <div className="flex items-start justify-between gap-3">
+          <div><p className="eyebrow">Today’s plan</p><h2 className="mt-1 font-display text-2xl font-extrabold">{game.today.perfect ? "Perfect day! 🌟" : "3 small goals, 1 big day"}</h2><p className="mt-1 text-sm text-ink/55">Finish all three for a <b>+{XP.perfectDay} XP</b> Perfect Day bonus.</p></div>
+          <Ring value={(game.today.done / 3) * 100} size={64} stroke={8}><span className="font-display text-lg font-extrabold">{game.today.done}/3</span></Ring>
+        </div>
+        <ul className="mt-5 space-y-2.5">
+          {goals.map(g => <li key={g.title}>
+            <Link href={g.href} className={`group flex items-center gap-3 rounded-2xl p-3.5 transition ${g.done ? "bg-emerald-50" : "bg-white/80 ring-1 ring-ink/5 hover:-translate-y-0.5 hover:ring-brand/40"}`}>
+              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-xl transition ${g.done ? "animate-check-pop bg-emerald-500 text-white" : "bg-brand/10 group-hover:scale-110"}`}>{g.done ? <Check size={22} /> : g.emoji}</span>
+              <span className="min-w-0 flex-1"><span className={`block text-sm font-extrabold ${g.done ? "text-emerald-900 line-through decoration-emerald-400" : ""}`}>{g.title}</span><span className="block text-xs text-ink/50">{g.sub}</span></span>
+              {!g.done && <span className="chip bg-brand text-white">{g.cta} <ArrowRight size={12} /></span>}
+            </Link>
+          </li>)}
+        </ul>
+      </Reveal>
+      <Reveal delay={80} className="lg:col-span-2"><FocusCard /></Reveal>
+    </div>
+
+    {/* ---------- messages from Xander ---------- */}
+    <Reveal><XanderInbox /></Reveal>
+
+    {/* ---------- stats ---------- */}
+    <Reveal className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="card card-hover p-5"><p className="text-sm font-bold text-ink/55">Today</p><p className="mt-2 font-display text-3xl font-extrabold">{hydrated ? fmtMinutes(game.todayMinutes) : "0m"}</p><p className="mt-1 text-xs text-ink/45">of focused learning</p></div>
+      <div className="card card-hover relative p-5">
+        <div className="flex items-center justify-between"><p className="text-sm font-bold text-ink/55">This week</p><button onClick={() => setEditingGoal(v => !v)} className="text-[11px] font-bold text-brand">{editingGoal ? "Done" : "Edit goal"}</button></div>
+        <p className="mt-2 font-display text-3xl font-extrabold">{hydrated ? fmtMinutes(game.weekMinutes) : "0m"}</p>
+        {editingGoal ? <div className="mt-2 flex items-center gap-2 text-xs font-bold">Goal <input type="number" min={1} max={60} value={goalHours} onChange={e => setGoalHours(Math.max(1, Number(e.target.value) || DEFAULT_GOAL_HOURS))} className="field !w-16 !py-1.5" /> hours</div> : <><ProgressBar value={weekPct} className="mt-2" /><p className="mt-1 text-xs text-ink/45">{weekPct}% of your {goalHours}h goal</p></>}
+      </div>
+      <div className="card card-hover p-5"><p className="text-sm font-bold text-ink/55">Levels cleared</p><p className="mt-2 font-display text-3xl font-extrabold"><AnimatedNumber value={game.levelsCleared} /><span className="text-lg text-ink/35"> / {roadmap.length}</span></p><ProgressBar value={(game.levelsCleared / roadmap.length) * 100} className="mt-2" /></div>
+      <div className="card card-hover p-5"><p className="text-sm font-bold text-ink/55">Cards mastered</p><p className="mt-2 font-display text-3xl font-extrabold"><AnimatedNumber value={game.masteredCards} /></p><p className="mt-1 text-xs text-ink/45">stuck in long-term memory 🧠</p></div>
+    </Reveal>
+
+    {/* ---------- continue learning + missions ---------- */}
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Reveal className="card overflow-hidden">
+        <div className="bg-brand-gradient p-5 text-white">
+          <p className="text-[11px] font-extrabold uppercase tracking-widest text-white/75">Continue your adventure</p>
+          <h2 className="mt-1 font-display text-2xl font-extrabold">Level {current.number} · {current.title}</h2>
+          <p className="mt-1 text-xs text-white/80">{current.duration} · {doneSteps}/{required} steps done</p>
+          <ProgressBar value={(doneSteps / required) * 100} className="mt-3 !bg-white/25" />
+        </div>
+        <div className="space-y-3 p-5">
+          <p className="line-clamp-3 text-sm leading-6 text-ink/65">{current.summary}</p>
+          <div className="flex flex-wrap gap-2"><Link href="/adventure" className="btn-primary !py-2.5 text-xs">Open this level <ArrowRight size={14} /></Link><Link href={`/learn?m=${current.number}`} className="btn-soft !py-2.5 text-xs"><Brain size={14} />Flashcards for it</Link></div>
+        </div>
+      </Reveal>
+      <Reveal delay={80} className="card p-5">
+        <div className="flex items-center justify-between"><div><p className="eyebrow">Missions</p><h2 className="mt-1 font-display text-xl font-extrabold">From Xander &amp; you</h2></div><Target className="text-brand" /></div>
+        {missions.length ? <ul className="mt-4 space-y-2.5">{missions.slice(0, 3).map(q => <li key={q.id} className="flex items-center gap-3 rounded-2xl bg-white/80 p-3 ring-1 ring-ink/5"><span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10">{q.createdBy === "mentor" ? "📌" : "✨"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{q.title}</span><span className="block text-xs text-ink/50">{q.status}{q.dueDate ? ` · due ${fmtDay(q.dueDate)}` : ""}</span></span><span className="chip bg-brand/10 text-brand">+{q.xp ?? XP.defaultQuest}</span></li>)}</ul>
+          : <div className="mt-4 rounded-2xl border border-dashed border-ink/15 p-6 text-center"><p className="text-3xl">🌤️</p><p className="mt-2 text-sm font-bold">No open missions</p><p className="text-xs text-ink/50">Add your own, or wait for one from Xander.</p></div>}
+        <Link href="/quests" className="btn-soft mt-4 w-full !py-2.5 text-xs">{waiting ? `${waiting} waiting for Xander · ` : ""}Open missions <ArrowRight size={14} /></Link>
+      </Reveal>
+    </div>
+
+    {/* ---------- consistency + badges ---------- */}
+    <div className="grid gap-6 lg:grid-cols-5">
+      <Reveal className="card p-6 lg:col-span-2">
+        <div className="flex items-center justify-between"><div><p className="eyebrow">Consistency</p><h2 className="mt-1 font-display text-xl font-extrabold">Your last 4 weeks</h2></div><span className="chip bg-brand/10 text-brand">Best streak {game.streak.best}</span></div>
+        <div className="mt-5 grid grid-cols-7 gap-1.5">
+          {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <span key={i} className="text-center text-[10px] font-extrabold text-ink/35">{d}</span>)}
+          {hydrated && Array.from({ length: 28 }, (_, i) => {
+            const date = addDays(weekStart(today), i - 21);
+            const minutes = game.perDay[date] || 0, active = game.activeDays.has(date), future = date > today, isToday = date === today;
+            const tone = future ? "bg-transparent ring-1 ring-ink/5" : minutes >= 60 ? "bg-brand" : minutes >= 25 ? "bg-brand/60" : active ? "bg-brand/30" : "bg-ink/5";
+            return <div key={date} title={`${fmtDay(date)} · ${fmtMinutes(minutes)}`} className={`aspect-square rounded-xl transition hover:scale-110 ${tone} ${isToday ? "ring-2 ring-ink ring-offset-2" : ""}`} />;
+          })}
+        </div>
+        <p className="mt-4 text-xs text-ink/50">Every coloured square is a day you showed up. Darker means more time.</p>
+      </Reveal>
+      <Reveal delay={80} className="card p-6 lg:col-span-3">
+        <div className="flex items-center justify-between"><div><p className="eyebrow">Trophy shelf</p><h2 className="mt-1 font-display text-xl font-extrabold">{game.earnedBadges.length} of {game.badges.length} badges</h2></div><Trophy className="text-brand" /></div>
+        <div className="mt-5 grid grid-cols-4 gap-3 sm:grid-cols-6">
+          {game.badges.map(b => <div key={b.id} title={b.isEarned ? `${b.name}: ${b.hint}` : `Locked: ${b.hint}`} className={`group flex aspect-square flex-col items-center justify-center rounded-2xl text-center transition ${b.isEarned ? "bg-brand/10 ring-1 ring-brand/30 hover:-translate-y-1 hover:rotate-3" : "bg-ink/5 opacity-50 grayscale"}`}>
+            <span className={`text-2xl sm:text-3xl ${b.isEarned ? "group-hover:animate-wiggle" : ""}`}>{b.isEarned ? b.emoji : "🔒"}</span>
+            <span className="mt-1 hidden px-1 text-[9px] font-extrabold leading-tight sm:block">{b.name}</span>
+          </div>)}
+        </div>
+        {game.badges.some(b => !b.isEarned) && <p className="mt-4 rounded-2xl bg-ink/[.04] px-4 py-3 text-xs text-ink/60">🎯 <b>Next up:</b> {game.badges.find(b => !b.isEarned)?.name} — {game.badges.find(b => !b.isEarned)?.hint}</p>}
+      </Reveal>
+    </div>
+
+    {/* ---------- recent wins + share ---------- */}
+    <div className="grid gap-6 lg:grid-cols-5">
+      <Reveal className="card p-6 lg:col-span-3">
+        <div className="flex items-center justify-between"><div><p className="eyebrow">Journal</p><h2 className="mt-1 font-display text-xl font-extrabold">Recent little wins</h2></div><Link href="/time" className="chip bg-brand/10 text-brand">Open journal <ArrowRight size={12} /></Link></div>
+        {recent.length ? <ul className="mt-4 divide-y divide-ink/5">{recent.map(a => <li key={a.id} className="flex gap-3 py-3.5"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-brand/10 text-lg">{a.attachment ? "📸" : a.feeling.slice(0, 2) || "📝"}</span><div className="min-w-0"><p className="truncate text-sm font-extrabold">{a.topic}</p><p className="line-clamp-2 text-xs leading-5 text-ink/55">{a.did || "Time logged"}</p><p className="mt-1 text-[11px] font-bold text-ink/35">{fmtDay(a.date)}{a.minutes ? ` · ${fmtMinutes(a.minutes)}` : ""}{a.comments?.some(c => c.by === "mentor") || a.mentorNote ? " · 💬 Xander replied" : ""}</p></div></li>)}</ul>
+          : <div className="mt-4 rounded-2xl border border-dashed border-ink/15 p-7 text-center"><NotebookPen className="mx-auto text-brand" /><p className="mt-2 text-sm font-bold">Your story starts with one line</p><Link href="/time?new=1" className="btn-primary mt-3 !py-2.5 text-xs">Write your first entry</Link></div>}
+      </Reveal>
+      <Reveal delay={80} className="lg:col-span-2"><ShareCard goalHours={goalHours} onCopied={() => celebrate({ emoji: "📋", title: "Update copied!", text: "Paste it to Xander on WhatsApp.", confetti: false, sound: "pop" })} /></Reveal>
+    </div>
+  </div>;
+}
+
+// ------------------------------------------------------------------ focus timer
+function FocusCard() {
+  const { timer, start } = useFocusTimer();
+  const { celebrate } = useCelebrate();
+  const running = Boolean(timer);
+  const now = useNow(1000, running);
+  const [minutes, setMinutes] = useState(25);
+  const [topic, setTopic] = useState("");
+  const topics = useMemo(() => SKILLS.map(s => s.topic), []);
+  const chosen = topic || topics[0];
+  const total = timer ? timer.minutes * 60 : minutes * 60;
+  const left = timer ? Math.max(0, Math.round((timer.endsAt - now) / 1000)) : total;
+  const mm = String(Math.floor(left / 60)).padStart(2, "0"), ss = String(left % 60).padStart(2, "0");
+
+  const stopEarly = () => {
+    const logged = finishFocus();
+    celebrate(logged ? { emoji: "👏", title: `${logged} min saved`, text: "Every minute counts.", xp: logged, sound: "pop" } : { emoji: "🌱", title: "Session ended", text: "Under a minute, so nothing was logged.", confetti: false, sound: "pop" });
   };
-  const completeQuest = (quest: Quest) => {
-    const nextStatus = quest.requiresApproval ? "Waiting for Mentor" : "Completed";
-    const next = quests.map(item => item.id === quest.id ? { ...item, status: nextStatus } : item);
-    setQuests(next); localStorage.setItem(QUEST_KEY, JSON.stringify(next));
-    setCelebration(quest.requiresApproval ? "Sent to Mentor for a high five and review 💌" : "Quest cleared! Tiny win, big momentum ✨");
-    window.setTimeout(() => setCelebration(""), 3200);
-  };
 
-  return <div className="space-y-7 pb-10">
-    <section className="relative isolate overflow-hidden rounded-[2rem] bg-gradient-to-br from-violet-700 via-fuchsia-600 to-rose-500 px-6 py-7 text-white shadow-lg shadow-fuchsia-900/10 sm:px-9 sm:py-9">
-      <div className="absolute -right-10 -top-20 -z-10 h-64 w-64 rounded-full bg-amber-300/30 blur-3xl"/><div className="absolute -bottom-24 left-1/3 -z-10 h-56 w-56 rounded-full bg-cyan-300/20 blur-3xl"/>
-      <div className="flex flex-wrap items-start justify-between gap-5"><div className="max-w-2xl"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider">{role === "mentor" ? "Mentor dashboard" : "Your adventure"}</span><span className="rounded-full bg-amber-300/95 px-3 py-1 text-xs font-semibold text-amber-950">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</span></div><h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">{role === "mentor" ? "Look at her go, Xander!" : "Your future is taking shape, Hanifa!"}<span className="ml-2 inline-block animate-bounce">{role === "mentor" ? "🌱" : "🌈"}</span></h1><p className="mt-3 max-w-xl text-sm leading-6 text-white/85 sm:text-base">{role === "mentor" ? "A clear view of this week’s learning, questions, and little wins. Your next helpful nudge is one click away." : "A little practice, a curious question, a project of your own—every step adds a color to the picture."}</p><div className="mt-6 flex flex-wrap gap-3"><Link href="/quests" className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-violet-800 shadow-sm transition hover:-translate-y-0.5"><Plus size={17}/>Pick a quest</Link><Link href="/time" className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"><Clock3 size={17}/>Log what I did</Link></div></div><div className="hidden min-w-36 flex-col items-center rounded-[1.8rem] border border-white/30 bg-white/15 p-5 text-center backdrop-blur sm:flex"><span className="text-5xl">{streak > 0 ? "🔥" : "🌟"}</span><span className="mt-2 text-3xl font-bold">{streak}</span><span className="text-xs font-medium text-white/80">day{streak === 1 ? "" : "s"} in a row</span><div className="mt-4 w-full border-t border-white/20 pt-3"><div className="flex items-center justify-between text-xs"><span>🌟 Level {level}</span><b>{adventurePoints} XP</b></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/20"><div className="h-full rounded-full bg-amber-300 transition-all" style={{ width: `${levelProgress / 2.5}%` }}/></div><span className="mt-1 block text-[10px] text-white/75">{250 - levelProgress} XP to next level</span></div></div></div>
-      <div className="mt-8 grid grid-cols-3 gap-2 sm:hidden"><div className="rounded-2xl bg-white/15 p-3 text-center"><Flame className="mx-auto" size={18}/><b className="mt-1 block text-lg">{streak}</b><small className="text-white/80">day streak</small></div><div className="rounded-2xl bg-white/15 p-3 text-center"><Clock3 className="mx-auto" size={18}/><b className="mt-1 block text-lg">{fmtMinutes(weekMinutes)}</b><small className="text-white/80">this week</small></div><div className="rounded-2xl bg-white/15 p-3 text-center"><Trophy className="mx-auto" size={18}/><b className="mt-1 block text-lg">{completedQuests}</b><small className="text-white/80">wins</small></div></div>
-    </section>
+  return <div id="focus" className="card relative h-full overflow-hidden p-6">
+    <div className="flex items-start justify-between"><div><p className="eyebrow">Focus mode</p><h2 className="mt-1 font-display text-2xl font-extrabold">{running ? "In the zone 🎧" : "Start a focus session"}</h2></div><Timer className="text-brand" /></div>
+    <div className="mt-4 flex flex-col items-center">
+      <div className="relative">
+        {running && <span className="absolute inset-0 rounded-full bg-brand/20 animate-pulse-ring" />}
+        <Ring value={running ? ((total - left) / total) * 100 : 0} size={170} stroke={12}>
+          <div><p className="font-display text-4xl font-extrabold tabular-nums">{mm}:{ss}</p><p className="text-[11px] font-bold text-ink/45">{running ? timer?.topic : `${minutes} min`}</p></div>
+        </Ring>
+      </div>
+      {!running ? <>
+        <div className="mt-4 flex gap-2">{[15, 25, 45, 60].map(m => <button key={m} onClick={() => setMinutes(m)} className={`chip !px-3.5 !py-1.5 transition ${minutes === m ? "bg-brand text-white shadow-glow" : "bg-ink/5 text-ink/60 hover:bg-ink/10"}`}>{m}m</button>)}</div>
+        <select value={chosen} onChange={e => setTopic(e.target.value)} className="field mt-3 !py-2.5" aria-label="Topic">{topics.map(t => <option key={t}>{t}</option>)}</select>
+        <button onClick={() => start(minutes, chosen)} className="btn-primary mt-4 w-full"><Play size={16} />Start {minutes} min</button>
+      </> : <button onClick={stopEarly} className="btn-soft mt-5 w-full"><Pause size={16} />Finish early &amp; save</button>}
+    </div>
+    <p className="mt-3 text-center text-[11px] text-ink/40">Time is saved to your journal automatically, even if you switch pages.</p>
+  </div>;
+}
 
-    {role !== "mentor" && <section className="relative overflow-hidden rounded-[1.8rem] border border-violet-100 bg-gradient-to-r from-indigo-950 via-violet-900 to-fuchsia-900 p-5 text-white shadow-md sm:p-7"><div className="absolute -right-4 -top-12 text-[9rem] opacity-10">🦋</div><div className="relative grid gap-5 md:grid-cols-[1fr_auto] md:items-center"><div><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-amber-300 px-3 py-1 text-xs font-bold text-amber-950">⭐ LEVEL {level} · {rank}</span><span className="text-xs text-violet-200">Your adventure, your pace</span></div><h2 className="mt-3 text-2xl font-bold sm:text-3xl">Main character energy ✨</h2><p className="mt-1 max-w-xl text-sm text-violet-100">Every 10 focus minutes earns 1 XP. Clearing a quest earns 25 XP, and Mentor-verified skills earn 100 XP.</p><div className="mt-4 h-3 max-w-xl overflow-hidden rounded-full bg-white/15"><div className="h-full rounded-full bg-gradient-to-r from-amber-300 via-pink-300 to-cyan-300 transition-all" style={{ width: `${levelProgress / 2.5}%` }}/></div><p className="mt-2 text-xs text-violet-200">{levelProgress} / 250 XP to level {level + 1} <span className="mx-1">·</span> {adventurePoints} adventure points earned</p></div><div className="flex flex-wrap gap-2 md:max-w-64 md:justify-end">{[{ icon: "📔", title: "First page", earned: activity.length > 0 }, { icon: "🪄", title: "Quest cleared", earned: completedQuests > 0 }, { icon: "🔥", title: "3-day spark", earned: streak >= 3 }, { icon: "🏅", title: "Skill verified", earned: verifiedCount > 0 }].map(badge => <div key={badge.title} title={badge.earned ? `${badge.title} unlocked` : "Keep exploring to unlock"} className={`grid min-w-[5.5rem] place-items-center rounded-2xl border p-3 text-center ${badge.earned ? "border-amber-200/50 bg-white/15" : "border-white/10 bg-black/10 opacity-45 grayscale"}`}><span className="text-2xl">{badge.icon}</span><span className="mt-1 text-[10px] font-semibold">{badge.title}</span></div>)}</div></div></section>}
+// ------------------------------------------------------------------ messages from Xander
+function XanderInbox() {
+  const [inbox, setInbox] = useLocalStore<InboxMessage[]>(KEYS.inbox, EMPTY_INBOX);
+  const [activity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
+  const [seen, setSeen] = useLocalStore<string>(KEYS.inboxSeen, "");
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  type FeedItem = { id: string; at: string; text: string; kind: InboxMessage["kind"] | "comment"; topic: string; reply?: string };
+  const comments: FeedItem[] = activity.flatMap(a => (a.comments ?? []).filter(c => c.by === "mentor").map(c => ({ id: c.id, at: c.at, text: c.text, kind: "comment" as const, topic: a.topic })));
+  const feed: FeedItem[] = [...inbox.map(m => ({ ...m, topic: "" })), ...comments].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4);
+  const unread = feed.filter(m => m.at > seen).length;
+  const reply = (e: FormEvent, id: string) => { e.preventDefault(); const t = drafts[id]?.trim(); if (!t) return; setInbox(list => list.map(m => m.id === id ? { ...m, reply: t, repliedAt: new Date().toISOString() } : m)); setDrafts(d => ({ ...d, [id]: "" })); };
+  const icon = (kind: string) => kind === "cheer" ? "💖" : kind === "challenge" ? "🎯" : "💬";
 
-    {celebration && <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-900">{celebration}</div>}
+  return <section className={`card p-6 ${unread ? "ring-2 ring-brand/50" : ""}`}>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex items-center gap-3"><span className="relative grid h-11 w-11 place-items-center rounded-2xl bg-ink text-xl text-white"><MessageCircle size={20} />{unread > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[10px] font-extrabold animate-pop">{unread}</span>}</span><div><p className="eyebrow">From Xander</p><h2 className="font-display text-xl font-extrabold">{feed.length ? (unread ? "You have new messages" : "Messages & comments") : "Nothing yet"}</h2></div></div>
+      {unread > 0 && <button onClick={() => setSeen(new Date().toISOString())} className="chip bg-ink/5 text-ink/60 hover:bg-ink/10"><Check size={12} />Mark all read</button>}
+    </div>
+    {feed.length === 0 ? <p className="mt-3 text-sm text-ink/55">When Xander sends a cheer, a challenge or comments on your journal, it shows up here. 💌</p> :
+      <ul className="mt-4 space-y-3">{feed.map(m => <li key={m.id} className={`animate-fade-up rounded-2xl p-4 ${m.at > seen ? "bg-brand/10" : "bg-white/80 ring-1 ring-ink/5"}`}>
+        <div className="flex gap-3"><span className="text-2xl">{icon(m.kind)}</span><div className="min-w-0 flex-1"><p className="text-sm font-semibold leading-6">{m.text}</p><p className="mt-0.5 text-[11px] font-bold text-ink/40">{m.kind === "comment" ? `On your journal · ${m.topic}` : m.kind === "challenge" ? "Challenge" : "Message"}{m.at ? ` · ${fmtDay(m.at.slice(0, 10), { day: "numeric", month: "short" })}` : ""}</p>
+          {m.reply && <p className="mt-2 rounded-2xl bg-white px-3 py-2 text-xs"><b>You:</b> {m.reply}</p>}
+          {!m.reply && m.kind !== "comment" && <form onSubmit={e => reply(e, m.id)} className="mt-2 flex gap-2"><input value={drafts[m.id] ?? ""} onChange={e => setDrafts(d => ({ ...d, [m.id]: e.target.value }))} placeholder="Reply…" className="field !py-2 text-xs" aria-label="Reply" /><button className="btn-primary !px-3.5 !py-2" aria-label="Send reply"><Send size={14} /></button></form>}
+          {m.kind === "comment" && <Link href="/time" className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-brand">Reply in journal <ArrowRight size={12} /></Link>}
+        </div></div>
+      </li>)}</ul>}
+  </section>;
+}
 
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <MetricCard icon={<Clock3 size={19}/>} label="Focus time this week" value={fmtMinutes(weekMinutes)} note={`${fmtMinutes(todayMinutes)} added today`} tint="bg-gradient-to-br from-cyan-100 to-sky-50"/>
-      <MetricCard icon={<CheckCircle2 size={19}/>} label="Quests completed" value={String(completedQuests)} note={`${openQuests.length} still on your board`} tint="bg-gradient-to-br from-emerald-100 to-teal-50"/>
-      <MetricCard icon={<BookOpen size={19}/>} label="Skills in motion" value={String(skills.filter(s => s.activityPercent > 0).length)} note={`${verifiedCount} Mentor verified`} tint="bg-gradient-to-br from-violet-100 to-indigo-50"/>
-      <MetricCard icon={<MessageCircle size={19}/>} label={role === "mentor" ? "Needs your attention" : "With Mentor"} value={String(role === "mentor" ? waitingQuests.length + questionCount : waitingQuests.length)} note={questionCount ? `${questionCount} open question${questionCount === 1 ? "" : "s"}` : `${proofCount} proof item${proofCount === 1 ? "" : "s"} shared`} tint="bg-gradient-to-br from-amber-100 to-orange-50"/>
-    </section>
-
-    <section className="grid gap-5 xl:grid-cols-[1.45fr_0.85fr]">
-      <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.17em] text-violet-700">A little at a time adds up</p><h2 className="mt-1 text-xl font-semibold sm:text-2xl">Your week, in color</h2><p className="mt-1 text-sm text-slate-500">Focus minutes recorded each day · tap a day for its notes</p></div><Link href="/time" className="rounded-full bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-800">Open activity journal <ArrowRight className="ml-1 inline" size={13}/></Link></div>
-        <div className="mt-6 grid h-44 grid-cols-7 items-end gap-2 sm:h-52 sm:gap-4">{daySeries.map((day, i) => <button key={day.key} onClick={() => setSelectedDate(day.key)} aria-label={`${day.label}: ${fmtMinutes(day.minutes)}, ${day.entries} update${day.entries === 1 ? "" : "s"}`} className="group flex h-full flex-col items-center justify-end gap-2 rounded-2xl px-1 pt-3 focus:outline-none focus:ring-2 focus:ring-violet-400"><span className={`text-[10px] font-semibold text-slate-500 ${day.minutes ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>{day.minutes ? fmtMinutes(day.minutes) : "·"}</span><span className="flex h-32 w-full max-w-12 items-end overflow-hidden rounded-t-2xl bg-slate-100/90 sm:h-40"><span className={`w-full rounded-t-2xl bg-gradient-to-t ${day.key === selectedDate ? "from-violet-700 via-fuchsia-500 to-rose-300" : i % 2 ? "from-cyan-500 to-teal-200" : "from-indigo-500 to-violet-300"} transition-all duration-500 group-hover:brightness-105`} style={{ height: `${Math.max(day.minutes ? 14 : 4, day.minutes / maxMinutes * 100)}%` }}/></span><span className={`text-xs ${day.key === selectedDate ? "font-bold text-violet-800" : "text-slate-500"}`}>{day.label}</span></button>)}</div>
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-violet-50 to-sky-50 px-4 py-3"><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-white text-violet-700"><CalendarDays size={18}/></span><div><p className="text-sm font-semibold">{new Date(`${selectedDate}T00:00:00`).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</p><p className="text-xs text-slate-500">{selectedActivity.length ? `${selectedActivity.length} journal entr${selectedActivity.length === 1 ? "y" : "ies"} · ${fmtMinutes(selectedActivity.reduce((sum, item) => sum + item.minutes, 0))}` : "No activity logged yet—add a note whenever it suits you."}</p></div></div><Link href="/time" className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-violet-800 shadow-sm">{selectedActivity.length ? "See notes" : "Add an update"}</Link></div>
-      </article>
-
-      <article className="relative overflow-hidden rounded-[1.8rem] bg-gradient-to-br from-amber-100 via-rose-50 to-fuchsia-100 p-5 shadow-sm sm:p-7"><div className="absolute -right-5 -top-8 text-8xl opacity-20">🌼</div><div className="relative"><div className="flex items-center gap-2"><span className="grid h-9 w-9 place-items-center rounded-xl bg-white/75 text-amber-700"><Target size={18}/></span><p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-900">Your own pace</p></div><h2 className="mt-4 text-xl font-semibold">Weekly focus goal</h2>{weeklyGoal ? <><div className="mt-4 flex items-end gap-2"><span className="text-4xl font-semibold">{fmtMinutes(weekMinutes)}</span><span className="mb-1 text-sm text-slate-600">of {weeklyGoal}h</span></div><div className="mt-4 h-3 overflow-hidden rounded-full bg-white/80"><div className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 to-orange-400 transition-all" style={{ width: `${weeklyProgress}%` }}/></div><p className="mt-2 text-xs text-slate-600">{weeklyProgress >= 100 ? "Goal reached—look at you! 🎉" : `${weeklyProgress}% there · any pace is a good pace`}</p></> : <p className="mt-3 max-w-sm text-sm leading-6 text-slate-700">Pick a kind, realistic amount of focus time for this week. You can change it whenever life changes.</p>}{editingGoal ? <div className="mt-4 flex gap-2"><input aria-label="Weekly focus goal in hours" type="number" min="1" max="60" step="0.5" value={goalDraft} onChange={e => setGoalDraft(e.target.value)} className="w-28 rounded-xl border border-white bg-white/90 px-3 py-2 text-sm" placeholder="hours"/><button onClick={saveGoal} className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white">Save goal</button><button onClick={() => setEditingGoal(false)} className="rounded-xl bg-white/70 px-3 py-2 text-xs">Cancel</button></div> : <button onClick={() => setEditingGoal(true)} className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-fuchsia-800 shadow-sm"><Plus size={15}/>{weeklyGoal ? "Change my goal" : "Set a weekly goal"}</button>}</div></article>
-    </section>
-
-    <section className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-      <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.17em] text-rose-600">The next few wins</p><h2 className="mt-1 text-xl font-semibold">Quests for you</h2><p className="mt-1 text-sm text-slate-500">A plan you can actually see and shape</p></div><span className="grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 text-2xl">🪄</span></div><div className="mt-5 space-y-3">{visibleQuests.map((quest, index) => <div key={quest.id} className={`flex items-start gap-3 rounded-2xl p-3 ${index === 0 ? "bg-rose-50" : "bg-slate-50"}`}><button onClick={() => completeQuest(quest)} aria-label={quest.requiresApproval ? "Send to Mentor for review" : `Complete ${quest.title}`} className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-rose-300 bg-white text-rose-700 transition hover:scale-105"><Check size={14}/></button><div className="min-w-0 flex-1"><p className="text-sm font-semibold">{quest.title}</p><p className="mt-1 text-xs text-slate-500">{quest.dueDate === today ? "Today" : quest.dueDate || "Whenever"}{quest.dueTime ? ` · ${quest.dueTime}` : ""} · {quest.minutes || 0} min · {quest.category}</p></div><span className="mt-1 text-xs">{quest.requiresApproval ? "💌" : ["✨", "🌱", "🎯"][index % 3]}</span></div>)}{visibleQuests.length === 0 && <div className="rounded-2xl bg-gradient-to-r from-rose-50 to-amber-50 p-5"><p className="font-semibold">A blank page can be a lovely start.</p><p className="mt-1 text-sm text-slate-600">Add one small quest for today—or give yourself a proper rest day.</p></div>}</div><div className="mt-4 flex flex-wrap gap-2"><Link href="/quests" className="rounded-full bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white">See all quests <ArrowRight className="ml-1 inline" size={14}/></Link><Link href="/quests" className="rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700"><Plus className="mr-1 inline" size={14}/>Make a new quest</Link></div></article>
-
-      <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.17em] text-emerald-700">Your learning path</p><h2 className="mt-1 text-xl font-semibold">A new skill is growing</h2><p className="mt-1 text-sm text-slate-500">Learn · practice · build · show what you know</p></div><span className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-2xl">🪴</span></div>{skillWithProgress ? <div className="mt-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-emerald-800">{skillWithProgress.world}</span><h3 className="mt-3 text-xl font-semibold">{skillWithProgress.topic}</h3><p className="mt-1 max-w-md text-sm text-slate-600">{skillWithProgress.approximateTime} · {skillWithProgress.whatToLearn}</p></div><span className="rounded-2xl bg-white/80 px-3 py-2 text-center"><b className="block text-lg text-emerald-800">{skillWithProgress.activityPercent}%</b><small className="text-[10px] text-slate-500">activity</small></span></div><div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500" style={{ width: `${Math.max(0, Math.min(100, skillWithProgress.activityPercent))}%` }}/></div><p className="mt-2 flex items-center gap-1 text-xs text-emerald-900"><Heart size={13}/> Mentor verified: <b className="capitalize">{skillWithProgress.verifiedStage}</b></p></div> : <div className="mt-4 rounded-2xl bg-emerald-50 p-5 text-sm">Your learning path is ready. Pick a topic to start exploring!</div>}<div className="mt-4 flex flex-wrap gap-2"><Link href="/journey" className="rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"><Compass className="mr-1 inline" size={15}/>Continue Skill Adventure</Link><span className="self-center text-xs text-slate-500">{verifiedCount} skill{verifiedCount === 1 ? "" : "s"} Mentor verified so far</span></div></article>
-    </section>
-
-    <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-      <article className="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="flex items-center justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.17em] text-indigo-700">Tiny dots, big story</p><h2 className="mt-1 text-xl font-semibold">Your month of showing up</h2></div><span className="text-2xl">🦋</span></div><p className="mt-1 text-sm text-slate-500">Each colored dot is a day with a journal entry.</p><div className="mt-5 grid grid-cols-7 gap-2">{Array.from({ length: 28 }, (_, i) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (27 - i)); const date = localDate(d); const count = activity.filter(item => item.date === date).length; const selected = date === selectedDate; const shade = count === 0 ? "bg-slate-100" : count === 1 ? "bg-cyan-200" : count < 4 ? "bg-violet-300" : "bg-fuchsia-500"; return <button key={date} onClick={() => setSelectedDate(date)} aria-label={`${date}: ${count} updates`} title={`${date} · ${count} journal ${count === 1 ? "entry" : "entries"}`} className={`aspect-square rounded-lg ${shade} transition hover:scale-110 ${selected ? "ring-2 ring-violet-700 ring-offset-2" : ""}`}/>; })}</div><div className="mt-4 flex items-center justify-between text-[11px] text-slate-500"><span>4 weeks ago</span><span className="flex items-center gap-1">Less <i className="h-3 w-3 rounded bg-slate-100"/><i className="h-3 w-3 rounded bg-cyan-200"/><i className="h-3 w-3 rounded bg-violet-300"/><i className="h-3 w-3 rounded bg-fuchsia-500"/> More</span><span>Today</span></div><div className="mt-5 rounded-2xl bg-indigo-50 p-4"><p className="text-sm font-semibold text-indigo-950">{activityTotal ? `${activityTotal} entries in your journal this week` : "Your first dot is waiting"}</p><p className="mt-1 text-xs text-indigo-900/70">Reflections don’t have to be daily. Log time when you work; write a bigger update when you have something to share.</p></div></article>
-
-      <article className="overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-sm"><div className="bg-gradient-to-r from-amber-50 via-orange-50 to-pink-50 p-5 sm:p-7"><div className="flex items-center justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.17em] text-orange-700">From your journal</p><h2 className="mt-1 text-xl font-semibold">Recent little wins</h2></div><Link href="/time" className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-orange-800">Open journal <ArrowRight className="ml-1 inline" size={13}/></Link></div></div><div className="divide-y divide-slate-100 px-5 sm:px-7">{recentActivity.map((item, index) => <div key={item.id} className="flex gap-3 py-4"><span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${["bg-amber-100", "bg-cyan-100", "bg-violet-100"][index]}`}>{item.attachment ? "📸" : item.proof ? "🔗" : item.blocker ? "💭" : ["🌟", "📚", "🧩"][index]}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><p className="truncate text-sm font-semibold">{item.topic || "Learning update"}</p><span className="text-[11px] text-slate-500">{new Date(`${item.date}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {fmtMinutes(item.minutes)}</span></div><p className="mt-1 line-clamp-1 text-xs text-slate-500">{item.did || item.kind || "Saved in your progress journal"}</p>{item.mentorNote && <p className="mt-2 flex items-center gap-1 text-xs font-medium text-violet-700"><MessageCircle size={12}/>Mentor left you a note</p>}</div></div>)}{recentActivity.length === 0 && <div className="py-9 text-center"><span className="text-3xl">📔</span><p className="mt-2 text-sm font-semibold">Your story starts with one note</p><p className="mt-1 text-xs text-slate-500">Record time, a discovery, a question, or a screenshot.</p></div>}</div><div className="border-t border-slate-100 px-5 py-4 sm:px-7"><Link href="/time" className="inline-flex items-center gap-2 text-sm font-semibold text-fuchsia-700">Add a journal entry <ChevronRight size={16}/></Link></div></article>
-    </section>
-
-    <section className="rounded-[1.8rem] border border-slate-200 bg-gradient-to-r from-white via-violet-50/60 to-cyan-50/70 p-5 shadow-sm sm:p-7"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.17em] text-slate-500">Choose your next stop</p><h2 className="mt-1 text-xl font-semibold">Shortcuts for curious minds</h2><p className="mt-1 text-sm text-slate-500">Jump straight to whatever you need today.</p></div><Sparkles className="hidden text-fuchsia-500 sm:block" size={27}/></div><div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Link href="/quests" className="group flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-rose-100 text-rose-700"><CheckCircle2 size={20}/></span><span className="flex-1"><b className="block text-sm">My quests</b><small className="text-xs text-slate-500">Plan a small mission</small></span><ChevronRight size={16} className="text-slate-400 transition group-hover:translate-x-1"/></Link><Link href="/journey" className="group flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-100 text-emerald-700"><Compass size={20}/></span><span className="flex-1"><b className="block text-sm">Skill Adventure</b><small className="text-xs text-slate-500">Explore what’s next</small></span><ChevronRight size={16} className="text-slate-400 transition group-hover:translate-x-1"/></Link><Link href="/dreams" className="group flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-amber-100 text-amber-700"><GraduationCap size={20}/></span><span className="flex-1"><b className="block text-sm">Dream Board</b><small className="text-xs text-slate-500">Universities & scholarships</small></span><ChevronRight size={16} className="text-slate-400 transition group-hover:translate-x-1"/></Link><Link href="/mentor" className="group flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-violet-100 text-violet-700"><Heart size={20}/></span><span className="flex-1"><b className="block text-sm">Mentor corner</b><small className="text-xs text-slate-500">Feedback & shared plans</small></span><ChevronRight size={16} className="text-slate-400 transition group-hover:translate-x-1"/></Link></div></section>
+// ------------------------------------------------------------------ share progress with Xander
+function ShareCard({ goalHours, onCopied }: { goalHours: number; onCopied: () => void }) {
+  const game = useGame();
+  const [activity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
+  const [quests] = useLocalStore<Quest[]>(KEYS.quests, EMPTY_QUESTS);
+  const hydrated = useHydrated();
+  const text = useMemo(() => {
+    if (!hydrated) return "";
+    const today = localDate(), start = weekStart(today);
+    const week = activity.filter(a => !a.id.startsWith("import-") && a.date >= start && a.date <= today);
+    const topics = [...new Set(week.map(a => a.topic))].join(", ") || "—";
+    const questions = week.filter(a => a.blocker.trim()).map(a => `• ${a.topic}: ${a.blocker.trim()}`);
+    return [
+      `🌸 Hanifa’s update — week of ${fmtDay(start, { day: "numeric", month: "short" })}`,
+      `⏱️ Time: ${fmtMinutes(game.weekMinutes)} of ${goalHours}h goal`,
+      `🔥 Streak: ${game.streak.current} days · Level ${game.level} ${game.rank.title} (${game.xp} XP)`,
+      `📚 Studied: ${topics}`,
+      `🚀 Levels cleared: ${game.levelsCleared}/20 · Cards mastered: ${game.masteredCards}`,
+      `✅ Missions done: ${quests.filter(q => q.status === "Completed").length} · Journal entries this week: ${week.length}`,
+      questions.length ? `\n❓ Questions for Xander:\n${questions.join("\n")}` : "",
+    ].filter(Boolean).join("\n");
+  }, [hydrated, activity, quests, game, goalHours]);
+  const copy = async () => { try { await navigator.clipboard.writeText(text); onCopied(); } catch { window.prompt("Copy this update:", text); } };
+  return <div className="card h-full p-6">
+    <div className="flex items-center justify-between"><div><p className="eyebrow">Share</p><h2 className="mt-1 font-display text-xl font-extrabold">Update Xander</h2></div><Share2 className="text-brand" /></div>
+    <pre className="mt-4 max-h-56 overflow-auto whitespace-pre-wrap rounded-2xl bg-ink/[.04] p-4 font-sans text-xs leading-5 text-ink/70">{text || "…"}</pre>
+    <div className="mt-4 grid grid-cols-2 gap-2"><button onClick={copy} className="btn-primary !py-2.5 text-xs"><Copy size={14} />Copy</button><a href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer" className="btn-soft !py-2.5 text-xs">WhatsApp</a></div>
   </div>;
 }

@@ -1,1 +1,9 @@
-export function StatCard({ label, value, detail, tone = "white" }: { label: string; value: string; detail?: string; tone?: "white" | "pink" | "blue" | "green" }) { const bg = { white: "bg-white", pink: "bg-fuchsia-50", blue: "bg-sky-50", green: "bg-emerald-50" }[tone]; return <div className={`${bg} rounded-3xl border border-white p-5 shadow-sm`}><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>{detail && <p className="mt-1 text-xs text-slate-500">{detail}</p>}</div>; }
+import { AnimatedNumber } from "./AnimatedNumber";
+
+export function StatCard({ label, value, detail, emoji, number, suffix }: { label: string; value?: string; detail?: string; emoji?: string; number?: number; suffix?: string }) {
+  return <div className="card card-hover p-5">
+    <div className="flex items-center justify-between"><p className="text-sm font-semibold text-ink/55">{label}</p>{emoji && <span className="text-2xl">{emoji}</span>}</div>
+    <p className="mt-3 font-display text-3xl font-extrabold tracking-tight">{number !== undefined ? <AnimatedNumber value={number} suffix={suffix} /> : value}</p>
+    {detail && <p className="mt-1 text-xs text-ink/50">{detail}</p>}
+  </div>;
+}
