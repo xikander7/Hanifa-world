@@ -20,6 +20,8 @@
  * Script Properties (Project Settings → Script Properties):
  *  - MENTOR_PIN   required, your PIN
  *  - MENTOR_EMAIL optional; alerts go here. Without it they go to the Google account that runs this script
+ *  - HANIFA_EMAIL optional; her daily reminder goes here (several addresses can be separated with commas)
+ *  - REMINDER_HOUR optional, 0-23 (default 17); REMINDER_TIMEZONE optional (default Asia/Karachi). Run setup again after changing them
  *  - TOKEN_SECRET created automatically; delete it to sign every Mentor device out
  *  - DATA_SHEET_ID created automatically on first run
  */
@@ -429,6 +431,53 @@ function sheetsBackend() {
   };
 }
 
+// ------------------------------------------------------------------ Hanifa's daily reminder
+/** The reminder for `today` (yyyy-MM-dd), or null when she has already studied today. */
+function reminderFor(activity, today) {
+  const days = {};
+  list(activity).forEach(a => { if (a && a.date && String(a.id).indexOf("import-") !== 0 && (Number(a.minutes) > 0 || text(a.did).trim())) days[a.date] = true; });
+  if (days[today]) return null;
+  let streak = 0;
+  for (let d = new Date(today + "T12:00:00Z"); ; ) {
+    d.setUTCDate(d.getUTCDate() - 1);
+    if (!days[d.toISOString().slice(0, 10)]) break;
+    streak++;
+  }
+  const subject = streak > 0 ? "🔥 Keep your " + streak + "-day streak going, Hanifa!" : "💛 Nova misses you! 5 minutes of learning today?";
+  const body = [
+    "Hi Hanifa! 👋",
+    "",
+    streak > 0 ? "You learned " + streak + " day" + (streak > 1 ? "s" : "") + " in a row. Do a little today and your streak keeps growing! 🔥" : "A tiny bit of learning today is a great start. Even 5 minutes counts! 🌱",
+    "",
+    "Pick one:",
+    "⚡ Do the Daily 3 (2 minutes)",
+    "▶️ Press “Your next quest” on My Day",
+    "✍️ Write one line in My Diary",
+    "",
+    "Open your app: " + APP_URL + "/home",
+    "",
+    "You've got this! 💖",
+    "— Nova and Sikander",
+  ].join("\n");
+  return { subject: subject, body: body };
+}
+
+const reminderZone = backend => backend.prop("REMINDER_TIMEZONE") || "Asia/Karachi";
+
+/** Runs every day from the timer that setup creates. Sends nothing if she already studied today. */
+function dailyReminder(force) {
+  const backend = sheetsBackend();
+  const to = backend.prop("HANIFA_EMAIL");
+  if (!to) return;
+  const today = Utilities.formatDate(new Date(), reminderZone(backend), "yyyy-MM-dd");
+  const saved = backend.load(ACTIVITY_KEY);
+  const reminder = reminderFor(saved ? saved.value : [], force === true ? "0000-00-00" : today);
+  if (reminder) backend.sendMail(to, reminder.subject, reminder.body);
+}
+
+/** Run from the editor to send Hanifa a reminder right now, to see what it looks like. */
+function sendTestReminder() { dailyReminder(true); }
+
 /** Run once from the editor (select "setup", press Run) to grant access and create the private data spreadsheet. */
 function setup() {
   const backend = sheetsBackend();
@@ -436,8 +485,13 @@ function setup() {
   SpreadsheetApp.openById(WORKING_SHEET_ID).getName();
   MailApp.getRemainingDailyQuota(); // asks for permission to send the alert emails
   if (!backend.prop("MENTOR_PIN")) throw new Error("Add MENTOR_PIN in Project Settings → Script Properties, then run setup again.");
+  // The daily reminder timer (free): one per day at REMINDER_HOUR in REMINDER_TIMEZONE. Re-running setup replaces it.
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === "dailyReminder").forEach(t => ScriptApp.deleteTrigger(t));
+  const hour = Math.min(23, Math.max(0, Number(backend.prop("REMINDER_HOUR") || 17)));
+  ScriptApp.newTrigger("dailyReminder").timeBased().everyDays(1).atHour(hour).inTimezone(reminderZone(backend)).create();
+  Logger.log(backend.prop("HANIFA_EMAIL") ? "Daily reminder: every day around " + hour + ":00 (" + reminderZone(backend) + ") to " + backend.prop("HANIFA_EMAIL") : "Daily reminder is off: add HANIFA_EMAIL in Script Properties to turn it on.");
   Logger.log("All set. Private data spreadsheet: https://docs.google.com/spreadsheets/d/" + backend.prop("DATA_SHEET_ID"));
 }
 
 // Lets the app's tests load this file. Apps Script has no `module`, so this line does nothing there.
-if (typeof module !== "undefined") module.exports = { handle, mentorOnlyChanges, mentorAlerts, timeAppColumns, weeklyAppColumns, journalRows, applyJournalReplies, SYNCED_KEYS, CHUNK };
+if (typeof module !== "undefined") module.exports = { handle, mentorOnlyChanges, mentorAlerts, reminderFor, timeAppColumns, weeklyAppColumns, journalRows, applyJournalReplies, SYNCED_KEYS, CHUNK };

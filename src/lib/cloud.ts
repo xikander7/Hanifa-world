@@ -9,8 +9,9 @@ import { onLocalWrite, writeStore } from "./store";
 // Cloud save in the browser: works out when to sync, talks to the Apps Script web app, and reports status.
 // The merge rules live in src/domain/cloudSync.ts; the server is apps-script/Code.js.
 
-const PUSH_DELAY_MS = 1500;
-const POLL_MS = 60_000;
+const PUSH_DELAY_MS = 800;
+// Check for changes from other devices every 15 seconds while the app is on screen (nothing runs in a hidden tab).
+const POLL_MS = 15_000;
 /** Only Google Apps Script web apps are accepted as a cloud address (also from a ?cloud= link). */
 export const isCloudUrl = (url: string) => /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url.trim());
 

@@ -6,8 +6,8 @@ import { EMPTY_IDS, IMPORTED_ACTIVITY, KEYS, SKILLS, WORKING_SHEET_ID } from "./
 import type { Activity } from "./data";
 import { readStore, writeStore } from "./store";
 
-/** Don't re-read the sheet on every page load; a few minutes old is fresh enough. */
-export const AUTO_SYNC_EVERY_MS = 5 * 60_000;
+/** Re-read the sheet at most once a minute while the app is open. */
+export const AUTO_SYNC_EVERY_MS = 60_000;
 
 export type LiveSyncResult = MergeResult & { entries: number; skipped: string[] };
 

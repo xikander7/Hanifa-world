@@ -94,7 +94,7 @@ function Watchers({ role }: { role: Role }) {
     return startCloud();
   }, [hydrated, celebrate]);
 
-  // Keep the journal in step with the Google Sheet: read it when the app opens and whenever the tab comes back into view.
+  // Keep the journal in step with the Google Sheet: read it when the app opens, every minute while open, and whenever the tab comes back into view.
   useEffect(() => {
     if (!hydrated) return;
     let busy = false;
@@ -103,14 +103,15 @@ function Watchers({ role }: { role: Role }) {
       busy = true;
       try {
         const { added, updated } = await syncFromLiveSheet();
-        if (added) celebrate({ emoji: "📊", title: `${added} new ${added === 1 ? "entry" : "entries"} from the sheet`, text: "Your Excel sheet is synced to the Journal.", sound: "pop" });
+        if (added) celebrate({ emoji: "📊", title: `${added} new ${added === 1 ? "entry" : "entries"} from the sheet`, text: "Your Study Sheet is synced to My Diary.", sound: "pop" });
         else if (updated) celebrate({ emoji: "🔄", title: "Sheet synced", text: `${updated} ${updated === 1 ? "entry" : "entries"} updated from the sheet.`, confetti: false, sound: "pop" });
       } catch { /* offline or sheet unreachable: the Working Excel Sheet page shows the error when synced by hand */ }
       finally { busy = false; }
     };
     sync();
+    const timer = window.setInterval(sync, 20_000); // sync() itself waits until a minute has passed
     document.addEventListener("visibilitychange", sync);
-    return () => document.removeEventListener("visibilitychange", sync);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", sync); };
   }, [hydrated, celebrate]);
 
   useEffect(() => {

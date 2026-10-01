@@ -266,3 +266,22 @@ describe("Writing the app's work into the sheet's main tabs", () => {
     expect(google.appColumns["Weekly Learning Updates"].byRow).toEqual({});
   });
 });
+
+describe("Hanifa's daily reminder", () => {
+  const day = (id: string, date: string, minutes = 20) => ({ id, date, kind: "Time log", topic: "Python", minutes, did: "", practiced: "", feeling: "", blocker: "", proof: "" });
+
+  it("is skipped when she already studied today", () => {
+    expect(server.reminderFor([day("a", "2026-10-01")], "2026-10-01")).toBeNull();
+  });
+
+  it("cheers her streak on when she hasn't studied yet today", () => {
+    const reminder = server.reminderFor([day("a", "2026-09-28"), day("b", "2026-09-29"), day("c", "2026-09-30")], "2026-10-01");
+    expect(reminder.subject).toContain("3-day streak");
+    expect(reminder.body).toContain("/home");
+  });
+
+  it("is gentle when there is no streak, and ignores the sample week", () => {
+    const reminder = server.reminderFor([day("import-1", "2026-09-30")], "2026-10-01");
+    expect(reminder.subject).toContain("Nova misses you");
+  });
+});

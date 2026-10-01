@@ -60,6 +60,17 @@ the Google account that runs the script; to use another address, add a Script Pr
 
 The first time, run `setup` again (it asks for permission to send email), then deploy a new version as above.
 
+## Hanifa's daily reminder
+
+A free daily email that nudges Hanifa to learn, sent from your Gmail by a timer in the script. It is skipped on days she
+has already studied, and it cheers her streak on when she has one.
+
+1. In **Project Settings → Script Properties**, add `HANIFA_EMAIL` with her address. Several addresses can be separated with
+   commas. The address stays in your script, not in the app's code.
+2. Optional: `REMINDER_HOUR` (0 to 23, default 17) and `REMINDER_TIMEZONE` (default `Asia/Karachi`).
+3. Run `setup` again. It asks for permission to run on a timer and logs when the reminder will go out.
+4. To see one straight away, choose `sendTestReminder` and press **Run**.
+
 ## Good to know
 
 - **Sign every Mentor device out:** delete the `TOKEN_SECRET` script property.
