@@ -145,17 +145,19 @@ function Watchers({ role, roleReady }: { role: Role; roleReady: boolean }) {
 }
 
 /** Calm focus music for everyone: on by default at a medium volume. The top bar shows on/off, volume down and volume up. */
-function MusicControl({ active }: { active: boolean }) {
+// It is shown twice (top bar and side menu); only the top bar's copy (`plays`) runs the music, the two share their settings.
+function MusicControl({ active, plays = true }: { active: boolean; plays?: boolean }) {
   const [music, setMusic] = useLocalStore<string>(KEYS.music, "on");
   const [volume, setVolume] = useLocalStore<number>(KEYS.musicVolume, 0.5);
   const hydrated = useHydrated();
   const playing = hydrated && music === "on";
   useEffect(() => {
+    if (!plays) return;
     if (hydrated && active && music === "on") startMusic(volume); else stopMusic();
     return stopMusic;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, active, music]);
-  useEffect(() => { setMusicVolume(volume); }, [volume]);
+  }, [plays, hydrated, active, music]);
+  useEffect(() => { if (plays) setMusicVolume(volume); }, [plays, volume]);
   if (!active) return null;
   // Volume buttons also switch the music on, so pressing + always gives sound.
   const change = (by: number) => { setVolume(Math.min(1, Math.max(0, Math.round((volume + by) * 10) / 10))); if (by > 0 && music !== "on") setMusic("on"); };
@@ -265,7 +267,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="mt-auto space-y-3 pt-5">
       {!mentor && <div className="rounded-3xl bg-white/70 p-4">
         <div className="flex items-center justify-between"><p className="text-[11px] font-extrabold uppercase tracking-wider text-ink/45">Pick your world</p>
-          <button onClick={() => setSound(sound === "on" ? "off" : "on")} aria-label={sound === "on" ? "Turn sounds off" : "Turn sounds on"} className="grid h-8 w-8 place-items-center rounded-full bg-ink/5 text-ink/70 transition hover:bg-ink/10">
+          <button onClick={() => setSound(sound === "on" ? "off" : "on")} aria-label={sound === "on" ? "Turn sound effects off" : "Turn sound effects on"} title="Sound effects (pops and chimes)" className="grid h-8 w-8 place-items-center rounded-full bg-ink/5 text-ink/70 transition hover:bg-ink/10">
             {hydrated && sound === "on" ? <Volume2 size={15} /> : <VolumeX size={15} />}
           </button>
         </div>
@@ -276,6 +278,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="text-[10px] font-extrabold leading-tight">{v.label}</span>
           </button>)}
         </div>
+        <div className="mt-4 flex items-center justify-between gap-2"><p className="text-[11px] font-extrabold uppercase tracking-wider text-ink/45">🎵 Music</p><MusicControl active plays={false} /></div>
       </div>}
       <div className="rounded-3xl bg-white/70 p-3">
         <button onClick={becomeHanifa} className={`w-full rounded-2xl px-3 py-2 text-left text-xs font-bold ${role === "learner" ? "bg-white shadow-sticker" : "text-ink/55"}`}>🌸 Hanifa</button>
