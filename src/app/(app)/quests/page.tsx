@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { CheckCircle2, Clock3, Hourglass, Play, Plus, Send, Target } from "lucide-react";
+import { CheckCircle2, Clock3, Hourglass, Pencil, Play, Plus, Send, Target, Trash2 } from "lucide-react";
 import { EMPTY_QUESTS, KEYS, fmtDay, localDate } from "@/lib/data";
 import type { Quest } from "@/lib/data";
 import { XP } from "@/lib/game";
@@ -20,6 +20,7 @@ export default function MissionsPage() {
   const [quests, setQuests] = useLocalStore<Quest[]>(KEYS.quests, EMPTY_QUESTS);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Active");
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [proof, setProof] = useState("");
   const [reflection, setReflection] = useState("");
@@ -52,6 +53,9 @@ export default function MissionsPage() {
     {list.length === 0 ? <div className="card p-10 text-center"><Nova mood={tab === "Done" ? "think" : "happy"} size={96} className="mx-auto" /><p className="mt-3 font-display text-xl font-extrabold">{tab === "Active" ? "No active missions" : tab === "Done" ? "Nothing finished yet" : "Nothing waiting"}</p><p className="mt-1 text-sm text-ink/55">{tab === "Active" ? "Add a mission for yourself, or wait for one from Sikander. 🌤️" : tab === "Done" ? "Your completed missions will collect here." : "Missions you send for review appear here."}</p></div> :
       <div className="stagger space-y-4">{list.map(q => {
         const overdue = q.dueDate && q.dueDate < today && q.status !== "Completed";
+        if (editing === q.id) return <MissionForm key={q.id} by="hanifa" initial={q} onCancel={() => setEditing(null)} onCreate={next => { setQuests(quests.map(x => x.id === q.id ? next : x)); setEditing(null); celebrate({ emoji: "✏️", title: "Mission updated", text: next.title, confetti: false, sound: "pop" }); }} />;
+        // Hanifa can fix or remove her own missions; Sikander's are his to change.
+        const mine = role === "learner" && q.createdBy === "hanifa";
         return <article key={q.id} className="card p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -60,13 +64,17 @@ export default function MissionsPage() {
               {q.description && <p className="mt-1 text-sm leading-6 text-ink/60">{q.description}</p>}
               <p className="mt-2 flex flex-wrap items-center gap-3 text-xs font-bold text-ink/45"><span className="inline-flex items-center gap-1"><Clock3 size={12} />{q.minutes} min</span>{q.dueDate && <span>Due {fmtDay(q.dueDate)}</span>}<span className="inline-flex items-center gap-1 text-brand">+{q.xp ?? XP.defaultQuest} XP</span></p>
             </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
               {["Today", "Upcoming"].includes(q.status) && <button onClick={() => patch(q.id, { status: "In Progress" })} className="btn-soft !py-2.5 text-xs"><Play size={14} />Start</button>}
               {["Today", "Upcoming", "In Progress", "Needs a tweak"].includes(q.status) && (q.requiresApproval
                 ? <button onClick={() => { setSubmitting(q.id); setProof(q.proof); setReflection(q.comment); }} className="btn-primary !py-2.5 text-xs"><Send size={14} />{q.status === "Needs a tweak" ? "Resubmit" : "Send for review"}</button>
                 : <button onClick={() => complete(q)} className="btn-primary !py-2.5 text-xs"><CheckCircle2 size={14} />I did it!</button>)}
               {q.status === "Waiting for Mentor" && <span className="chip bg-amber-100 !py-2 text-amber-900"><Hourglass size={13} />Sikander is reviewing</span>}
               {q.status === "Completed" && <span className="chip bg-emerald-100 !py-2 text-emerald-800"><CheckCircle2 size={13} />Done</span>}
+              {mine && <>
+                <button onClick={() => setEditing(q.id)} aria-label={`Edit ${q.title}`} title="Edit" className="grid h-9 w-9 place-items-center rounded-full bg-ink/5 text-ink/60 transition hover:text-brand"><Pencil size={14} /></button>
+                <button onClick={() => { if (window.confirm(`Delete the mission "${q.title}"?`)) setQuests(quests.filter(x => x.id !== q.id)); }} aria-label={`Delete ${q.title}`} title="Delete" className="grid h-9 w-9 place-items-center rounded-full bg-ink/5 text-ink/60 transition hover:text-rose-600"><Trash2 size={14} /></button>
+              </>}
             </div>
           </div>
           {q.mentorFeedback && <p className="animate-pop mt-3 rounded-2xl bg-ink px-4 py-3 text-sm text-white"><b>Sikander:</b> {q.mentorFeedback}</p>}
