@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createContext, FormEvent, useContext, useEffect, useState } from "react";
-import { BookOpen, Brain, Cloud, CloudOff, Compass, FileSpreadsheet, Flame, GraduationCap, HelpCircle, Home, Lock, Menu, MessageCircleQuestion, NotebookPen, ShieldCheck, Target, Timer, Trophy, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { createContext, FormEvent, Suspense, useContext, useEffect, useState } from "react";
+import { BookOpen, Brain, CheckCircle2, Cloud, CloudOff, Compass, FileSpreadsheet, Flame, GraduationCap, HelpCircle, Home, LineChart, Lock, Menu, MessageCircleHeart, MessageCircleQuestion, NotebookPen, Settings, ShieldCheck, Target, Timer, Trophy, Volume2, VolumeX, X, Zap } from "lucide-react";
 import type { Role } from "@/domain/types";
 import { KEYS, NOT_SEEN } from "@/lib/data";
 import { seedSheetEntries } from "@/lib/sheetSeed";
@@ -30,7 +30,33 @@ const moreNav = [
   { href: "/quests", label: "Mini Missions", short: "Missions", icon: Target }, { href: "/ask", label: "Ask for Help", short: "Help", icon: MessageCircleQuestion },
   { href: "/dreams", label: "Dream Schools", short: "Dreams", icon: GraduationCap }, { href: "/sheet", label: "Study Sheet", short: "Sheet", icon: FileSpreadsheet },
 ];
-const mentorItem = { href: "/mentor", label: "Mentor Hub", short: "Mentor", icon: ShieldCheck };
+// Sikander's menu: only what a mentor needs. The Mentor Hub parts are picked with ?tab= (see the mentor page).
+const mentorNav = [
+  { href: "/mentor?tab=todo", label: "To do", short: "To do", icon: CheckCircle2 },
+  { href: "/mentor?tab=diary", label: "Her Diary", short: "Diary", icon: NotebookPen },
+  { href: "/mentor?tab=progress", label: "Progress", short: "Progress", icon: LineChart },
+  { href: "/mentor?tab=message", label: "Messages & Missions", short: "Messages", icon: MessageCircleHeart },
+];
+const mentorMore = [
+  { href: "/dreams", label: "Dream Schools", short: "Dreams", icon: GraduationCap },
+  { href: "/sheet", label: "Study Sheet", short: "Sheet", icon: FileSpreadsheet },
+  { href: "/mentor?tab=settings", label: "Settings", short: "Settings", icon: Settings },
+];
+/** Pages Sikander can open in Mentor mode; anything else sends him back to Mentor Hub. */
+const MENTOR_PAGES = ["/mentor", "/dreams", "/sheet"];
+
+type NavItem = { href: string; label: string; short: string; icon: typeof Home };
+/** A menu link that knows it is active, including Mentor Hub's ?tab= parts. */
+function NavLink({ item, variant }: { item: NavItem; variant: "side" | "more" | "mobile" }) {
+  const pathname = usePathname();
+  const tab = useSearchParams().get("tab") || "todo";
+  const [path, query] = item.href.split("?");
+  const active = query ? pathname === path && `tab=${tab === "sync" ? "settings" : tab}` === query : pathname === path || pathname.startsWith(`${path}/`);
+  const Icon = item.icon;
+  if (variant === "mobile") return <Link href={item.href} className={`flex min-w-0 flex-col items-center gap-0.5 rounded-2xl px-0.5 py-2 text-[11px] font-bold transition duration-300 ${active ? "animate-pop bg-brand text-white shadow-glow" : "text-ink/55 active:scale-90"}`}><Icon size={20} className={active ? "animate-bounce-soft" : ""} /><span className="max-w-full truncate">{item.short}</span></Link>;
+  if (variant === "more") return <Link href={item.href} className={`group flex items-center gap-3 rounded-2xl px-4 py-2 text-[13px] font-bold transition duration-200 ${active ? "bg-brand text-white shadow-glow" : "text-ink/50 hover:bg-white hover:text-ink"}`}><Icon size={16} className="transition group-hover:scale-110 group-hover:-rotate-6" /><span className="flex-1">{item.label}</span></Link>;
+  return <Link href={item.href} className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition duration-200 ${active ? "bg-brand text-white shadow-glow" : "text-ink/65 hover:bg-white hover:text-ink"}`}><Icon size={19} className="transition group-hover:scale-110 group-hover:-rotate-6" /><span className="flex-1">{item.label}</span></Link>;
+}
 
 // Three themes Hanifa can pick: each has its own colours and its own things drifting in the background (globals.css).
 const VIBES = [
@@ -155,7 +181,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => { document.documentElement.dataset.vibe = vibe; }, [vibe]);
   useEffect(() => { setOpen(false); }, [pathname]);
   // Mentor mode lives on Mentor Hub; Hanifa's pages are for Hanifa.
-  useEffect(() => { if (role === "mentor" && !pathname.startsWith("/mentor")) router.replace("/mentor"); }, [role, pathname, router]);
+  useEffect(() => { if (role === "mentor" && !MENTOR_PAGES.some(p => pathname.startsWith(p))) router.replace("/mentor"); }, [role, pathname, router]);
 
   const switchRole = (next: Role) => { setRole(next); try { sessionStorage.setItem(KEYS.role, next); } catch { /* ignore */ } };
   const [checking, setChecking] = useState(false);
@@ -171,9 +197,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const becomeHanifa = async () => { if (role === "mentor") { switchRole("learner"); await mentorSignOut(); router.push("/home"); } setShowPin(false); };
   // Mentor mode is only Mentor Hub: everything Sikander needs to check is there, so Hanifa's pages stay out of his way.
   const mentor = role === "mentor";
-  const sideNav = mentor ? [mentorItem] : [guideItem, ...learnerNav];
+  const sideNav = mentor ? mentorNav : [guideItem, ...learnerNav];
+  const moreItems = mentor ? mentorMore : moreNav;
   // Help lives in the top bar's ? button and the side menu; the "More" pages are in the side menu.
-  const mobileNav = mentor ? [] : learnerNav;
+  const mobileNav = mentor ? mentorNav : learnerNav;
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   const sidebar = <>
@@ -190,20 +217,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </div>
 
     <nav className="mt-5 space-y-1" aria-label="Main">
-      {sideNav.map(({ href, label, icon: Icon }) => {
+      {mentor && <Suspense fallback={null}>{mentorNav.map(item => <NavLink key={item.href} item={item} variant="side" />)}</Suspense>}
+      {!mentor && sideNav.map(({ href, label, icon: Icon }) => {
         const active = isActive(href);
         return <Link key={href} href={href} className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition duration-200 ${active ? "bg-brand text-white shadow-glow" : "text-ink/65 hover:bg-white hover:text-ink"}`}>
           <Icon size={19} className="transition group-hover:scale-110 group-hover:-rotate-6" /><span className="flex-1">{label}</span>
           {href === guideItem.href && !active && hydrated && guideSeen !== "yes" && <span className="rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-brand">Start here</span>}
         </Link>;
       })}
-      {!mentor && <p className="px-4 pb-1 pt-4 text-[11px] font-extrabold uppercase tracking-wider text-ink/40">More</p>}
-      {!mentor && moreNav.map(({ href, label, icon: Icon }) => {
-        const active = isActive(href);
-        return <Link key={href} href={href} className={`group flex items-center gap-3 rounded-2xl px-4 py-2 text-[13px] font-bold transition duration-200 ${active ? "bg-brand text-white shadow-glow" : "text-ink/50 hover:bg-white hover:text-ink"}`}>
-          <Icon size={16} className="transition group-hover:scale-110 group-hover:-rotate-6" /><span className="flex-1">{label}</span>
-        </Link>;
-      })}
+      <p className="px-4 pb-1 pt-4 text-[11px] font-extrabold uppercase tracking-wider text-ink/40">More</p>
+      <Suspense fallback={null}>{moreItems.map(item => <NavLink key={item.href} item={item} variant="more" />)}</Suspense>
     </nav>
 
     <div className="mt-auto space-y-3 pt-5">
@@ -256,12 +279,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="mx-auto max-w-6xl px-4 pb-28 pt-7 lg:px-10 lg:pb-12">{children}</main>
     </div>
 
-    {!mentor && <nav aria-label="Main mobile" className="glass fixed inset-x-3 bottom-3 z-30 grid grid-flow-col auto-cols-fr rounded-[1.6rem] p-1.5 shadow-pop lg:hidden">
-      {mobileNav.map(({ href, short, icon: Icon }) => {
-        const active = isActive(href);
-        return <Link key={href} href={href} className={`flex min-w-0 flex-col items-center gap-0.5 rounded-2xl px-0.5 py-2 text-[11px] font-bold transition duration-300 ${active ? "animate-pop bg-brand text-white shadow-glow" : "text-ink/55 active:scale-90"}`}><Icon size={20} className={active ? "animate-bounce-soft" : ""} /><span className="max-w-full truncate">{short}</span></Link>;
-      })}
-    </nav>}
+    <nav aria-label="Main mobile" className="glass fixed inset-x-3 bottom-3 z-30 grid grid-flow-col auto-cols-fr rounded-[1.6rem] p-1.5 shadow-pop lg:hidden">
+      <Suspense fallback={null}>{mobileNav.map(item => <NavLink key={item.href} item={item} variant="mobile" />)}</Suspense>
+    </nav>
     {role === "learner" && !isActive("/ask") && <NovaHelper />}
   </CelebrateProvider></RoleContext.Provider>;
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BadgeCheck, CheckCircle2, Flame, HelpCircle, Lock, MessageCircle, Send, Trophy } from "lucide-react";
 import roadmap from "@/data/roadmap.json";
 import { lessons } from "@/data/lessons";
@@ -24,9 +25,16 @@ import { CloudSetup } from "@/components/CloudSetup";
 import { SheetSync } from "@/components/SheetSync";
 
 // "To do" comes first: everything Hanifa sent that needs Sikander, in one place.
-const TABS = ["To do", "Progress", "Message", "Settings"] as const;
-const TAB_LABEL: Record<(typeof TABS)[number], string> = { "To do": "✅ To do", Progress: "📈 Progress", Message: "💌 Message", Settings: "⚙️ Settings" };
+// Each part of Mentor Hub has its own menu item (see mentorNav in AppShell), picked with ?tab=.
+const TABS = ["todo", "diary", "progress", "message", "settings"] as const;
 type Tab = (typeof TABS)[number];
+const HEADINGS: Record<Tab, [string, string, string]> = {
+  todo: ["To do", "What Hanifa needs from you ✅", "Missions and levels to review, her questions, and diary entries with no reply yet."],
+  diary: ["Her diary", "Everything she wrote 📝", "Her time, notes and questions, newest first. Reply to any entry."],
+  progress: ["Progress", "How Hanifa is doing 📈", "Her level, streak, study time and how far she is on each level."],
+  message: ["Messages & missions", "Cheer her on 💌", "Send a message or a challenge, and give her missions."],
+  settings: ["Settings", "Devices & sync ⚙️", "Cloud save, device links and the sheet sync."],
+};
 const stageIds = roadmap.map(m => `module-${m.number}`);
 const TEMPLATES: { kind: InboxMessage["kind"]; text: string }[] = [
   { kind: "cheer", text: "I saw your effort this week and I'm really proud of you. Keep going! 💖" },
@@ -36,13 +44,17 @@ const TEMPLATES: { kind: InboxMessage["kind"]; text: string }[] = [
   { kind: "note", text: "Stuck is normal. Write your exact question in the journal and I'll answer tonight. 🙋‍♀️" },
 ];
 
-export default function MentorPage() {
+export default function MentorPage() { return <Suspense fallback={null}><MentorHub /></Suspense>; }
+
+function MentorHub() {
   const role = useRole();
   const hydrated = useHydrated();
   const { celebrate } = useCelebrate();
   const game = useGame();
-  const [tab, setTab] = useState<Tab>("To do");
-  useEffect(() => { if (new URLSearchParams(window.location.search).get("tab") === "sync") setTab("Settings"); }, []);
+  const router = useRouter();
+  const asked = useSearchParams().get("tab");
+  const tab: Tab = asked === "sync" ? "settings" : TABS.includes(asked as Tab) ? (asked as Tab) : "todo";
+  const setTab = (next: Tab) => router.push(`/mentor?tab=${next}`);
   const [activity, setActivity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
   const [quests, setQuests] = useLocalStore<Quest[]>(KEYS.quests, EMPTY_QUESTS);
   const [proofs, setProofs] = useLocalStore<SkillProofMap>(KEYS.skillProof, EMPTY_SKILL_PROOF);
@@ -53,7 +65,7 @@ export default function MentorPage() {
   const [feedback, setFeedback] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [messageKind, setMessageKind] = useState<InboxMessage["kind"]>("cheer");
-  const [onlyOpen, setOnlyOpen] = useState(true);
+  const [onlyOpen, setOnlyOpen] = useState(false);
 
   const today = hydrated ? localDate() : "";
   const real = useMemo(() => activity.filter(a => !isSample(a)), [activity]);
@@ -94,16 +106,16 @@ export default function MentorPage() {
   const comment = (id: string, c: Comment) => setActivity(activity.map(a => a.id === id ? { ...a, comments: [...(a.comments ?? []), c] } : a));
   const send = (kind: InboxMessage["kind"], text: string) => { if (!text.trim()) return; setInbox([{ id: uid(), at: new Date().toISOString(), kind, text: text.trim() }, ...inbox]); setMessage(""); celebrate({ emoji: kind === "cheer" ? "💖" : "📨", title: "Sent to Hanifa", text: "She’ll see it on her Home page.", confetti: false, sound: "pop" }); };
 
-  const journal = [...activity].sort((a, b) => b.date.localeCompare(a.date)).filter(a => !onlyOpen || (!isSample(a) && !(a.comments ?? []).some(c => c.by === "mentor")));
+  // To do only lists entries still waiting for a reply; Her diary lists everything unless the filter is on.
+  const open = (a: Activity) => !isSample(a) && (a.blocker.trim() || a.did.trim()) && !(a.comments ?? []).some(c => c.by === "mentor") && !a.mentorNote;
+  const journal = [...activity].sort((a, b) => b.date.localeCompare(a.date)).filter(a => (tab === "todo" || onlyOpen) ? open(a) : true);
 
   return <div>
-    <SectionHeading eyebrow="Mentor Hub · see, cheer, guide" title="What Hanifa needs from you 👀" copy="Start with To do: everything she sent you is there. Progress shows how she is doing.">
-    </SectionHeading>
+    <SectionHeading eyebrow={`Mentor Hub · ${HEADINGS[tab][0]}`} title={HEADINGS[tab][1]} copy={HEADINGS[tab][2]} />
     {message && <p role="status" className="animate-pop mb-4 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white">{message}</p>}
 
-    <div className="no-scrollbar mb-6 flex gap-2 overflow-x-auto">{TABS.map(t => <button key={t} onClick={() => { setTab(t); setMessage(""); }} className={`chip shrink-0 !px-4 !py-2.5 text-sm transition ${tab === t ? "bg-ink text-white shadow-pop" : "bg-white/80 text-ink/60 ring-1 ring-ink/5 hover:bg-white"}`}>{TAB_LABEL[t]}{t === "To do" && attention > 0 && <span className="ml-1 animate-pop rounded-full bg-brand px-1.5 text-[11px] text-white">{attention}</span>}</button>)}</div>
 
-    {tab === "Progress" && <div className="space-y-5">
+    {tab === "progress" && <div className="space-y-5">
       <div className="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="card p-5"><p className="text-sm font-bold text-ink/55">Level</p><p className="mt-2 font-display text-3xl font-extrabold">{game.rank.emoji} <AnimatedNumber value={game.level} /></p><p className="text-xs text-ink/45">{game.rank.title} · {game.xp} XP</p></div>
         <div className="card p-5"><p className="text-sm font-bold text-ink/55">Streak</p><p className="mt-2 flex items-center gap-1 font-display text-3xl font-extrabold"><Flame className={game.streak.current ? "animate-flame text-brand" : "text-ink/30"} /><AnimatedNumber value={game.streak.current} /></p><p className="text-xs text-ink/45">best {game.streak.best} day{game.streak.best === 1 ? "" : "s"}</p></div>
@@ -115,7 +127,7 @@ export default function MentorPage() {
         <section className={`card p-6 ${attention ? "ring-2 ring-brand/40" : ""}`}>
           <p className="eyebrow">Needs you</p><h2 className="mt-1 font-display text-xl font-extrabold">{attention ? `${attention} thing${attention > 1 ? "s" : ""} waiting` : "All caught up ✨"}</h2>
           <ul className="mt-4 space-y-2.5 text-sm font-semibold">
-            {[["Missions to review", waitingQuests.length, "To do", "🎯"], ["Levels sent for verification", waitingProofs.length, "To do", "🛡️"], ["Questions from Hanifa", questions.length, "To do", "🙋‍♀️"], ["Entries with no reply yet", needsReply.length, "To do", "💬"]].map(([label, n, target, emoji]) =>
+            {[["Missions to review", waitingQuests.length, "todo", "🎯"], ["Levels sent for verification", waitingProofs.length, "todo", "🛡️"], ["Questions from Hanifa", questions.length, "todo", "🙋‍♀️"], ["Entries with no reply yet", needsReply.length, "todo", "💬"]].map(([label, n, target, emoji]) =>
               <li key={String(label)}><button onClick={() => setTab(target as Tab)} className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition hover:-translate-y-0.5 ${Number(n) ? "bg-brand/10" : "bg-ink/[.04] text-ink/45"}`}><span>{emoji}</span><span className="flex-1">{label}</span><span className="font-display text-lg font-extrabold">{n}</span></button></li>)}
           </ul>
         </section>
@@ -149,7 +161,7 @@ export default function MentorPage() {
       </div>
     </div>}
 
-    {tab === "To do" && <div className="space-y-8">
+    {tab === "todo" && <div className="space-y-8">
       <section><h2 className="font-display text-2xl font-extrabold">Missions to review</h2>
         {waitingQuests.length === 0 ? <p className="card mt-3 p-6 text-sm text-ink/55">Nothing waiting. 🎉</p> : <div className="mt-3 space-y-4">{waitingQuests.map(q => <article key={q.id} className="card animate-fade-up p-5">
           <p className="eyebrow">{q.skill}</p><h3 className="mt-1 font-display text-xl font-extrabold">{q.title}</h3>
@@ -170,9 +182,9 @@ export default function MentorPage() {
       </section>
     </div>}
 
-    {tab === "To do" && <section className="mt-8">
-      <div className="mb-4 flex flex-wrap items-center gap-2"><h2 className="mr-auto font-display text-2xl font-extrabold">Her diary</h2><button onClick={() => setOnlyOpen(v => !v)} className={`chip !px-4 !py-2 transition ${onlyOpen ? "bg-ink text-white" : "bg-white/80 text-ink/60 ring-1 ring-ink/5"}`}>{onlyOpen ? "Show all entries" : "Show only: needs a reply"}</button></div>
-      {journal.length === 0 ? <p className="card p-6 text-sm text-ink/55">Nothing to show.</p> : <div className="stagger space-y-4">{journal.map(a => <article key={a.id} className="card p-5">
+    {(tab === "todo" || tab === "diary") && <section className={tab === "todo" ? "mt-8" : ""}>
+      <div className="mb-4 flex flex-wrap items-center gap-2"><h2 className="mr-auto font-display text-2xl font-extrabold">{tab === "todo" ? "Diary entries waiting for your reply" : "Her diary"}</h2>{tab === "diary" && <button onClick={() => setOnlyOpen(v => !v)} className={`chip !px-4 !py-2 transition ${onlyOpen ? "bg-ink text-white" : "bg-white/80 text-ink/60 ring-1 ring-ink/5"}`}>{onlyOpen ? "Show all entries" : "Show only: needs a reply"}</button>}</div>
+      {journal.length === 0 ? <p className="card p-6 text-sm text-ink/55">{tab === "todo" ? "All replied. 🎉" : "Nothing to show."}</p> : <div className="stagger space-y-4">{journal.map(a => <article key={a.id} className="card p-5">
         <div className="flex flex-wrap items-center gap-2"><span className="text-xl">{feelingIcon(a.feeling)}</span><h3 className="font-display text-lg font-extrabold">{a.topic}</h3><span className="chip bg-ink/5 text-ink/60">{fmtDay(a.date)}</span>{a.minutes > 0 && <span className="chip bg-brand/10 text-brand">{fmtMinutes(a.minutes)}</span>}{isSample(a) && <span className="chip bg-amber-100 text-amber-900">Sample week</span>}</div>
         {a.did && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{a.did}</p>}
         {a.practiced && <p className="mt-2 text-xs text-ink/55"><b>Practised:</b> {a.practiced}</p>}
@@ -182,9 +194,9 @@ export default function MentorPage() {
       </article>)}</div>}
     </section>}
 
-    {tab === "To do" && <div className="mt-8"><AskedQuestions /></div>}
+    {tab === "todo" && <div className="mt-8"><AskedQuestions /></div>}
 
-    {tab === "Progress" && <section className="mt-8">
+    {tab === "progress" && <section className="mt-8">
       <h2 className="font-display text-2xl font-extrabold">Level by level</h2><p className="mt-1 text-sm text-ink/55">Activity is hers. The ✅ verified stamp is yours. Tap it to give or remove it.</p>
       <div className="card mt-4 divide-y divide-ink/5 overflow-hidden">{roadmap.map((m, i) => {
         const state = getStageState(i, stageIds, roadmapProgress.passed), id = `module-${m.number}`;
@@ -203,9 +215,9 @@ export default function MentorPage() {
       })}</div>
     </section>}
 
-    {tab === "Settings" && <div className="space-y-5"><CloudSetup /><SheetSync /></div>}
+    {tab === "settings" && <div className="space-y-5"><CloudSetup /><SheetSync /></div>}
 
-    {tab === "Message" && <div className="grid gap-6 lg:grid-cols-2">
+    {tab === "message" && <div className="grid gap-6 lg:grid-cols-2">
       <section className="space-y-4">
         <div className="card p-5 sm:p-6">
           <div className="flex items-center gap-2"><MessageCircle className="text-brand" size={20} /><h2 className="font-display text-xl font-extrabold">Send Hanifa a message</h2></div>
