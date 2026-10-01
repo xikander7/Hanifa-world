@@ -8,6 +8,7 @@ import { lessons } from "@/data/lessons";
 import { EMPTY_BRAIN, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, EMPTY_SKILL_PROOF, IMPORTED_ACTIVITY, KEYS, SKILLS, addDays, blankSkillProof, feelingIcon, fmtDay, fmtMinutes, isSample, localDate, uid, weekStart } from "@/lib/data";
 import type { Activity, Brain, Comment, InboxMessage, Quest, RoadmapProgress, SkillProofMap } from "@/lib/data";
 import { XP } from "@/lib/game";
+import { quizKey, TIERS } from "@/lib/quizTier";
 import { getStageState } from "@/lib/roadmap-progress";
 import { useGame } from "@/lib/useGame";
 import { useHydrated, useLocalStore } from "@/lib/store";
@@ -202,14 +203,14 @@ function MentorHub() {
         const state = getStageState(i, stageIds, roadmapProgress.passed), id = `module-${m.number}`;
         const total = m.resources.filter(r => !r.optional).length + m.practice.length;
         const done = (roadmapProgress.resources[id] || []).filter(r => m.resources.some(x => x.id === r && !x.optional)).length + (roadmapProgress.practice[id] || []).length;
-        const q = brain.quiz[String(m.number)], verified = proofs[SKILLS[i].id]?.verified;
+        const qs = TIERS.map(t => ({ tier: t, result: brain.quiz[quizKey(m.number, t.id)] })), verified = proofs[SKILLS[i].id]?.verified;
         const mastered = lessons[i].cards.filter((_, ci) => (brain.cards[`m${m.number}-c${ci + 1}`]?.box ?? 0) >= 3).length;
         return <div key={m.number} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
           <span className="text-2xl">{lessons[i].emoji}</span>
           <div className="min-w-[10rem] flex-1"><p className="text-sm font-extrabold">{m.number}. {m.title}</p><div className="mt-1.5 flex items-center gap-2"><ProgressBar value={(done / total) * 100} height="h-1.5" className="max-w-40 flex-1" /><span className="text-[11px] font-bold text-ink/40">{done}/{total}</span></div></div>
           <span className={`chip ${state === "passed" ? "bg-emerald-100 text-emerald-800" : state === "ready" ? "bg-brand/10 text-brand" : "bg-ink/5 text-ink/40"}`}>{state === "passed" ? "Cleared" : state === "ready" ? "In progress" : "Locked"}</span>
           <span className="chip bg-ink/5 text-ink/60" title="Flashcards mastered">🃏 {mastered}/{lessons[i].cards.length}</span>
-          <span className={`chip ${q ? (q.best === q.total ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900") : "bg-ink/5 text-ink/40"}`} title="Best quiz score">🧠 {q ? `${q.best}/${q.total}` : "—"}</span>
+          <span className="flex gap-1" title="Best quiz scores: Easy, Medium, Hard">{qs.map(({ tier, result }) => <span key={tier.id} className={`chip ${result ? (result.best === result.total ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900") : "bg-ink/5 text-ink/40"}`}>{tier.emoji} {result ? `${result.best}/${result.total}` : "—"}</span>)}</span>
           <button onClick={() => toggleVerified(i)} className={`chip !px-3 !py-1.5 transition ${verified ? "bg-brand text-white" : "bg-white text-ink/50 ring-1 ring-ink/10 hover:ring-brand/50"}`}><BadgeCheck size={13} />{verified ? "Verified" : "Verify"}</button>
         </div>;
       })}</div>

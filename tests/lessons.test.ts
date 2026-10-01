@@ -60,6 +60,13 @@ describe("quiz tiers", () => {
     all.forEach(q => counts[q.answer]++);
     counts.forEach(c => expect(c).toBeGreaterThan(all.length * 0.18));
   });
+  it("doesn't give the right answer away by being much longer than the wrong ones", () => {
+    lessons.forEach(l => (["medium", "hard"] as const).forEach(t => quizFor(l.module, t).forEach(q => {
+      const right = q.options[q.answer].length;
+      const longestWrong = Math.max(...q.options.filter((_, i) => i !== q.answer).map(o => o.length));
+      if (right > 30) expect(right, q.q).toBeLessThanOrEqual(longestWrong * 1.45);
+    })));
+  });
   it("keeps Easy results under the plain level number so old scores still count", () => {
     expect(quizKey(3, "easy")).toBe("3");
     expect(quizKey(3, "hard")).toBe("3:hard");

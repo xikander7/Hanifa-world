@@ -1,12 +1,13 @@
 import { addDays, isSample, localDate, weekStart } from "./data";
 import type { Activity, Brain, Quest, RoadmapProgress, SkillProofMap } from "./data";
+import { tierMeta, tierOfKey } from "./quizTier";
 
 // Everything here is derived from stored data, never stored itself, so XP can't be double-counted
 // and Sikander and Hanifa always see the same numbers.
 
 export const XP = {
   perMinute: 1, minuteCapPerDay: 180, journalEntry: 15, journalCapPerDay: 2,
-  masteredCard: 5, quizCorrect: 10, dailyThree: 30, levelCleared: 150, perfectDay: 50, verifiedSkill: 100, defaultQuest: 40,
+  masteredCard: 5, dailyThree: 30, levelCleared: 150, perfectDay: 50, verifiedSkill: 100, defaultQuest: 40,
 } as const;
 
 export const DAILY_FOCUS_GOAL_MINUTES = 25;
@@ -79,6 +80,8 @@ export const BADGES: Badge[] = [
   { id: "streak-7", emoji: "🌋", name: "Unstoppable", hint: "Learn 7 days in a row", earned: c => c.streakBest >= 7 },
   { id: "streak-21", emoji: "☄️", name: "Habit Hero", hint: "Learn 21 days in a row", earned: c => c.streakBest >= 21 },
   { id: "quiz-whiz", emoji: "🧠", name: "Quiz Whiz", hint: "Score 100% on any quiz", earned: c => Object.values(c.brain.quiz).some(q => q.total > 0 && q.best === q.total) },
+  { id: "heating-up", emoji: "🔥", name: "Heating Up", hint: "Score 100% on a Medium quiz", earned: c => Object.entries(c.brain.quiz).some(([k, q]) => tierOfKey(k) === "medium" && q.total > 0 && q.best === q.total) },
+  { id: "diamond-mind", emoji: "💎", name: "Diamond Mind", hint: "Score 100% on a Hard quiz", earned: c => Object.entries(c.brain.quiz).some(([k, q]) => tierOfKey(k) === "hard" && q.total > 0 && q.best === q.total) },
   { id: "card-shark", emoji: "🃏", name: "Card Shark", hint: "Master 20 flashcards", earned: c => c.masteredCards >= 20 },
   { id: "brain-builder", emoji: "🧬", name: "Brain Builder", hint: "Master 60 flashcards", earned: c => c.masteredCards >= 60 },
   { id: "level-1", emoji: "🚀", name: "Lift Off", hint: "Clear your first adventure level", earned: c => c.roadmap.passed.length >= 1 },
@@ -114,7 +117,8 @@ export function computeGame(input: GameInput) {
   const minuteXp = Object.values(perDay).reduce((sum, m) => sum + Math.min(m, XP.minuteCapPerDay) * XP.perMinute, 0);
   const journalXp = Object.values(journalPerDay).reduce((sum, n) => sum + Math.min(n, XP.journalCapPerDay) * XP.journalEntry, 0);
   const masteredCards = Object.values(brain.cards).filter(c => c.box >= MASTERED_BOX).length;
-  const quizXp = Object.values(brain.quiz).reduce((sum, q) => sum + q.best * XP.quizCorrect, 0);
+  // Harder quizzes pay more per right answer; only the best score of each quiz counts.
+  const quizXp = Object.entries(brain.quiz).reduce((sum, [key, q]) => sum + q.best * tierMeta(tierOfKey(key)).xpPerCorrect, 0);
   const dailyXp = Object.keys(brain.daily).length * XP.dailyThree;
   const levelsCleared = roadmap.passed.length;
   const questXp = quests.filter(q => q.status === "Completed").reduce((sum, q) => sum + (q.xp ?? XP.defaultQuest), 0);

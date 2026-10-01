@@ -1,6 +1,7 @@
 // Three quiz difficulty tiers per level. Easy lives in lessons.ts; Medium and Hard live in ./quiz.
-// A result is stored under the level number for Easy (as it always was) and "<level>:medium" / "<level>:hard".
 
+import { quizKey, TIERS } from "@/lib/quizTier";
+import type { Tier } from "@/lib/quizTier";
 import { lessons } from "./lessons";
 import type { QuizQuestion } from "./lessons";
 import { place } from "./quiz/build";
@@ -10,15 +11,8 @@ import { levels06to10 } from "./quiz/levels06to10";
 import { levels11to15 } from "./quiz/levels11to15";
 import { levels16to20 } from "./quiz/levels16to20";
 
-export type Tier = "easy" | "medium" | "hard";
-export const TIERS: { id: Tier; label: string; emoji: string; xpPerCorrect: number; blurb: string }[] = [
-  { id: "easy", label: "Easy", emoji: "🌱", xpPerCorrect: 10, blurb: "Warm-up: the key ideas" },
-  { id: "medium", label: "Medium", emoji: "🔥", xpPerCorrect: 15, blurb: "Apply it: predict, choose, spot the bug" },
-  { id: "hard", label: "Hard", emoji: "💎", xpPerCorrect: 20, blurb: "Think it through: tricky cases and why" },
-];
-
-export const quizKey = (module: number, tier: Tier) => (tier === "easy" ? String(module) : `${module}:${tier}`);
-export const tierOfKey = (key: string): Tier => (key.endsWith(":medium") ? "medium" : key.endsWith(":hard") ? "hard" : "easy");
+export { TIERS, quizKey, tierOfKey } from "@/lib/quizTier";
+export type { Tier } from "@/lib/quizTier";
 
 const banks: Record<number, LevelBank> = { ...levels01to05, ...levels06to10, ...levels11to15, ...levels16to20 };
 

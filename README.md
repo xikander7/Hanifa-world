@@ -474,7 +474,7 @@ The menu shows five main tabs, then "More", then Mentor Hub for the mentor.
 | `/guide` | How to use this app | Kid-friendly, step-by-step explanation of every tab, plus a dictionary and FAQ (first in the menu) |
 | `/home` | My Day | Nova the mascot, daily goals, focus timer, messages from Mentor, streak calendar, and a "copy my update for Sikander" report |
 | `/adventure` | Level Map | 20-level world map with playlists, missions, proof for Mentor verification, and level-clear celebrations (`/journey` redirects here) |
-| `/learn` | Quiz & Cards | Brain Gym: 120 flashcards (spaced repetition), a 4-question quiz per level, and the Daily 3 |
+| `/learn` | Quiz & Cards | Brain Gym: 120 flashcards (spaced repetition), three quizzes per level (Easy 4, Medium 6, Hard 6 questions = 320 in total), and the Daily 3 |
 | `/time` | My Diary | Time logs, reflections, questions for Mentor, proof, screenshots, and comment threads |
 | `/me` | My Trophies | XP, level, badges and achievements |
 | `/quests` | Mini Missions | Missions assigned by Mentor or added by Hanifa, with submit-for-review |
@@ -498,7 +498,7 @@ Going the other way (app → sheet) is part of Cloud save: see below.
 
 ## How XP, streaks and badges work
 
-Everything is **derived from stored activity** in `src/lib/game.ts`, never stored on its own, so it can't be double-counted (quiz XP only counts the best score, focus XP is capped per day, and the workbook's sample week is ignored). Teaching content lives in `src/data/lessons.ts`. Hanifa can switch colour themes and sounds from the sidebar.
+Everything is **derived from stored activity** in `src/lib/game.ts`, never stored on its own, so it can't be double-counted (quiz XP only counts the best score of each quiz, and pays 10 / 15 / 20 XP per right answer on Easy / Medium / Hard, focus XP is capped per day, and the workbook's sample week is ignored). Teaching content lives in `src/data/lessons.ts`. Hanifa can switch colour themes and sounds from the sidebar.
 
 ## Cloud save and security
 

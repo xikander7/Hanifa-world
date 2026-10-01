@@ -50,9 +50,9 @@ const SECTIONS: Section[] = [
       "Pick a topic card and press “Flashcards”. You see a word. Try to remember what it means. Then tap the card to see the answer.",
       "Did you know it? Press “Got it!”. Not sure? Press “Show again”. You will see it again soon.",
       "Say “Got it!” 3 times for a card and it becomes a Mastered card 🃏. That means you really remember it.",
-      "Want a test? Press “Quiz me”. You get 4 questions.",
+      "Want a test? Press “Quiz me” and pick Easy 🌱, Medium 🔥 or Hard 💎. Easy has 4 questions. Medium and Hard have 6 each. The questions come in a new order every time.",
     ],
-    earn: "Daily 3 gives 30 XP. A Mastered card gives 5 XP. Each right quiz answer gives 10 XP.",
+    earn: "Daily 3 gives 30 XP. A Mastered card gives 5 XP. A right quiz answer gives 10 XP on Easy, 15 XP on Medium and 20 XP on Hard.",
     tips: ["A wrong answer is GOOD. That is how your brain grows.", "Do the Daily 3 every day. It keeps your streak going!"],
   },
   {

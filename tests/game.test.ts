@@ -40,6 +40,19 @@ describe("xp", () => {
     const brain = { ...EMPTY_BRAIN, quiz: { "1": { best: 3, total: 4, attempts: 9, last: "2026-10-10" } } };
     expect(computeGame({ ...base, brain }).xp).toBe(30);
   });
+  it("pays more per right answer on harder quizzes", () => {
+    const result = (best: number, total: number) => ({ best, total, attempts: 1, last: "2026-10-10" });
+    const brain = { ...EMPTY_BRAIN, quiz: { "1": result(4, 4), "1:medium": result(5, 6), "1:hard": result(3, 6) } };
+    expect(computeGame({ ...base, brain }).xp).toBe(4 * 10 + 5 * 15 + 3 * 20);
+  });
+  it("awards the Medium and Hard quiz badges only for a perfect score on that tier", () => {
+    const result = (best: number, total: number) => ({ best, total, attempts: 1, last: "2026-10-10" });
+    const ids = (quiz: Record<string, ReturnType<typeof result>>) => computeGame({ ...base, brain: { ...EMPTY_BRAIN, quiz } }).earnedBadges.map(b => b.id);
+    expect(ids({ "2:medium": result(6, 6) })).toContain("heating-up");
+    expect(ids({ "2:medium": result(6, 6) })).not.toContain("diamond-mind");
+    expect(ids({ "2:hard": result(5, 6) })).not.toContain("diamond-mind");
+    expect(ids({ "2:hard": result(6, 6) })).toContain("diamond-mind");
+  });
   it("awards a perfect-day bonus when all three daily goals are done", () => {
     const brain = { ...EMPTY_BRAIN, days: ["2026-10-10"], daily: { "2026-10-10": { score: 3, total: 3 } } };
     const game = computeGame({ ...base, brain, activity: [entry("2026-10-10", 30)] });
