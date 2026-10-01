@@ -11,7 +11,7 @@ import { syncFromLiveSheet, syncIsDue } from "@/lib/liveSheet";
 import { STORE_ERROR_EVENT } from "@/lib/store";
 import { cloudUrl, isCloudUrl, mentorSignIn, mentorSignOut, mentorToken, setCloudUrl, startCloud, useCloudStatus } from "@/lib/cloud";
 import { finishFocus, useFocusTimer } from "@/lib/useFocus";
-import { startMusic, stopMusic } from "@/lib/music";
+import { setMusicVolume, startMusic, stopMusic } from "@/lib/music";
 import { useGame } from "@/lib/useGame";
 import { useHydrated, useLocalStore } from "@/lib/store";
 import { CelebrateProvider, useCelebrate } from "./Celebrate";
@@ -141,7 +141,7 @@ function Watchers({ role }: { role: Role }) {
   return null;
 }
 
-/** Background music for Hanifa: on by default at a medium volume, with a button and a slider to change it. */
+/** Calm focus music for everyone: on by default at a medium volume, with a button and a slider to change it. */
 function MusicControl({ active }: { active: boolean }) {
   const [music, setMusic] = useLocalStore<string>(KEYS.music, "on");
   const [volume, setVolume] = useLocalStore<number>(KEYS.musicVolume, 0.5);
@@ -151,7 +151,9 @@ function MusicControl({ active }: { active: boolean }) {
   useEffect(() => {
     if (hydrated && active && music === "on") startMusic(volume); else stopMusic();
     return stopMusic;
-  }, [hydrated, active, music, volume]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, active, music]);
+  useEffect(() => { setMusicVolume(volume); }, [volume]);
   if (!active) return null;
   return <div className="relative">
     <button onClick={() => setOpen(o => !o)} aria-label="Music and volume" aria-expanded={open} title="Music and volume"
@@ -304,7 +306,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="ml-auto flex items-center gap-2">
           <FocusPill />
           <CloudPill />
-          <MusicControl active={!mentor} />
+          <MusicControl active />
           {!mentor && <Link href="/guide" aria-label="How to use this app" title="How to use this app" className="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink/70 ring-1 ring-ink/5 transition hover:scale-110 hover:text-brand"><HelpCircle size={17} /></Link>}
           <span className="chip bg-white/80 text-ink ring-1 ring-ink/5" title="Day streak"><Flame size={14} className={`text-brand ${hydrated && game.streak.current > 0 ? "animate-flame" : ""}`} />{hydrated ? game.streak.current : 0}</span>
           <span className="chip bg-white/80 text-ink ring-1 ring-ink/5" title="Total XP"><Zap size={14} className="text-brand" />{hydrated ? game.xp.toLocaleString() : 0}</span>
