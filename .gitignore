@@ -6,3 +6,5 @@ node_modules/
 .env.local
 coverage/
 src/data/seed.local.json
+.vercel
+.env*

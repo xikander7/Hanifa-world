@@ -17,6 +17,8 @@ export const KEYS = {
   seenGame: "future-world-seen-game-v1",
   role: "future-world-role",
   sound: "future-world-sound",
+  music: "future-world-music",
+  musicVolume: "future-world-music-volume",
   guideSeen: "future-world-guide-seen",
   sheetSeeded: "future-world-sheet-seeded-v1",
   lastSheetSync: "future-world-last-sheet-sync",

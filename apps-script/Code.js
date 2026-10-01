@@ -9,15 +9,15 @@
  *    Every device syncs with it, so her phone, her laptop and your laptop all see the same thing.
  *  - Writes every journal entry she makes in the app to an "App Journal" tab in the working sheet. Anything you type in
  *    that tab's "Sikander's reply" column shows up in the app as your comment.
- *  - Fills "📱 App ..." columns on the sheet's main tabs (Time Tracking Daily, Weekly Learning Updates) with the time,
+ *  - Fills "App ..." columns on the sheet's main tabs (Time Tracking Daily, Weekly Learning Updates) with the time,
  *    notes and chat from the app. Only those columns are written; what anyone types in the other columns is never touched,
- *    and the app ignores the 📱 columns when it reads the sheet, so nothing is counted twice.
+ *    and the app ignores the columns when it reads the sheet, so nothing is counted twice.
  *  - Checks the Mentor PIN here, on Google's side, so it is never inside the app. Changes only a mentor may make
  *    (approving, verifying, messages, mentor comments) are refused unless they come from a device signed in as Mentor.
  *
  *  - Emails Sikander when Hanifa needs him: a question, a help request, a mission or level to review, or a reply.
  *
- * Script Properties (Project Settings → Script Properties):
+ * Script Properties (Project Settings > Script Properties):
  *  - MENTOR_PIN   required, your PIN
  *  - MENTOR_EMAIL optional; alerts go here. Without it they go to the Google account that runs this script
  *  - HANIFA_EMAIL optional; her daily reminder goes here (several addresses can be separated with commas)
@@ -30,8 +30,8 @@ const WORKING_SHEET_ID = "1U-4tJ5tJGLne0uCzxhKHlO9aBvm9DsfIOvV94VDXYfE";
 const JOURNAL_TAB = "App Journal";
 const TIME_TAB = "Time Tracking Daily";
 const WEEKLY_TAB = "Weekly Learning Updates";
-const TIME_APP_HEADER = ["📱 App hours", "📱 App notes", "📱 App chat"];
-const WEEKLY_APP_HEADER = ["📱 App chat"];
+const TIME_APP_HEADER = ["App hours", "App notes", "App chat"];
+const WEEKLY_APP_HEADER = ["App chat"];
 const ACTIVITY_KEY = "future-world-activity-v2";
 const SYNCED_KEYS = [
   "future-world-quests", ACTIVITY_KEY, "hanifa-tech-roadmap-progress-v1", "future-world-weekly-goal-hours",
@@ -181,34 +181,34 @@ function mentorAlerts(key, before, after) {
   const alerts = [];
   if (key === "future-world-asks-v1") {
     const old = byId(before);
-    list(after).forEach(a => { if (!old[a.id]) alerts.push("💬 She asked for help with " + text(a.topic) + (text(a.question).trim() ? ": \"" + text(a.question).trim() + "\"" : "") + " (" + text(a.mode) + ")"); });
+    list(after).forEach(a => { if (!old[a.id]) alerts.push("\u{1F4AC} She asked for help with " + text(a.topic) + (text(a.question).trim() ? ": \"" + text(a.question).trim() + "\"" : "") + " (" + text(a.mode) + ")"); });
   }
   if (key === ACTIVITY_KEY) {
     const old = byId(before);
     list(after).forEach(entry => {
       const was = old[entry.id] || {};
       const question = text(entry.blocker).trim();
-      if (question && question !== text(was.blocker).trim()) alerts.push("❓ Question in her diary (" + text(entry.topic) + "): \"" + question + "\"");
+      if (question && question !== text(was.blocker).trim()) alerts.push("\u{2753} Question in her diary (" + text(entry.topic) + "): \"" + question + "\"");
       const oldComments = byId(was.comments);
       list(entry.comments).forEach(c => {
-        if (c.by === "hanifa" && !fromSheet(entry, c) && !oldComments[c.id]) alerts.push("✍️ She commented on her diary (" + text(entry.topic) + "): \"" + text(c.text) + "\"");
+        if (c.by === "hanifa" && !fromSheet(entry, c) && !oldComments[c.id]) alerts.push("\u{270D}\u{FE0F} She commented on her diary (" + text(entry.topic) + "): \"" + text(c.text) + "\"");
       });
     });
   }
   if (key === "future-world-quests") {
     const old = byId(before);
-    list(after).forEach(q => { if (q.status === "Waiting for Mentor" && (!old[q.id] || old[q.id].status !== "Waiting for Mentor")) alerts.push("🎯 Mission ready for your review: " + text(q.title) + (text(q.comment).trim() ? " — \"" + text(q.comment).trim() + "\"" : "")); });
+    list(after).forEach(q => { if (q.status === "Waiting for Mentor" && (!old[q.id] || old[q.id].status !== "Waiting for Mentor")) alerts.push("\u{1F3AF} Mission ready for your review: " + text(q.title) + (text(q.comment).trim() ? " - \"" + text(q.comment).trim() + "\"" : "")); });
   }
   if (key === "future-world-skill-proof-v2") {
     const old = before && typeof before === "object" ? before : {};
     Object.keys(after || {}).forEach(id => {
       const now = after[id] || {}, was = old[id] || {};
-      if (now.sent && (!was.sent || text(now.sentAt) !== text(was.sentAt))) alerts.push("🗺️ Level " + id.replace("module-", "") + " sent for you to verify" + (text(now.proof).trim() ? ": " + text(now.proof).trim() : ""));
+      if (now.sent && (!was.sent || text(now.sentAt) !== text(was.sentAt))) alerts.push("\u{1F5FA}\u{FE0F} Level " + id.replace("module-", "") + " sent for you to verify" + (text(now.proof).trim() ? ": " + text(now.proof).trim() : ""));
     });
   }
   if (key === "future-world-inbox-v1") {
     const old = byId(before);
-    list(after).forEach(m => { if (text(m.reply).trim() && text(m.reply) !== text(old[m.id] && old[m.id].reply)) alerts.push("💌 She replied to your message \"" + text(m.text) + "\": \"" + text(m.reply) + "\""); });
+    list(after).forEach(m => { if (text(m.reply).trim() && text(m.reply) !== text(old[m.id] && old[m.id].reply)) alerts.push("\u{1F48C} She replied to your message \"" + text(m.text) + "\": \"" + text(m.reply) + "\""); });
   }
   return alerts;
 }
@@ -217,12 +217,12 @@ function sendAlertEmail(alerts, backend) {
   const to = backend.prop("MENTOR_EMAIL") || backend.ownerEmail();
   if (!to) return;
   const subject = alerts.length === 1 ? "Hanifa: " + alerts[0].replace(/^\S+\s/, "").slice(0, 90) : "Hanifa has " + alerts.length + " updates for you";
-  const body = "Hi Sikander,\n\n" + alerts.map(a => "• " + a).join("\n") + "\n\nOpen Mentor Hub: " + APP_URL + "/mentor\n\n— My Future World";
+  const body = "Hi Sikander,\n\n" + alerts.map(a => "- " + a).join("\n") + "\n\nOpen Mentor Hub: " + APP_URL + "/mentor\n\n- My Future World";
   backend.sendMail(to, subject, body);
 }
 
 // ------------------------------------------------------------------ the "App Journal" tab
-const JOURNAL_HEADER = ["Date", "Type", "Topic", "Minutes", "What I learned / did", "Practised", "Feeling", "Question for Sikander", "Proof", "Chat in the app", "✍️ Sikander's reply (type here)", "Entry id (don't edit)"];
+const JOURNAL_HEADER = ["Date", "Type", "Topic", "Minutes", "What I learned / did", "Practised", "Feeling", "Question for Sikander", "Proof", "Chat in the app", "Sikander's reply (type here)", "Entry id (don't edit)"];
 const REPLY_COL = 10, ID_COL = 11; // zero-based
 const replyId = entryId => entryId + "-sheetreply";
 // Text that starts with = + - @ would become a formula in Sheets.
@@ -235,7 +235,7 @@ function journalRows(activity, replies) {
     .sort((a, b) => text(b.date).localeCompare(text(a.date)))
     .map(a => [
       a.date, a.kind, safeCell(a.topic), a.minutes || "", safeCell(a.did), safeCell(a.practiced), text(a.feeling),
-      safeCell(a.blocker), safeCell(a.proof) + (a.attachment ? (a.proof ? " · " : "") + "📸 screenshot in the app" : ""),
+      safeCell(a.blocker), safeCell(a.proof) + (a.attachment ? (a.proof ? " - " : "") + "\u{1F4F8} screenshot in the app" : ""),
       safeCell(list(a.comments).filter(c => c.id !== replyId(a.id)).map(c => (c.by === "mentor" ? "Sikander: " : "Hanifa: ") + c.text).join("\n")),
       safeCell(replies[a.id] || ""), "'" + a.id,
     ]);
@@ -273,7 +273,7 @@ const isAppComment = (entry, c) => String(c.id).indexOf(entry.id + "-") !== 0;
 const chatLine = c => (c.by === "mentor" ? "Sikander: " : "Hanifa: ") + text(c.text);
 const hours = minutes => Math.round((minutes / 60) * 100) / 100;
 
-/** Per day: the minutes, notes and chat from the app, for the 📱 columns of Time Tracking Daily. */
+/** Per day: the minutes, notes and chat from the app, for the columns of Time Tracking Daily. */
 function timeAppColumns(activity) {
   const days = {};
   const day = date => (days[date] = days[date] || { minutes: 0, notes: [], chat: [] });
@@ -282,7 +282,7 @@ function timeAppColumns(activity) {
     if (isAppEntry(a)) {
       const d = day(a.date);
       d.minutes += Number(a.minutes) || 0;
-      const note = [text(a.did).trim(), text(a.blocker).trim() && "❓ " + text(a.blocker).trim()].filter(Boolean).join(" ");
+      const note = [text(a.did).trim(), text(a.blocker).trim() && "\u{2753} " + text(a.blocker).trim()].filter(Boolean).join(" ");
       if (note || a.minutes) d.notes.push(text(a.topic) + (a.minutes ? " (" + a.minutes + "m)" : "") + (note ? ": " + note : ""));
       list(a.comments).forEach(c => { if (String(c.id) !== replyId(a.id)) d.chat.push(chatLine(c)); });
     } else if (String(a.id).indexOf("sheet-time-") === 0) {
@@ -297,7 +297,7 @@ function timeAppColumns(activity) {
   return out;
 }
 
-/** Per week label: the chat from the app on that week's sheet entry, for the 📱 column of Weekly Learning Updates. */
+/** Per week label: the chat from the app on that week's sheet entry, for the column of Weekly Learning Updates. */
 function weeklyAppColumns(activity) {
   const out = {};
   list(activity).forEach(a => {
@@ -381,16 +381,20 @@ function sheetsBackend() {
       return out;
     },
     /**
-     * Writes the 📱 columns of a main tab. `byRow` maps a row's key (its date as yyyy-MM-dd, or its week label) to the
-     * values for those columns. Rows without app data get empty 📱 cells; days the tab doesn't have yet are added.
+     * Writes the columns of a main tab. `byRow` maps a row's key (its date as yyyy-MM-dd, or its week label) to the
+     * values for those columns. Rows without app data get empty cells; days the tab doesn't have yet are added.
      */
     writeAppColumns: (tabName, header, byRow, keyType) => {
       const sheet = SpreadsheetApp.openById(WORKING_SHEET_ID).getSheetByName(tabName);
       if (!sheet) return;
       const width = Math.max(sheet.getLastColumn(), 1);
       const top = sheet.getRange(1, 1, 1, width).getValues()[0].map(String);
-      let first = top.indexOf(header[0]);
-      if (first < 0) {
+      // Also finds a header an older version wrote with an emoji prefix (possibly garbled), and rewrites it cleanly.
+      const ends = (h, want) => h === want || h.slice(-want.length - 1) === " " + want;
+      let first = top.findIndex(h => ends(h, header[0]));
+      if (first >= 0) {
+        sheet.getRange(1, first + 1, 1, header.length).setValues([header]);
+      } else {
         let last = top.length - 1;
         while (last >= 0 && !top[last].trim()) last--;
         first = last + 1;
@@ -443,21 +447,21 @@ function reminderFor(activity, today, always) {
     if (!days[d.toISOString().slice(0, 10)]) break;
     streak++;
   }
-  const subject = streak > 0 ? "🔥 Keep your " + streak + "-day streak going, Hanifa!" : "💛 Nova misses you! 5 minutes of learning today?";
+  const subject = streak > 0 ? "\u{1F525} Keep your " + streak + "-day streak going, Hanifa!" : "\u{1F49B} Nova misses you! 5 minutes of learning today?";
   const body = [
-    "Hi Hanifa! 👋",
+    "Hi Hanifa! \u{1F44B}",
     "",
-    streak > 0 ? "You learned " + streak + " day" + (streak > 1 ? "s" : "") + " in a row. Do a little today and your streak keeps growing! 🔥" : "A tiny bit of learning today is a great start. Even 5 minutes counts! 🌱",
+    streak > 0 ? "You learned " + streak + " day" + (streak > 1 ? "s" : "") + " in a row. Do a little today and your streak keeps growing! \u{1F525}" : "A tiny bit of learning today is a great start. Even 5 minutes counts! \u{1F331}",
     "",
     "Pick one:",
-    "⚡ Do the Daily 3 (2 minutes)",
-    "▶️ Press “Your next quest” on My Day",
-    "✍️ Write one line in My Diary",
+    "\u{26A1} Do the Daily 3 (2 minutes)",
+    "\u{25B6}\u{FE0F} Press \"Your next quest\" on My Day",
+    "\u{270D}\u{FE0F} Write one line in My Diary",
     "",
     "Open your app: " + APP_URL + "/home",
     "",
-    "You've got this! 💖",
-    "— Nova and Sikander",
+    "You've got this! \u{1F496}",
+    "- Nova and Sikander",
   ].join("\n");
   return { subject: subject, body: body };
 }
@@ -484,7 +488,7 @@ function setup() {
   backend.revs();
   SpreadsheetApp.openById(WORKING_SHEET_ID).getName();
   MailApp.getRemainingDailyQuota(); // asks for permission to send the alert emails
-  if (!backend.prop("MENTOR_PIN")) throw new Error("Add MENTOR_PIN in Project Settings → Script Properties, then run setup again.");
+  if (!backend.prop("MENTOR_PIN")) throw new Error("Add MENTOR_PIN in Project Settings \u{2192} Script Properties, then run setup again.");
   // The daily reminder timer (free): one per day at REMINDER_HOUR in REMINDER_TIMEZONE. Re-running setup replaces it.
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === "dailyReminder").forEach(t => ScriptApp.deleteTrigger(t));
   const hour = Math.min(23, Math.max(0, Number(backend.prop("REMINDER_HOUR") || 17)));

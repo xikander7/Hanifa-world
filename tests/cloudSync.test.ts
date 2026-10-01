@@ -261,7 +261,7 @@ describe("Writing the app's work into the sheet's main tabs", () => {
   it("updates the main tabs whenever the journal is saved", () => {
     const google = fakeGoogle();
     google.call({ action: "push", token: "", changes: [{ key: KEYS.activity, baseRev: 0, value: [entry({ id: "a1", minutes: 45, did: "Git", source: "manual" })] }] });
-    expect(google.appColumns["Time Tracking Daily"].header).toEqual(["📱 App hours", "📱 App notes", "📱 App chat"]);
+    expect(google.appColumns["Time Tracking Daily"].header).toEqual(["App hours", "App notes", "App chat"]);
     expect(google.appColumns["Time Tracking Daily"].byRow["2026-09-30"][0]).toBe(0.75);
     expect(google.appColumns["Weekly Learning Updates"].byRow).toEqual({});
   });

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, FormEvent, Suspense, useContext, useEffect, useState } from "react";
-import { BookOpen, Brain, CheckCircle2, Cloud, CloudOff, Compass, FileSpreadsheet, Flame, GraduationCap, HelpCircle, Home, LineChart, Lock, Menu, MessageCircleHeart, MessageCircleQuestion, NotebookPen, Settings, ShieldCheck, Target, Timer, Trophy, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { BookOpen, Brain, CheckCircle2, Cloud, CloudOff, Compass, FileSpreadsheet, Flame, GraduationCap, HelpCircle, Home, LineChart, Lock, Menu, MessageCircleHeart, Music, MessageCircleQuestion, NotebookPen, Settings, ShieldCheck, Target, Timer, Trophy, Volume2, VolumeX, X, Zap } from "lucide-react";
 import type { Role } from "@/domain/types";
 import { KEYS, NOT_SEEN } from "@/lib/data";
 import { seedSheetEntries } from "@/lib/sheetSeed";
@@ -11,6 +11,7 @@ import { syncFromLiveSheet, syncIsDue } from "@/lib/liveSheet";
 import { STORE_ERROR_EVENT } from "@/lib/store";
 import { cloudUrl, isCloudUrl, mentorSignIn, mentorSignOut, mentorToken, setCloudUrl, startCloud, useCloudStatus } from "@/lib/cloud";
 import { finishFocus, useFocusTimer } from "@/lib/useFocus";
+import { startMusic, stopMusic } from "@/lib/music";
 import { useGame } from "@/lib/useGame";
 import { useHydrated, useLocalStore } from "@/lib/store";
 import { CelebrateProvider, useCelebrate } from "./Celebrate";
@@ -138,6 +139,37 @@ function Watchers({ role }: { role: Role }) {
     }
   }, [now, timer, celebrate]);
   return null;
+}
+
+/** Background music for Hanifa: on by default at a medium volume, with a button and a slider to change it. */
+function MusicControl({ active }: { active: boolean }) {
+  const [music, setMusic] = useLocalStore<string>(KEYS.music, "on");
+  const [volume, setVolume] = useLocalStore<number>(KEYS.musicVolume, 0.5);
+  const [open, setOpen] = useState(false);
+  const hydrated = useHydrated();
+  const playing = hydrated && music === "on";
+  useEffect(() => {
+    if (hydrated && active && music === "on") startMusic(volume); else stopMusic();
+    return stopMusic;
+  }, [hydrated, active, music, volume]);
+  if (!active) return null;
+  return <div className="relative">
+    <button onClick={() => setOpen(o => !o)} aria-label="Music and volume" aria-expanded={open} title="Music and volume"
+      className={`grid h-9 w-9 place-items-center rounded-full ring-1 ring-ink/5 transition hover:scale-110 ${playing ? "bg-white/80 text-brand" : "bg-white/80 text-ink/40"}`}>
+      <Music size={16} className={playing ? "animate-bounce-soft" : ""} />
+    </button>
+    {open && <div className="animate-pop absolute right-0 top-12 z-40 w-56 rounded-3xl bg-white p-4 shadow-pop ring-1 ring-ink/5">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-extrabold uppercase tracking-wider text-ink/45">Music 🎵</p>
+        <button onClick={() => setMusic(music === "on" ? "off" : "on")} aria-pressed={playing} className={`rounded-full px-3 py-1 text-xs font-bold ${playing ? "bg-brand text-white" : "bg-ink/10 text-ink/60"}`}>{playing ? "On" : "Off"}</button>
+      </div>
+      <label className="mt-3 flex items-center gap-2 text-ink/60">
+        <VolumeX size={15} aria-hidden />
+        <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => setVolume(Number(e.target.value))} aria-label="Music volume" className="h-2 w-full accent-brand" />
+        <Volume2 size={15} aria-hidden />
+      </label>
+    </div>}
+  </div>;
 }
 
 function FocusPill() {
@@ -272,6 +304,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="ml-auto flex items-center gap-2">
           <FocusPill />
           <CloudPill />
+          <MusicControl active={!mentor} />
           {!mentor && <Link href="/guide" aria-label="How to use this app" title="How to use this app" className="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink/70 ring-1 ring-ink/5 transition hover:scale-110 hover:text-brand"><HelpCircle size={17} /></Link>}
           <span className="chip bg-white/80 text-ink ring-1 ring-ink/5" title="Day streak"><Flame size={14} className={`text-brand ${hydrated && game.streak.current > 0 ? "animate-flame" : ""}`} />{hydrated ? game.streak.current : 0}</span>
           <span className="chip bg-white/80 text-ink ring-1 ring-ink/5" title="Total XP"><Zap size={14} className="text-brand" />{hydrated ? game.xp.toLocaleString() : 0}</span>
