@@ -72,7 +72,7 @@ export const useRole = () => useContext(RoleContext);
 const greeting = () => { const h = new Date().getHours(); return h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
 
 /** Celebrates level-ups and new badges, and saves finished focus sessions, wherever Hanifa is in the app. */
-function Watchers({ role }: { role: Role }) {
+function Watchers({ role, roleReady }: { role: Role; roleReady: boolean }) {
   const { celebrate, levelUp } = useCelebrate();
   const game = useGame();
   const hydrated = useHydrated();
@@ -80,6 +80,8 @@ function Watchers({ role }: { role: Role }) {
   const { timer } = useFocusTimer();
   const now = useNow(1000, Boolean(timer));
   const earnedKey = game.earnedBadges.map(b => b.id).join(",");
+  // XP, level-ups, badges and saved focus sessions belong to Hanifa alone: nothing here runs while Sikander is signed in as mentor.
+  const hanifa = roleReady && role === "learner";
 
   useEffect(() => { if (hydrated) seedSheetEntries(); }, [hydrated]);
 
@@ -97,13 +99,14 @@ function Watchers({ role }: { role: Role }) {
 
   // Keep the journal in step with the Google Sheet: read it when the app opens, every minute while open, and whenever the tab comes back into view.
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !roleReady) return;
     let busy = false;
     const sync = async () => {
       if (busy || !syncIsDue() || document.visibilityState === "hidden") return;
       busy = true;
       try {
         const { added, updated } = await syncFromLiveSheet();
+        if (!hanifa) return;
         if (added) celebrate({ emoji: "📊", title: `${added} new ${added === 1 ? "entry" : "entries"} from the sheet`, text: "Your Study Sheet is synced to My Diary.", sound: "pop" });
         else if (updated) celebrate({ emoji: "🔄", title: "Sheet synced", text: `${updated} ${updated === 1 ? "entry" : "entries"} updated from the sheet.`, confetti: false, sound: "pop" });
       } catch { /* offline or sheet unreachable: the Working Excel Sheet page shows the error when synced by hand */ }
@@ -113,7 +116,7 @@ function Watchers({ role }: { role: Role }) {
     const timer = window.setInterval(sync, 20_000); // sync() itself waits until a minute has passed
     document.addEventListener("visibilitychange", sync);
     return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", sync); };
-  }, [hydrated, celebrate]);
+  }, [hydrated, roleReady, hanifa, celebrate]);
 
   useEffect(() => {
     const warn = () => celebrate({ emoji: "⚠️", title: "Couldn't save that", text: "This browser's storage is full. Remove a few screenshots from old journal entries, then try again.", confetti: false, sound: "pop" });
@@ -122,7 +125,7 @@ function Watchers({ role }: { role: Role }) {
   }, [celebrate]);
 
   useEffect(() => {
-    if (!hydrated || role !== "learner") return;
+    if (!hydrated || !hanifa) return;
     const earned = game.earnedBadges;
     if (!seen.init) { setSeen({ init: true, level: game.level, badges: earned.map(b => b.id) }); return; }
     const fresh = earned.filter(b => !seen.badges.includes(b.id));
@@ -130,14 +133,14 @@ function Watchers({ role }: { role: Role }) {
     else if (fresh.length) celebrate({ emoji: fresh[0].emoji, title: `Badge unlocked: ${fresh[0].name}`, text: fresh[0].hint, sound: "win" });
     if (game.level !== seen.level || fresh.length || earned.length !== seen.badges.length) setSeen({ init: true, level: game.level, badges: earned.map(b => b.id) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, role, game.level, earnedKey, seen.init]);
+  }, [hydrated, hanifa, game.level, earnedKey, seen.init]);
 
   useEffect(() => {
-    if (timer && now >= timer.endsAt) {
+    if (hanifa && timer && now >= timer.endsAt) {
       const minutes = finishFocus();
       if (minutes) celebrate({ emoji: "⏱️", title: `${minutes} focused minutes saved!`, text: "Take a stretch. You earned it.", xp: minutes, sound: "chime" });
     }
-  }, [now, timer, celebrate]);
+  }, [now, timer, hanifa, celebrate]);
   return null;
 }
 
@@ -199,6 +202,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [role, setRole] = useState<Role>("learner");
+  const [roleReady, setRoleReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [pin, setPin] = useState("");
@@ -210,7 +214,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const hydrated = useHydrated();
 
   // With Cloud save, Mentor mode needs the sign-in token the web app gave this device.
-  useEffect(() => { try { if (sessionStorage.getItem(KEYS.role) === "mentor" && (!cloudUrl() || mentorToken())) setRole("mentor"); } catch { /* ignore */ } }, []);
+  useEffect(() => { try { if (sessionStorage.getItem(KEYS.role) === "mentor" && (!cloudUrl() || mentorToken())) setRole("mentor"); } catch { /* ignore */ } setRoleReady(true); }, []);
   // Older picks (Sunset, Forest) aren't themes any more, so they start on Candy Land.
   useEffect(() => { if (hydrated && !VIBES.some(v => v.id === vibe)) setVibe("bloom"); }, [hydrated, vibe, setVibe]);
   useEffect(() => { document.documentElement.dataset.vibe = vibe; }, [vibe]);
@@ -295,7 +299,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   </>;
 
   return <RoleContext.Provider value={role}><CelebrateProvider>
-    <Watchers role={role} />
+    <Watchers role={role} roleReady={roleReady} />
     {open && <div className="fixed inset-0 z-30 bg-ink/40 backdrop-blur-sm lg:hidden" onClick={() => setOpen(false)} />}
     <aside className={`${open ? "translate-x-0" : "-translate-x-full"} glass fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto border-r border-white p-5 transition-transform duration-300 lg:translate-x-0`}>{sidebar}</aside>
 
