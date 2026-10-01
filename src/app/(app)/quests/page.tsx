@@ -77,6 +77,7 @@ export default function MissionsPage() {
               </>}
             </div>
           </div>
+          {role === "learner" && q.createdBy === "mentor" && <p className="mt-3 text-[11px] font-semibold text-ink/40">Only Sikander can edit or delete this mission (Mentor sign in → Messages &amp; Missions).</p>}
           {q.mentorFeedback && <p className="animate-pop mt-3 rounded-2xl bg-ink px-4 py-3 text-sm text-white"><b>Sikander:</b> {q.mentorFeedback}</p>}
           {submitting === q.id && <form onSubmit={e => submit(e, q)} className="animate-fade-up mt-4 space-y-3 rounded-2xl bg-brand/5 p-4">
             <input className="field" placeholder="Proof link or screenshot link (optional)" value={proof} onChange={e => setProof(e.target.value)} />

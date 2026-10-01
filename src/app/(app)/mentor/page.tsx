@@ -233,9 +233,8 @@ function MentorHub() {
           {inbox.length === 0 ? <p className="mt-2 text-sm text-ink/50">Nothing sent yet.</p> : <ul className="mt-3 space-y-3">{inbox.slice(0, 8).map(m => <li key={m.id} className="rounded-2xl bg-ink/[.04] p-3.5 text-sm"><p className="leading-6">{m.text}</p><p className="mt-1 flex items-center gap-2 text-[11px] font-bold text-ink/40"><span className="flex-1">{m.kind} · {fmtDay(m.at.slice(0, 10), { day: "numeric", month: "short" })}</span><button onClick={() => { if (window.confirm("Delete this message?")) setInbox(inbox.filter(x => x.id !== m.id)); }} aria-label="Delete message" title="Delete" className="text-ink/40 hover:text-rose-600"><Trash2 size={13} /></button></p>{m.reply && <p className="animate-pop mt-2 rounded-xl bg-white px-3 py-2 text-xs"><b>Hanifa:</b> {m.reply}</p>}</li>)}</ul>}
         </div>
       </section>
-      <section className="space-y-4">
-        <MissionForm by="mentor" onCreate={q => { setQuests([...quests, q]); celebrate({ emoji: "📌", title: "Mission assigned", text: q.title, confetti: false, sound: "pop" }); }} />
-        <div className="card p-5 sm:p-6"><h3 className="font-display text-lg font-extrabold">Missions</h3>
+      <section className="order-first space-y-4 lg:order-none">
+        <div className="card p-5 sm:p-6"><h3 className="font-display text-lg font-extrabold">Your missions for Hanifa</h3><p className="mt-1 text-xs text-ink/50">Made a mistake? Press ✏️ to fix a mission or 🗑️ to delete it.</p>
           {quests.length === 0 ? <p className="mt-2 text-sm text-ink/50">None yet.</p> : <ul className="mt-3 space-y-2">{[...quests].sort((a, b) => Number(a.status === "Completed") - Number(b.status === "Completed")).map(q => <li key={q.id} className="rounded-2xl bg-ink/[.04] px-4 py-2.5 text-sm">
             {editing === q.id
               ? <MissionForm by="mentor" initial={q} onCancel={() => setEditing(null)} onCreate={next => { setQuests(quests.map(x => x.id === q.id ? next : x)); setEditing(null); celebrate({ emoji: "✏️", title: "Mission updated", text: next.title, confetti: false, sound: "pop" }); }} />
@@ -244,6 +243,7 @@ function MentorHub() {
                 <button onClick={() => { if (window.confirm(`Delete the mission "${q.title}"? This can't be undone.`)) setQuests(quests.filter(x => x.id !== q.id)); }} aria-label={`Delete ${q.title}`} title="Delete" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-ink/60 transition hover:text-rose-600"><Trash2 size={14} /></button></div>}
           </li>)}</ul>}
         </div>
+        <MissionForm by="mentor" onCreate={q => { setQuests([...quests, q]); celebrate({ emoji: "📌", title: "Mission assigned", text: q.title, confetti: false, sound: "pop" }); }} />
       </section>
     </div>}
   </div>;

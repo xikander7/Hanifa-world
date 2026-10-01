@@ -144,11 +144,10 @@ function Watchers({ role, roleReady }: { role: Role; roleReady: boolean }) {
   return null;
 }
 
-/** Calm focus music for everyone: on by default at a medium volume, with a button and a slider to change it. */
+/** Calm focus music for everyone: on by default at a medium volume. The top bar shows on/off, volume down and volume up. */
 function MusicControl({ active }: { active: boolean }) {
   const [music, setMusic] = useLocalStore<string>(KEYS.music, "on");
   const [volume, setVolume] = useLocalStore<number>(KEYS.musicVolume, 0.5);
-  const [open, setOpen] = useState(false);
   const hydrated = useHydrated();
   const playing = hydrated && music === "on";
   useEffect(() => {
@@ -158,23 +157,17 @@ function MusicControl({ active }: { active: boolean }) {
   }, [hydrated, active, music]);
   useEffect(() => { setMusicVolume(volume); }, [volume]);
   if (!active) return null;
-  return <div className="relative">
-    <button onClick={() => setOpen(o => !o)} aria-label="Music and volume" aria-expanded={open} title="Music and volume"
-      className={`grid h-9 w-9 place-items-center rounded-full ring-1 ring-ink/5 transition hover:scale-110 ${playing ? "bg-white/80 text-brand" : "bg-white/80 text-ink/40"}`}>
-      <Music size={16} className={playing ? "animate-bounce-soft" : ""} />
+  // Volume buttons also switch the music on, so pressing + always gives sound.
+  const change = (by: number) => { setVolume(Math.min(1, Math.max(0, Math.round((volume + by) * 10) / 10))); if (by > 0 && music !== "on") setMusic("on"); };
+  const small = "grid h-7 w-7 place-items-center rounded-full transition hover:bg-ink/10 disabled:opacity-30";
+  return <div className="flex items-center gap-0.5 rounded-full bg-white/80 p-1 ring-1 ring-ink/5" role="group" aria-label="Music">
+    <button onClick={() => setMusic(music === "on" ? "off" : "on")} aria-pressed={playing} aria-label={playing ? "Turn music off" : "Turn music on"} title={playing ? "Music on: tap to turn off" : "Music off: tap to turn on"}
+      className={`grid h-7 w-7 place-items-center rounded-full transition ${playing ? "bg-brand text-white" : "bg-ink/5 text-ink/45"}`}>
+      {playing ? <Music size={14} className="animate-bounce-soft" /> : <VolumeX size={14} />}
     </button>
-    {open && <div className="animate-pop absolute right-0 top-12 z-40 w-56 rounded-3xl bg-white p-4 shadow-pop ring-1 ring-ink/5">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-extrabold uppercase tracking-wider text-ink/45">Music 🎵</p>
-        <button onClick={() => setMusic(music === "on" ? "off" : "on")} aria-pressed={playing} className={`rounded-full px-3 py-1 text-xs font-bold ${playing ? "bg-brand text-white" : "bg-ink/10 text-ink/60"}`}>{playing ? "On" : "Off"}</button>
-      </div>
-      <div className="mt-3 flex items-center gap-2 text-ink/60">
-        <button onClick={() => setVolume(Math.max(0, Math.round((volume - 0.1) * 10) / 10))} disabled={volume <= 0} aria-label="Volume down" title="Volume down" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink/5 transition hover:bg-ink/10 disabled:opacity-40"><Minus size={15} /></button>
-        <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => setVolume(Number(e.target.value))} aria-label="Music volume" className="h-2 min-w-0 flex-1 accent-brand" />
-        <button onClick={() => setVolume(Math.min(1, Math.round((volume + 0.1) * 10) / 10))} disabled={volume >= 1} aria-label="Volume up" title="Volume up" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink/5 transition hover:bg-ink/10 disabled:opacity-40"><Plus size={15} /></button>
-      </div>
-      <p className="mt-2 text-center text-[11px] font-bold text-ink/45">Volume {Math.round(volume * 100)}%</p>
-    </div>}
+    <button onClick={() => change(-0.1)} disabled={!playing || volume <= 0} aria-label="Volume down" title="Volume down" className={`${small} text-ink/70`}><Minus size={14} /></button>
+    <span className="w-8 text-center text-[11px] font-extrabold tabular-nums text-ink/60" aria-live="polite" title="Music volume">{playing ? `${Math.round(volume * 100)}%` : "off"}</span>
+    <button onClick={() => change(0.1)} disabled={playing && volume >= 1} aria-label="Volume up" title="Volume up" className={`${small} text-ink/70`}><Plus size={14} /></button>
   </div>;
 }
 
@@ -314,7 +307,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <MusicControl active />
           {!mentor && <Link href="/guide" aria-label="How to use this app" title="How to use this app" className="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink/70 ring-1 ring-ink/5 transition hover:scale-110 hover:text-brand"><HelpCircle size={17} /></Link>}
           <span className="chip bg-white/80 text-ink ring-1 ring-ink/5" title="Day streak"><Flame size={14} className={`text-brand ${hydrated && game.streak.current > 0 ? "animate-flame" : ""}`} />{hydrated ? game.streak.current : 0}</span>
-          <span className="chip bg-white/80 text-ink ring-1 ring-ink/5" title="Total XP"><Zap size={14} className="text-brand" />{hydrated ? game.xp.toLocaleString() : 0}</span>
+          <span className="chip hidden bg-white/80 text-ink ring-1 ring-ink/5 sm:inline-flex" title="Total XP"><Zap size={14} className="text-brand" />{hydrated ? game.xp.toLocaleString() : 0}</span>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 pb-28 pt-7 lg:px-10 lg:pb-12">{children}</main>
