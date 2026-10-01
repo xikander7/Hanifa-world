@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BadgeCheck, CheckCircle2, Flame, HelpCircle, Lock, MessageCircle, Send, Trophy } from "lucide-react";
+import { BadgeCheck, CheckCircle2, Flame, HelpCircle, Lock, MessageCircle, Pencil, Send, Trash2, Trophy } from "lucide-react";
 import roadmap from "@/data/roadmap.json";
 import { lessons } from "@/data/lessons";
 import { EMPTY_BRAIN, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, EMPTY_SKILL_PROOF, IMPORTED_ACTIVITY, KEYS, SKILLS, addDays, blankSkillProof, feelingIcon, fmtDay, fmtMinutes, isSample, localDate, uid, weekStart } from "@/lib/data";
@@ -58,6 +58,7 @@ function MentorHub() {
   const setTab = (next: Tab) => router.push(`/mentor?tab=${next}`);
   const [activity, setActivity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
   const [quests, setQuests] = useLocalStore<Quest[]>(KEYS.quests, EMPTY_QUESTS);
+  const [editing, setEditing] = useState<string | null>(null);
   const [proofs, setProofs] = useLocalStore<SkillProofMap>(KEYS.skillProof, EMPTY_SKILL_PROOF);
   const [brain] = useLocalStore<Brain>(KEYS.brain, EMPTY_BRAIN);
   const [roadmapProgress] = useLocalStore<RoadmapProgress>(KEYS.roadmap, EMPTY_ROADMAP);
@@ -229,13 +230,19 @@ function MentorHub() {
           <div className="mt-2 space-y-2">{TEMPLATES.map(t => <button key={t.text} onClick={() => send(t.kind, t.text)} className="w-full rounded-2xl bg-ink/[.04] px-4 py-2.5 text-left text-xs font-semibold leading-5 transition hover:-translate-y-0.5 hover:bg-brand/10">{t.text}</button>)}</div>
         </div>
         <div className="card p-5 sm:p-6"><h3 className="font-display text-lg font-extrabold">Sent messages</h3>
-          {inbox.length === 0 ? <p className="mt-2 text-sm text-ink/50">Nothing sent yet.</p> : <ul className="mt-3 space-y-3">{inbox.slice(0, 8).map(m => <li key={m.id} className="rounded-2xl bg-ink/[.04] p-3.5 text-sm"><p className="leading-6">{m.text}</p><p className="mt-1 text-[11px] font-bold text-ink/40">{m.kind} · {fmtDay(m.at.slice(0, 10), { day: "numeric", month: "short" })}</p>{m.reply && <p className="animate-pop mt-2 rounded-xl bg-white px-3 py-2 text-xs"><b>Hanifa:</b> {m.reply}</p>}</li>)}</ul>}
+          {inbox.length === 0 ? <p className="mt-2 text-sm text-ink/50">Nothing sent yet.</p> : <ul className="mt-3 space-y-3">{inbox.slice(0, 8).map(m => <li key={m.id} className="rounded-2xl bg-ink/[.04] p-3.5 text-sm"><p className="leading-6">{m.text}</p><p className="mt-1 flex items-center gap-2 text-[11px] font-bold text-ink/40"><span className="flex-1">{m.kind} · {fmtDay(m.at.slice(0, 10), { day: "numeric", month: "short" })}</span><button onClick={() => { if (window.confirm("Delete this message?")) setInbox(inbox.filter(x => x.id !== m.id)); }} aria-label="Delete message" title="Delete" className="text-ink/40 hover:text-rose-600"><Trash2 size={13} /></button></p>{m.reply && <p className="animate-pop mt-2 rounded-xl bg-white px-3 py-2 text-xs"><b>Hanifa:</b> {m.reply}</p>}</li>)}</ul>}
         </div>
       </section>
       <section className="space-y-4">
         <MissionForm by="mentor" onCreate={q => { setQuests([...quests, q]); celebrate({ emoji: "📌", title: "Mission assigned", text: q.title, confetti: false, sound: "pop" }); }} />
-        <div className="card p-5 sm:p-6"><h3 className="font-display text-lg font-extrabold">Open missions</h3>
-          {quests.filter(q => q.status !== "Completed").length === 0 ? <p className="mt-2 text-sm text-ink/50">None open.</p> : <ul className="mt-3 space-y-2">{quests.filter(q => q.status !== "Completed").map(q => <li key={q.id} className="flex items-center gap-3 rounded-2xl bg-ink/[.04] px-4 py-2.5 text-sm"><span className="min-w-0 flex-1 truncate font-bold">{q.title}</span><span className="chip bg-white text-ink/60">{q.status}</span></li>)}</ul>}
+        <div className="card p-5 sm:p-6"><h3 className="font-display text-lg font-extrabold">Missions</h3>
+          {quests.length === 0 ? <p className="mt-2 text-sm text-ink/50">None yet.</p> : <ul className="mt-3 space-y-2">{[...quests].sort((a, b) => Number(a.status === "Completed") - Number(b.status === "Completed")).map(q => <li key={q.id} className="rounded-2xl bg-ink/[.04] px-4 py-2.5 text-sm">
+            {editing === q.id
+              ? <MissionForm by="mentor" initial={q} onCancel={() => setEditing(null)} onCreate={next => { setQuests(quests.map(x => x.id === q.id ? next : x)); setEditing(null); celebrate({ emoji: "✏️", title: "Mission updated", text: next.title, confetti: false, sound: "pop" }); }} />
+              : <div className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate font-bold">{q.title}</span><span className="chip bg-white text-ink/60">{q.status}</span>
+                <button onClick={() => setEditing(q.id)} aria-label={`Edit ${q.title}`} title="Edit" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-ink/60 transition hover:text-brand"><Pencil size={14} /></button>
+                <button onClick={() => { if (window.confirm(`Delete the mission "${q.title}"? This can't be undone.`)) setQuests(quests.filter(x => x.id !== q.id)); }} aria-label={`Delete ${q.title}`} title="Delete" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-ink/60 transition hover:text-rose-600"><Trash2 size={14} /></button></div>}
+          </li>)}</ul>}
         </div>
       </section>
     </div>}
