@@ -432,11 +432,11 @@ function sheetsBackend() {
 }
 
 // ------------------------------------------------------------------ Hanifa's daily reminder
-/** The reminder for `today` (yyyy-MM-dd), or null when she has already studied today. */
-function reminderFor(activity, today) {
+/** The reminder for `today` (yyyy-MM-dd), or null when she has already studied today (unless `always`, for a test send). */
+function reminderFor(activity, today, always) {
   const days = {};
   list(activity).forEach(a => { if (a && a.date && String(a.id).indexOf("import-") !== 0 && (Number(a.minutes) > 0 || text(a.did).trim())) days[a.date] = true; });
-  if (days[today]) return null;
+  if (days[today] && !always) return null;
   let streak = 0;
   for (let d = new Date(today + "T12:00:00Z"); ; ) {
     d.setUTCDate(d.getUTCDate() - 1);
@@ -471,7 +471,7 @@ function dailyReminder(force) {
   if (!to) return;
   const today = Utilities.formatDate(new Date(), reminderZone(backend), "yyyy-MM-dd");
   const saved = backend.load(ACTIVITY_KEY);
-  const reminder = reminderFor(saved ? saved.value : [], force === true ? "0000-00-00" : today);
+  const reminder = reminderFor(saved ? saved.value : [], today, force === true);
   if (reminder) backend.sendMail(to, reminder.subject, reminder.body);
 }
 

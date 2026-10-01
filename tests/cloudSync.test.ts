@@ -280,6 +280,11 @@ describe("Hanifa's daily reminder", () => {
     expect(reminder.body).toContain("/home");
   });
 
+  it("still makes a reminder for a test send, even on a day she studied", () => {
+    const reminder = server.reminderFor([day("a", "2026-09-30"), day("b", "2026-10-01")], "2026-10-01", true);
+    expect(reminder.subject).toContain("1-day streak");
+  });
+
   it("is gentle when there is no streak, and ignores the sample week", () => {
     const reminder = server.reminderFor([day("import-1", "2026-09-30")], "2026-10-01");
     expect(reminder.subject).toContain("Nova misses you");
