@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createContext, FormEvent, useContext, useEffect, useState } from "react";
 import { BookOpen, Brain, Cloud, CloudOff, Compass, FileSpreadsheet, Flame, GraduationCap, HelpCircle, Home, Lock, Menu, MessageCircleQuestion, NotebookPen, ShieldCheck, Target, Timer, Trophy, Volume2, VolumeX, X, Zap } from "lucide-react";
 import type { Role } from "@/domain/types";
@@ -32,9 +32,11 @@ const moreNav = [
 ];
 const mentorItem = { href: "/mentor", label: "Mentor Hub", short: "Mentor", icon: ShieldCheck };
 
+// Three themes Hanifa can pick: each has its own colours and its own things drifting in the background (globals.css).
 const VIBES = [
-  { id: "bloom", label: "Bloom", from: "#ec4899", to: "#a855f7" }, { id: "ocean", label: "Ocean", from: "#0ea5e9", to: "#6366f1" },
-  { id: "sunset", label: "Sunset", from: "#f97316", to: "#f43f5e" }, { id: "forest", label: "Forest", from: "#10b981", to: "#0d9488" },
+  { id: "bloom", label: "Candy Land", emoji: "🍭", from: "#ec4899", to: "#a855f7" },
+  { id: "space", label: "Space Adventure", emoji: "🚀", from: "#6366f1", to: "#a855f7" },
+  { id: "ocean", label: "Ocean World", emoji: "🌊", from: "#0ea5e9", to: "#6366f1" },
 ];
 
 const RoleContext = createContext<Role>("learner");
@@ -134,6 +136,7 @@ function CloudPill() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [role, setRole] = useState<Role>("learner");
   const [open, setOpen] = useState(false);
   const [showPin, setShowPin] = useState(false);
@@ -147,8 +150,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // With Cloud save, Mentor mode needs the sign-in token the web app gave this device.
   useEffect(() => { try { if (sessionStorage.getItem(KEYS.role) === "mentor" && (!cloudUrl() || mentorToken())) setRole("mentor"); } catch { /* ignore */ } }, []);
+  // Older picks (Sunset, Forest) aren't themes any more, so they start on Candy Land.
+  useEffect(() => { if (hydrated && !VIBES.some(v => v.id === vibe)) setVibe("bloom"); }, [hydrated, vibe, setVibe]);
   useEffect(() => { document.documentElement.dataset.vibe = vibe; }, [vibe]);
   useEffect(() => { setOpen(false); }, [pathname]);
+  // Mentor mode lives on Mentor Hub; Hanifa's pages are for Hanifa.
+  useEffect(() => { if (role === "mentor" && !pathname.startsWith("/mentor")) router.replace("/mentor"); }, [role, pathname, router]);
 
   const switchRole = (next: Role) => { setRole(next); try { sessionStorage.setItem(KEYS.role, next); } catch { /* ignore */ } };
   const [checking, setChecking] = useState(false);
@@ -158,13 +165,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     // The PIN is only ever checked by the Cloud save web app, so it is never in the app's code.
     const error = cloudUrl() ? await mentorSignIn(pin) : "Mentor sign-in needs Cloud save, and it isn’t set up on this device.";
     setChecking(false);
-    if (!error) { switchRole("mentor"); setShowPin(false); setPin(""); setPinError(""); }
+    if (!error) { switchRole("mentor"); setShowPin(false); setPin(""); setPinError(""); router.push("/mentor"); }
     else setPinError(error);
   };
-  const becomeHanifa = async () => { if (role === "mentor") { switchRole("learner"); await mentorSignOut(); } setShowPin(false); };
-  const sideNav = role === "mentor" ? [guideItem, mentorItem, ...learnerNav] : [guideItem, ...learnerNav];
+  const becomeHanifa = async () => { if (role === "mentor") { switchRole("learner"); await mentorSignOut(); router.push("/home"); } setShowPin(false); };
+  // Mentor mode is only Mentor Hub: everything Sikander needs to check is there, so Hanifa's pages stay out of his way.
+  const mentor = role === "mentor";
+  const sideNav = mentor ? [mentorItem] : [guideItem, ...learnerNav];
   // Help lives in the top bar's ? button and the side menu; the "More" pages are in the side menu.
-  const mobileNav = role === "mentor" ? [mentorItem, ...learnerNav] : learnerNav;
+  const mobileNav = mentor ? [] : learnerNav;
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   const sidebar = <>
@@ -188,8 +197,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {href === guideItem.href && !active && hydrated && guideSeen !== "yes" && <span className="rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-brand">Start here</span>}
         </Link>;
       })}
-      <p className="px-4 pb-1 pt-4 text-[11px] font-extrabold uppercase tracking-wider text-ink/40">More</p>
-      {moreNav.map(({ href, label, icon: Icon }) => {
+      {!mentor && <p className="px-4 pb-1 pt-4 text-[11px] font-extrabold uppercase tracking-wider text-ink/40">More</p>}
+      {!mentor && moreNav.map(({ href, label, icon: Icon }) => {
         const active = isActive(href);
         return <Link key={href} href={href} className={`group flex items-center gap-3 rounded-2xl px-4 py-2 text-[13px] font-bold transition duration-200 ${active ? "bg-brand text-white shadow-glow" : "text-ink/50 hover:bg-white hover:text-ink"}`}>
           <Icon size={16} className="transition group-hover:scale-110 group-hover:-rotate-6" /><span className="flex-1">{label}</span>
@@ -198,16 +207,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </nav>
 
     <div className="mt-auto space-y-3 pt-5">
-      <div className="rounded-3xl bg-white/70 p-4">
-        <p className="text-[11px] font-extrabold uppercase tracking-wider text-ink/45">Make it yours</p>
-        <div className="mt-3 flex items-center gap-2">
-          {VIBES.map(v => <button key={v.id} onClick={() => setVibe(v.id)} title={v.label} aria-label={`${v.label} theme`} aria-pressed={vibe === v.id}
-            className={`h-8 w-8 rounded-full transition hover:scale-110 ${vibe === v.id ? "ring-2 ring-ink ring-offset-2" : ""}`} style={{ background: `linear-gradient(135deg, ${v.from}, ${v.to})` }} />)}
-          <button onClick={() => setSound(sound === "on" ? "off" : "on")} aria-label={sound === "on" ? "Turn sounds off" : "Turn sounds on"} className="ml-auto grid h-8 w-8 place-items-center rounded-full bg-ink/5 text-ink/70 transition hover:bg-ink/10">
+      {!mentor && <div className="rounded-3xl bg-white/70 p-4">
+        <div className="flex items-center justify-between"><p className="text-[11px] font-extrabold uppercase tracking-wider text-ink/45">Pick your world</p>
+          <button onClick={() => setSound(sound === "on" ? "off" : "on")} aria-label={sound === "on" ? "Turn sounds off" : "Turn sounds on"} className="grid h-8 w-8 place-items-center rounded-full bg-ink/5 text-ink/70 transition hover:bg-ink/10">
             {hydrated && sound === "on" ? <Volume2 size={15} /> : <VolumeX size={15} />}
           </button>
         </div>
-      </div>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {VIBES.map(v => <button key={v.id} onClick={() => setVibe(v.id)} title={v.label} aria-label={`${v.label} theme`} aria-pressed={vibe === v.id}
+            className={`group flex flex-col items-center gap-1 rounded-2xl p-2 text-white transition hover:-translate-y-0.5 ${vibe === v.id ? "animate-pop ring-2 ring-ink ring-offset-2" : "opacity-80 hover:opacity-100"}`} style={{ background: `linear-gradient(135deg, ${v.from}, ${v.to})` }}>
+            <span className="text-2xl transition group-hover:scale-125 group-hover:-rotate-12">{v.emoji}</span>
+            <span className="text-[10px] font-extrabold leading-tight">{v.label}</span>
+          </button>)}
+        </div>
+      </div>}
       <div className="rounded-3xl bg-white/70 p-3">
         <button onClick={becomeHanifa} className={`w-full rounded-2xl px-3 py-2 text-left text-xs font-bold ${role === "learner" ? "bg-white shadow-sticker" : "text-ink/55"}`}>🌸 Hanifa</button>
         {role === "mentor"
@@ -235,7 +248,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="ml-auto flex items-center gap-2">
           <FocusPill />
           <CloudPill />
-          <Link href="/guide" aria-label="How to use this app" title="How to use this app" className="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink/70 ring-1 ring-ink/5 transition hover:scale-110 hover:text-brand"><HelpCircle size={17} /></Link>
+          {!mentor && <Link href="/guide" aria-label="How to use this app" title="How to use this app" className="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink/70 ring-1 ring-ink/5 transition hover:scale-110 hover:text-brand"><HelpCircle size={17} /></Link>}
           <span className="chip bg-white/80 text-ink ring-1 ring-ink/5" title="Day streak"><Flame size={14} className={`text-brand ${hydrated && game.streak.current > 0 ? "animate-flame" : ""}`} />{hydrated ? game.streak.current : 0}</span>
           <span className="chip bg-white/80 text-ink ring-1 ring-ink/5" title="Total XP"><Zap size={14} className="text-brand" />{hydrated ? game.xp.toLocaleString() : 0}</span>
         </div>
@@ -243,17 +256,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="mx-auto max-w-6xl px-4 pb-28 pt-7 lg:px-10 lg:pb-12">{children}</main>
     </div>
 
-    <nav aria-label="Main mobile" className="glass fixed inset-x-3 bottom-3 z-30 grid grid-flow-col auto-cols-fr rounded-[1.6rem] p-1.5 shadow-pop lg:hidden">
+    {!mentor && <nav aria-label="Main mobile" className="glass fixed inset-x-3 bottom-3 z-30 grid grid-flow-col auto-cols-fr rounded-[1.6rem] p-1.5 shadow-pop lg:hidden">
       {mobileNav.map(({ href, short, icon: Icon }) => {
         const active = isActive(href);
         return <Link key={href} href={href} className={`flex min-w-0 flex-col items-center gap-0.5 rounded-2xl px-0.5 py-2 text-[11px] font-bold transition duration-300 ${active ? "animate-pop bg-brand text-white shadow-glow" : "text-ink/55 active:scale-90"}`}><Icon size={20} className={active ? "animate-bounce-soft" : ""} /><span className="max-w-full truncate">{short}</span></Link>;
       })}
-    </nav>
+    </nav>}
     {role === "learner" && !isActive("/ask") && <NovaHelper />}
   </CelebrateProvider></RoleContext.Provider>;
 }
 
-/** Nova floats in the corner on every page. Tap her when you're stuck and she opens Ask for Help. */
+/** Nova floats in the corner on every page. Tap Nova when you are stuck to open Ask for Help. */
 function NovaHelper() {
   return <Link href="/ask" aria-label="Stuck? Ask for help" className="group fixed bottom-24 right-4 z-30 flex items-end gap-1 lg:bottom-6 lg:right-6">
     <span className="animate-nova-bubble mb-10 whitespace-nowrap rounded-2xl rounded-br-md bg-white px-3 py-2 text-xs font-extrabold text-ink shadow-pop ring-1 ring-brand/20">Stuck? Ask me! 💬</span>

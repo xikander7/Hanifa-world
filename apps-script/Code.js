@@ -9,6 +9,9 @@
  *    Every device syncs with it, so her phone, her laptop and your laptop all see the same thing.
  *  - Writes every journal entry she makes in the app to an "App Journal" tab in the working sheet. Anything you type in
  *    that tab's "Sikander's reply" column shows up in the app as your comment.
+ *  - Fills "📱 App ..." columns on the sheet's main tabs (Time Tracking Daily, Weekly Learning Updates) with the time,
+ *    notes and chat from the app. Only those columns are written; what anyone types in the other columns is never touched,
+ *    and the app ignores the 📱 columns when it reads the sheet, so nothing is counted twice.
  *  - Checks the Mentor PIN here, on Google's side, so it is never inside the app. Changes only a mentor may make
  *    (approving, verifying, messages, mentor comments) are refused unless they come from a device signed in as Mentor.
  *
@@ -23,6 +26,10 @@
 
 const WORKING_SHEET_ID = "1U-4tJ5tJGLne0uCzxhKHlO9aBvm9DsfIOvV94VDXYfE";
 const JOURNAL_TAB = "App Journal";
+const TIME_TAB = "Time Tracking Daily";
+const WEEKLY_TAB = "Weekly Learning Updates";
+const TIME_APP_HEADER = ["📱 App hours", "📱 App notes", "📱 App chat"];
+const WEEKLY_APP_HEADER = ["📱 App chat"];
 const ACTIVITY_KEY = "future-world-activity-v2";
 const SYNCED_KEYS = [
   "future-world-quests", ACTIVITY_KEY, "hanifa-tech-roadmap-progress-v1", "future-world-weekly-goal-hours",
@@ -105,7 +112,7 @@ function push(req, backend) {
       // A key's first save is a device joining, not news: only later changes can send an email.
       if (!mentor && current.rev > 0) mentorAlerts(key, current.value, change.value).forEach(a => alerts.push(a));
       results[key] = { status: "ok", rev: current.rev + 1 };
-      if (key === ACTIVITY_KEY) backend.writeJournal(journalRows(change.value, backend.journalReplies()));
+      if (key === ACTIVITY_KEY) { backend.writeJournal(journalRows(change.value, backend.journalReplies())); writeMainSheet(change.value, backend); }
     }
   });
   if (alerts.length) {
@@ -254,8 +261,55 @@ function importJournalReplies(backend) {
     const current = backend.load(ACTIVITY_KEY);
     if (!current) return;
     const next = applyJournalReplies(current.value, replies, backend.now());
-    if (next) { backend.save(ACTIVITY_KEY, current.rev + 1, next); backend.writeJournal(journalRows(next, replies)); }
+    if (next) { backend.save(ACTIVITY_KEY, current.rev + 1, next); backend.writeJournal(journalRows(next, replies)); writeMainSheet(next, backend); }
   });
+}
+
+// ------------------------------------------------------------------ the sheet's main tabs
+const isAppEntry = a => a && a.source !== "sheet" && String(a.id).indexOf("import-") !== 0;
+const isAppComment = (entry, c) => String(c.id).indexOf(entry.id + "-") !== 0;
+const chatLine = c => (c.by === "mentor" ? "Sikander: " : "Hanifa: ") + text(c.text);
+const hours = minutes => Math.round((minutes / 60) * 100) / 100;
+
+/** Per day: the minutes, notes and chat from the app, for the 📱 columns of Time Tracking Daily. */
+function timeAppColumns(activity) {
+  const days = {};
+  const day = date => (days[date] = days[date] || { minutes: 0, notes: [], chat: [] });
+  list(activity).forEach(a => {
+    if (!a || !a.date) return;
+    if (isAppEntry(a)) {
+      const d = day(a.date);
+      d.minutes += Number(a.minutes) || 0;
+      const note = [text(a.did).trim(), text(a.blocker).trim() && "❓ " + text(a.blocker).trim()].filter(Boolean).join(" ");
+      if (note || a.minutes) d.notes.push(text(a.topic) + (a.minutes ? " (" + a.minutes + "m)" : "") + (note ? ": " + note : ""));
+      list(a.comments).forEach(c => { if (String(c.id) !== replyId(a.id)) d.chat.push(chatLine(c)); });
+    } else if (String(a.id).indexOf("sheet-time-") === 0) {
+      list(a.comments).filter(c => isAppComment(a, c)).forEach(c => day(a.date).chat.push(chatLine(c)));
+    }
+  });
+  const out = {};
+  Object.keys(days).forEach(date => {
+    const d = days[date];
+    out[date] = [d.minutes ? hours(d.minutes) : "", safeCell(d.notes.join("\n")), safeCell(d.chat.join("\n"))];
+  });
+  return out;
+}
+
+/** Per week label: the chat from the app on that week's sheet entry, for the 📱 column of Weekly Learning Updates. */
+function weeklyAppColumns(activity) {
+  const out = {};
+  list(activity).forEach(a => {
+    if (!a || String(a.id).indexOf("sheet-weekly-") !== 0 || !a.sourceWeek) return;
+    const chat = list(a.comments).filter(c => isAppComment(a, c)).map(chatLine);
+    if (chat.length) out[a.sourceWeek] = [safeCell(chat.join("\n"))];
+  });
+  return out;
+}
+
+function writeMainSheet(activity, backend) {
+  // The sheet is a bonus copy: a problem writing it must never stop Hanifa's work from saving.
+  try { backend.writeAppColumns(TIME_TAB, TIME_APP_HEADER, timeAppColumns(activity), "date"); } catch (err) { /* see above */ }
+  try { backend.writeAppColumns(WEEKLY_TAB, WEEKLY_APP_HEADER, weeklyAppColumns(activity), "week"); } catch (err) { /* see above */ }
 }
 
 // ------------------------------------------------------------------ Google services
@@ -324,6 +378,45 @@ function sheetsBackend() {
       sheet.getRange(2, 1, last - 1, ID_COL + 1).getValues().forEach(r => { const id = String(r[ID_COL]).replace(/^'/, ""); if (id && String(r[REPLY_COL]).trim()) out[id] = String(r[REPLY_COL]); });
       return out;
     },
+    /**
+     * Writes the 📱 columns of a main tab. `byRow` maps a row's key (its date as yyyy-MM-dd, or its week label) to the
+     * values for those columns. Rows without app data get empty 📱 cells; days the tab doesn't have yet are added.
+     */
+    writeAppColumns: (tabName, header, byRow, keyType) => {
+      const sheet = SpreadsheetApp.openById(WORKING_SHEET_ID).getSheetByName(tabName);
+      if (!sheet) return;
+      const width = Math.max(sheet.getLastColumn(), 1);
+      const top = sheet.getRange(1, 1, 1, width).getValues()[0].map(String);
+      let first = top.indexOf(header[0]);
+      if (first < 0) {
+        let last = top.length - 1;
+        while (last >= 0 && !top[last].trim()) last--;
+        first = last + 1;
+        if (sheet.getMaxColumns() < first + header.length) sheet.insertColumnsAfter(sheet.getMaxColumns(), first + header.length - sheet.getMaxColumns());
+        sheet.getRange(1, first + 1, 1, header.length).setValues([header]).setFontWeight("bold").setBackground("#e8f0fe");
+      }
+      const tz = Session.getScriptTimeZone();
+      const keyOf = value => {
+        if (keyType === "week") return String(value).trim();
+        if (value instanceof Date) return Utilities.formatDate(value, tz, "yyyy-MM-dd");
+        const us = String(value).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        return us ? us[3] + "-" + ("0" + us[1]).slice(-2) + "-" + ("0" + us[2]).slice(-2) : String(value).trim();
+      };
+      const lastRow = sheet.getLastRow();
+      const keys = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().map(r => keyOf(r[0])) : [];
+      const blank = header.map(() => "");
+      const values = keys.map(k => byRow[k] || blank);
+      if (values.length) sheet.getRange(2, first + 1, values.length, header.length).setValues(values);
+      if (keyType !== "date") return;
+      const missing = Object.keys(byRow).filter(k => keys.indexOf(k) < 0).sort();
+      missing.forEach(k => {
+        const parts = k.split("-"), when = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const row = new Array(first + header.length).fill("");
+        row[0] = when; row[1] = Utilities.formatDate(when, tz, "EEE");
+        byRow[k].forEach((v, i) => { row[first + i] = v; });
+        sheet.appendRow(row);
+      });
+    },
     writeJournal: rows => {
       const sheet = journalTab();
       sheet.clearContents();
@@ -347,4 +440,4 @@ function setup() {
 }
 
 // Lets the app's tests load this file. Apps Script has no `module`, so this line does nothing there.
-if (typeof module !== "undefined") module.exports = { handle, mentorOnlyChanges, mentorAlerts, journalRows, applyJournalReplies, SYNCED_KEYS, CHUNK };
+if (typeof module !== "undefined") module.exports = { handle, mentorOnlyChanges, mentorAlerts, timeAppColumns, weeklyAppColumns, journalRows, applyJournalReplies, SYNCED_KEYS, CHUNK };

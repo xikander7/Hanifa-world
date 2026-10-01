@@ -13,6 +13,7 @@
   --bg-b: 250 245 255;
   --bg-c: 255 250 247;
 }
+:root[data-vibe="space"] { --brand: 99 102 241; --brand2: 168 85 247; --brand3: 125 211 252; --bg-a: 238 240 255; --bg-b: 243 238 255; --bg-c: 234 244 255; }
 :root[data-vibe="ocean"] { --brand: 14 165 233; --brand2: 99 102 241; --brand3: 125 211 252; --bg-a: 242 250 255; --bg-b: 243 245 255; --bg-c: 246 252 255; }
 :root[data-vibe="sunset"] { --brand: 249 115 22; --brand2: 244 63 94; --brand3: 253 186 116; --bg-a: 255 248 241; --bg-b: 255 243 245; --bg-c: 255 250 245; }
 :root[data-vibe="forest"] { --brand: 16 185 129; --brand2: 13 148 136; --brand3: 167 243 208; --bg-a: 240 253 248; --bg-b: 243 252 250; --bg-c: 247 254 250; }
@@ -43,6 +44,24 @@ h1, h2, h3, .font-display { font-family: var(--font-display), ui-rounded, system
 .aurora i:nth-child(2) { width: 22rem; height: 22rem; right: -6rem; top: 50%; background: rgb(var(--brand2) / .18); animation-delay: -8s; }
 .aurora i:nth-child(3) { display: none; }
 @keyframes floatSlow { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px,-30px) scale(1.12); } }
+
+/* ---------- Theme decorations: little things drifting in the background (see THEMES in AppShell) ---------- */
+.decor { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.decor span { position: absolute; font-size: 2.4rem; opacity: .35; animation: drift 18s ease-in-out infinite; }
+.decor span:nth-child(1) { left: 6%; top: 18%; } .decor span:nth-child(2) { left: 84%; top: 12%; animation-delay: -3s; font-size: 2.6rem; }
+.decor span:nth-child(3) { left: 72%; top: 58%; animation-delay: -6s; } .decor span:nth-child(4) { left: 14%; top: 72%; animation-delay: -9s; font-size: 2.4rem; }
+.decor span:nth-child(5) { left: 45%; top: 88%; animation-delay: -12s; font-size: 1.6rem; } .decor span:nth-child(6) { left: 92%; top: 82%; animation-delay: -15s; }
+@keyframes drift { 0%,100% { transform: translate(0,0) rotate(-8deg); } 50% { transform: translate(24px,-36px) rotate(10deg); } }
+@keyframes rise { 0% { transform: translateY(0) scale(.8); opacity: 0; } 15% { opacity: .35; } 100% { transform: translateY(-110vh) scale(1.1); opacity: 0; } }
+.decor span::before { content: var(--e); }
+:root:not([data-vibe]) .decor span, [data-vibe="bloom"] .decor span { --e: "🍬"; }
+[data-vibe="bloom"] .decor span:nth-child(2n), :root:not([data-vibe]) .decor span:nth-child(2n) { --e: "🍭"; }
+[data-vibe="bloom"] .decor span:nth-child(3n), :root:not([data-vibe]) .decor span:nth-child(3n) { --e: "🧁"; }
+[data-vibe="space"] .decor span { --e: "⭐"; } [data-vibe="space"] .decor span:nth-child(2n) { --e: "🪐"; } [data-vibe="space"] .decor span:nth-child(3n) { --e: "🚀"; }
+[data-vibe="space"] .aurora { background-image: radial-gradient(1.5px 1.5px at 20% 30%, rgb(var(--brand) / .5), transparent), radial-gradient(1.5px 1.5px at 70% 20%, rgb(var(--brand2) / .5), transparent), radial-gradient(2px 2px at 40% 70%, rgb(var(--brand) / .45), transparent), radial-gradient(1.5px 1.5px at 85% 60%, rgb(var(--brand2) / .5), transparent), radial-gradient(2px 2px at 10% 85%, rgb(var(--brand) / .45), transparent), linear-gradient(165deg, rgb(var(--bg-a)), rgb(var(--bg-b)) 55%, rgb(var(--bg-c))); background-size: 340px 340px, 420px 420px, 380px 380px, 460px 460px, 300px 300px, auto; }
+[data-vibe="ocean"] .decor span { --e: "🫧"; top: 100%; animation: rise 16s linear infinite; } [data-vibe="ocean"] .decor span:nth-child(3n) { --e: "🐠"; } [data-vibe="ocean"] .decor span:nth-child(4) { --e: "🐙"; }
+[data-vibe="ocean"] .decor span:nth-child(2) { animation-delay: -4s; } [data-vibe="ocean"] .decor span:nth-child(3) { animation-delay: -8s; } [data-vibe="ocean"] .decor span:nth-child(4) { animation-delay: -12s; }
+[data-vibe="ocean"] .decor span:nth-child(5) { animation-delay: -2s; } [data-vibe="ocean"] .decor span:nth-child(6) { animation-delay: -10s; }
 
 /* ---------- Building blocks ---------- */
 @layer components {

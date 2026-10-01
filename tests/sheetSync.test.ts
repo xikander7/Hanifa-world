@@ -137,3 +137,17 @@ describe("feeling icons", () => {
     expect(["😮‍💨", "🤔", "Easy", "", "easy-medium"].map(feelingIcon)).toEqual(["😮‍💨", "🤔", "📝", "📝", "📝"]);
   });
 });
+
+describe("The 📱 app columns the cloud script adds", () => {
+  it("are ignored when the app reads the sheet, so app time is never counted twice", () => {
+    const rows = [
+      ["Date", "Day", "Hrs", "What Worked On", "Hanifa Comments", "Sikander Comments", "📱 App hours", "📱 App notes", "📱 App chat"],
+      ["09/29/2026", "Tue", "3h", "command line", "", "", "0.75", "Python (45m): loops", "Sikander: nice"],
+      ["09/30/2026", "Wed", "", "", "", "", "1.5", "Git (90m)", ""],
+    ];
+    const { entries } = parseTimeTracking(rows, ["Python", "Git"]);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ id: "sheet-time-2026-09-29", minutes: 180, did: "command line" });
+    expect(entries[0].comments).toEqual([]);
+  });
+});

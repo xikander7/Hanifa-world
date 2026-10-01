@@ -14,7 +14,7 @@ const SECTIONS: Section[] = [
   {
     id: "home", emoji: "🏠", title: "My Day", href: "/home", tagline: "The first page you see every day.",
     what: "My Day is like the front door of your house. It shows how you are doing today and what to do next. Just pick one thing.",
-    see: "A pink box with a cute star called Nova. A big “Your next quest” button. Three goals for today. A round timer.",
+    see: "A pink box with Nova, your little yellow buddy with a big goggle. A big “Your next quest” button. Three goals for today. A round timer.",
     steps: [
       "Nova is your friend. Read what Nova says. It changes all day!",
       "Press the big ▶ “Your next quest” button. It takes you straight to your level on the Level Map.",
@@ -88,7 +88,7 @@ const SECTIONS: Section[] = [
     what: "Sometimes you read something and it makes no sense. That is okay! ChatGPT is like a very patient teacher. This page writes a good question for you, so you do not have to.",
     see: "Three steps and a big pink “Ask ChatGPT” button.",
     steps: [
-      "Tap Nova, the little star in the bottom corner of the screen. (Or open the menu ☰ and find “Ask for Help” under More.)",
+      "Tap Nova, the little yellow buddy in the bottom corner of the screen. (Or open the menu ☰ and find “Ask for Help” under More.)",
       "Step 1: pick what you are learning.",
       "Step 2: pick what kind of help you want. For example “Explain it simply” or “Show me an example”.",
       "Step 3: type a few words. You must write something if you pick “I'm stuck” or “Check if I understood”.",
@@ -166,9 +166,9 @@ const FAQ: [string, string][] = [
   ["How does Sikander see my work?", "With the green cloud, he sees your journal, time, levels and quiz scores. Your journal also goes into the Working Excel Sheet, on the “App Journal” page. You can also press “Update Sikander” on Home to send him a report."],
   ["I forgot to study yesterday. Did I lose everything?", "No! Your XP, levels, badges and cards all stay. Only your streak starts again."],
   ["I do not understand something.", "That is okay! Open My Diary, press New entry, and write your question in the yellow box. Sikander will help."],
-  ["Can I change the colours?", "Yes! In the left menu, under “Make it yours”, tap a colour circle. The little speaker button turns sound on or off."],
+  ["Can I change how the app looks?", "Yes! In the left menu, under “Pick your world”, tap Candy Land 🍭, Space Adventure 🚀 or Ocean World 🌊. The little speaker button turns sound on or off."],
   ["What is “Mentor sign in”?", "That is only for Sikander. Ignore it."],
-  ["Who is the little star in the corner?", "That is Nova! Tap her when you are stuck and she helps you ask a question."],
+  ["Who is the little yellow buddy in the corner?", "That is Nova! Tap Nova when you are stuck and Nova helps you ask a question."],
   ["What are the two numbers at the top right?", "🔥 is your streak (days in a row). ⚡ is your XP points."],
   ["I am on a phone. Where is the menu?", "The 5 tabs are at the bottom of the screen. The ❓ button at the top opens this page. The ☰ button at the top left opens the full menu, with more pages under “More”."],
   ["I wrote in the sheet. Why is it not in the app?", "Go to Study Sheet and press “Sync now”. You need internet."],
@@ -223,9 +223,9 @@ export default function GuidePage() {
         <li>⚡ <b>Bolt number:</b> your total XP.</li>
         <li>⏱️ <b>Dark timer pill:</b> appears when a focus session is running. Tap it to go back to My Day.</li>
         <li>🌟 <b>Dark level card (sidebar):</b> your level, your title and how much XP until the next level.</li>
-        <li>🎨 <b>Make it yours:</b> choose a colour theme and turn sounds on or off.</li>
+        <li>🎨 <b>Pick your world:</b> choose Candy Land, Space Adventure or Ocean World, and turn sounds on or off.</li>
         <li>❓ <b>The ? button at the top:</b> brings you back to this page any time.</li>
-        <li>⭐ <b>Nova in the corner:</b> tap her when you are stuck.</li>
+        <li>💛 <b>Nova in the corner:</b> tap Nova when you are stuck.</li>
       </ul>
     </section>
 

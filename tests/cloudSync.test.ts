@@ -15,6 +15,7 @@ function fakeGoogle(pin = "2468") {
   const cache = new Map<string, string>();
   let journal: unknown[][] = [];
   const mail: { to: string; subject: string; body: string }[] = [];
+  const appColumns: Record<string, { header: string[]; byRow: Record<string, unknown[]> }> = {};
   const backend = {
     prop: (name: string) => props.get(name) ?? null,
     setProp: (name: string, value: string) => { props.set(name, value); },
@@ -29,11 +30,12 @@ function fakeGoogle(pin = "2468") {
     save: (key: string, rev: number, value: unknown) => { rows.set(key, { rev, value: roundTrip(value) }); },
     journalReplies: () => Object.fromEntries(journal.slice(1).filter(r => String(r[10]).trim()).map(r => [String(r[11]).replace(/^'/, ""), String(r[10])])),
     writeJournal: (next: unknown[][]) => { journal = next; },
+    writeAppColumns: (tab: string, header: string[], byRow: Record<string, unknown[]>) => { appColumns[tab] = { header, byRow: roundTrip(byRow) }; },
     ownerEmail: () => "mentor@example.com",
     sendMail: (to: string, subject: string, body: string) => { mail.push({ to, subject, body }); },
   };
   return {
-    backend, rows, mail,
+    backend, rows, mail, appColumns,
     journal: () => journal,
     typeReply: (entryId: string, reply: string) => { journal = journal.map(r => (String(r[11]) === `'${entryId}` ? r.map((c, i) => (i === 10 ? reply : c)) : r)); cache.clear(); },
     call: (req: Record<string, unknown>) => roundTrip(server.handle(roundTrip(req), backend)),
@@ -229,5 +231,38 @@ describe("Emails to Sikander", () => {
     google.backend.setProp("MENTOR_EMAIL", "sikander@example.com");
     push(google, KEYS.inbox, [{ id: "m1", at: "", kind: "note", text: "Hi", reply: "Hello again" }]);
     expect(google.mail.map(m => m.to)).toEqual(["sikander@example.com"]);
+  });
+});
+
+describe("Writing the app's work into the sheet's main tabs", () => {
+  const entry = (over: Record<string, unknown>) => ({ date: "2026-09-30", kind: "Time log", topic: "Python", minutes: 0, did: "", practiced: "", feeling: "", blocker: "", proof: "", comments: [], ...over });
+
+  it("adds up a day's app time and notes, and keeps chat on sheet rows, leaving sheet-typed time out", () => {
+    const columns = server.timeAppColumns([
+      entry({ id: "a1", minutes: 30, did: "Loops", source: "manual" }),
+      entry({ id: "a2", minutes: 15, source: "focus", blocker: "What is a list?" }),
+      entry({ id: "sheet-time-2026-09-29", date: "2026-09-29", minutes: 180, source: "sheet", did: "Typed in the sheet",
+        comments: [{ id: "sheet-time-2026-09-29-hanifa", by: "hanifa", text: "from the sheet", at: "" }, { id: "c9", by: "mentor", text: "Great work", at: "" }] }),
+      entry({ id: "import-1", minutes: 60, source: "manual" }),
+    ]);
+    expect(columns["2026-09-30"]).toEqual([0.75, "Python (30m): Loops\nPython (15m): ❓ What is a list?", ""]);
+    expect(columns["2026-09-29"]).toEqual(["", "", "Sikander: Great work"]);
+    expect(Object.keys(columns)).toHaveLength(2);
+  });
+
+  it("puts app chat on the right weekly row", () => {
+    const columns = server.weeklyAppColumns([
+      entry({ id: "sheet-weekly-1", sourceWeek: "Week 1", kind: "Weekly reflection", source: "sheet", comments: [{ id: "x", by: "hanifa", text: "Can we go over RAM?", at: "" }] }),
+      entry({ id: "sheet-weekly-2", sourceWeek: "Week 2", kind: "Weekly reflection", source: "sheet", comments: [{ id: "sheet-weekly-2-mentor", by: "mentor", text: "sheet review", at: "" }] }),
+    ]);
+    expect(columns).toEqual({ "Week 1": ["Hanifa: Can we go over RAM?"] });
+  });
+
+  it("updates the main tabs whenever the journal is saved", () => {
+    const google = fakeGoogle();
+    google.call({ action: "push", token: "", changes: [{ key: KEYS.activity, baseRev: 0, value: [entry({ id: "a1", minutes: 45, did: "Git", source: "manual" })] }] });
+    expect(google.appColumns["Time Tracking Daily"].header).toEqual(["📱 App hours", "📱 App notes", "📱 App chat"]);
+    expect(google.appColumns["Time Tracking Daily"].byRow["2026-09-30"][0]).toBe(0.75);
+    expect(google.appColumns["Weekly Learning Updates"].byRow).toEqual({});
   });
 });

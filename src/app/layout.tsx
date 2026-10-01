@@ -19,6 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head><script dangerouslySetInnerHTML={{ __html: `try{var v=JSON.parse(localStorage.getItem("future-world-vibe"));if(v)document.documentElement.dataset.vibe=v}catch(e){}` }} /></head>
       <body>
         <div className="aurora" aria-hidden><i /><i /><i /></div>
+        <div className="decor" aria-hidden><span /><span /><span /><span /><span /><span /></div>
         {children}
       </body>
     </html>
