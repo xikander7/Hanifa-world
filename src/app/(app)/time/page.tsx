@@ -10,7 +10,7 @@ import { useGame } from "@/lib/useGame";
 import { useHydrated, useLocalStore } from "@/lib/store";
 import { useRole } from "@/components/AppShell";
 import { useCelebrate } from "@/components/Celebrate";
-import { CommentThread } from "@/components/CommentThread";
+import { CommentThread, LEGACY_NOTE_ID, sheetComment } from "@/components/CommentThread";
 import { Nova } from "@/components/Nova";
 import { SectionHeading } from "@/components/SectionHeading";
 
@@ -64,6 +64,8 @@ function Journal() {
     reset();
   };
   const addComment = (id: string, comment: Comment) => setItems(items.map(i => i.id === id ? { ...i, comments: [...(i.comments ?? []), comment] } : i));
+  const editComment = (id: string, commentId: string, text: string) => setItems(items.map(i => i.id === id ? { ...i, comments: (i.comments ?? []).map(c => c.id === commentId ? { ...c, text } : c) } : i));
+  const deleteComment = (id: string, commentId: string) => setItems(items.map(i => i.id !== id ? i : commentId === LEGACY_NOTE_ID ? { ...i, mentorNote: "" } : { ...i, comments: (i.comments ?? []).filter(c => c.id !== commentId) }));
 
   return <div>
     <SectionHeading eyebrow="My Diary · your learning story" title="Every little step counts ✍️" copy="Log time, write what you learned, ask questions, and add proof. Sikander reads it all and can reply right here.">
@@ -133,7 +135,7 @@ function Journal() {
           {a.practiced && <p className="mt-2 text-xs text-ink/55"><b>Practised:</b> {a.practiced}</p>}
           {a.blocker && <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-2.5 text-sm text-amber-950"><b>🙋‍♀️ Question for Sikander:</b> {a.blocker}</p>}
           {(a.proof || a.attachment) && <div className="mt-3 flex flex-wrap items-center gap-3">{a.proof && (a.proof.startsWith("http") ? <a href={a.proof} target="_blank" rel="noopener noreferrer" className="chip bg-brand/10 text-brand underline">🔗 Proof link</a> : <span className="chip bg-ink/5 text-ink/60">{a.proof}</span>)}{a.attachment && <button type="button" onClick={() => setViewing(a.attachment!)} aria-label="View screenshot"><img src={a.attachment} alt="Screenshot proof" className="h-20 rounded-xl object-cover ring-1 ring-ink/10 transition hover:scale-105" /></button>}</div>}
-          <CommentThread comments={a.comments ?? []} legacyMentorNote={a.mentorNote} viewer={learner ? "hanifa" : "mentor"} onAdd={c => addComment(a.id, c)} />
+          <CommentThread comments={a.comments ?? []} legacyMentorNote={a.mentorNote} viewer={learner ? "hanifa" : "mentor"} onAdd={c => addComment(a.id, c)} onEdit={(cid, t) => editComment(a.id, cid, t)} onDelete={cid => deleteComment(a.id, cid)} fromSheet={sheetComment(a)} />
         </article>)}</div>
       </section>)}</div>}
 

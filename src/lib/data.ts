@@ -71,7 +71,7 @@ export type QuizResult = { best: number; total: number; attempts: number; last: 
 export type Brain = { cards: Record<string, CardState>; quiz: Record<string, QuizResult>; days: string[]; daily: Record<string, { score: number; total: number }> };
 
 export type InboxMessage = { id: string; at: string; kind: "cheer" | "challenge" | "note"; text: string; reply?: string; repliedAt?: string };
-export type AskLog = { id: string; at: string; module: number; topic: string; mode: string; question: string };
+export type AskLog = { id: string; at: string; module: number; topic: string; mode: string; question: string; comments?: Comment[] };
 export const EMPTY_ASKS: AskLog[] = [];
 export type FocusTimer = { endsAt: number; minutes: number; topic: string; startedAt: number } | null;
 

@@ -16,7 +16,7 @@ import { useRole } from "@/components/AppShell";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { AskedQuestions } from "@/components/AskedQuestions";
 import { useCelebrate } from "@/components/Celebrate";
-import { CommentThread } from "@/components/CommentThread";
+import { CommentThread, LEGACY_NOTE_ID, sheetComment } from "@/components/CommentThread";
 import { MissionForm } from "@/components/MissionForm";
 import { Nova } from "@/components/Nova";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -106,6 +106,16 @@ function MentorHub() {
   };
   const toggleVerified = (index: number) => { const skill = SKILLS[index], p = proofs[skill.id] ?? blankSkillProof(); setProofs({ ...proofs, [skill.id]: { ...p, verified: !p.verified } }); };
   const comment = (id: string, c: Comment) => setActivity(activity.map(a => a.id === id ? { ...a, comments: [...(a.comments ?? []), c] } : a));
+  // Fixing mistakes: the old-style mentor note (LEGACY_NOTE_ID) lives in mentorNote, everything else in comments.
+  const editComment = (id: string, commentId: string, text: string) => setActivity(activity.map(a => a.id !== id ? a : commentId === LEGACY_NOTE_ID ? { ...a, mentorNote: text } : { ...a, comments: (a.comments ?? []).map(c => c.id === commentId ? { ...c, text } : c) }));
+  const deleteComment = (id: string, commentId: string) => setActivity(activity.map(a => a.id !== id ? a : commentId === LEGACY_NOTE_ID ? { ...a, mentorNote: "" } : { ...a, comments: (a.comments ?? []).filter(c => c.id !== commentId) }));
+  const deleteEntry = (a: Activity) => { if (window.confirm(`Delete the diary entry "${a.topic}" (${fmtDay(a.date)})? This can't be undone.`)) setActivity(activity.filter(x => x.id !== a.id)); };
+  const editMessage = (m: InboxMessage) => { const text = window.prompt("Edit your message to Hanifa:", m.text); if (text !== null && text.trim()) setInbox(inbox.map(x => x.id === m.id ? { ...x, text: text.trim() } : x)); };
+  const editLevelFeedback = (index: number) => {
+    const skill = SKILLS[index], p = proofs[skill.id] ?? blankSkillProof();
+    const text = window.prompt(`Your feedback on level ${index + 1} (leave empty to remove it):`, p.mentorFeedback ?? "");
+    if (text !== null) setProofs({ ...proofs, [skill.id]: { ...p, mentorFeedback: text.trim() } });
+  };
   const send = (kind: InboxMessage["kind"], text: string) => { if (!text.trim()) return; setInbox([{ id: uid(), at: new Date().toISOString(), kind, text: text.trim() }, ...inbox]); setMessage(""); celebrate({ emoji: kind === "cheer" ? "💖" : "📨", title: "Sent to Hanifa", text: "She’ll see it on her Home page.", confetti: false, sound: "pop" }); };
 
   // To do only lists entries still waiting for a reply; Her diary lists everything unless the filter is on.
@@ -187,19 +197,22 @@ function MentorHub() {
     {(tab === "todo" || tab === "diary") && <section className={tab === "todo" ? "mt-8" : ""}>
       <div className="mb-4 flex flex-wrap items-center gap-2"><h2 className="mr-auto font-display text-2xl font-extrabold">{tab === "todo" ? "Diary entries waiting for your reply" : "Her diary"}</h2>{tab === "diary" && <button onClick={() => setOnlyOpen(v => !v)} className={`chip !px-4 !py-2 transition ${onlyOpen ? "bg-ink text-white" : "bg-white/80 text-ink/60 ring-1 ring-ink/5"}`}>{onlyOpen ? "Show all entries" : "Show only: needs a reply"}</button>}</div>
       {journal.length === 0 ? <p className="card p-6 text-sm text-ink/55">{tab === "todo" ? "All replied. 🎉" : "Nothing to show."}</p> : <div className="stagger space-y-4">{journal.map(a => <article key={a.id} className="card p-5">
-        <div className="flex flex-wrap items-center gap-2"><span className="text-xl">{feelingIcon(a.feeling)}</span><h3 className="font-display text-lg font-extrabold">{a.topic}</h3><span className="chip bg-ink/5 text-ink/60">{fmtDay(a.date)}</span>{a.minutes > 0 && <span className="chip bg-brand/10 text-brand">{fmtMinutes(a.minutes)}</span>}{isSample(a) && <span className="chip bg-amber-100 text-amber-900">Sample week</span>}</div>
+        <div className="flex flex-wrap items-center gap-2"><span className="text-xl">{feelingIcon(a.feeling)}</span><h3 className="font-display text-lg font-extrabold">{a.topic}</h3><span className="chip bg-ink/5 text-ink/60">{fmtDay(a.date)}</span>{a.minutes > 0 && <span className="chip bg-brand/10 text-brand">{fmtMinutes(a.minutes)}</span>}{isSample(a) && <span className="chip bg-amber-100 text-amber-900">Sample week</span>}
+          {a.source === "sheet"
+            ? <span className="ml-auto text-[11px] font-semibold text-ink/40" title="This entry is copied from the Google Sheet on every sync. Delete or fix the row in the sheet.">📊 From the sheet: change it there</span>
+            : <button onClick={() => deleteEntry(a)} aria-label={`Delete diary entry ${a.topic}`} title="Delete this entry" className="ml-auto grid h-8 w-8 place-items-center rounded-full text-ink/40 transition hover:bg-rose-50 hover:text-rose-600"><Trash2 size={15} /></button>}</div>
         {a.did && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{a.did}</p>}
         {a.practiced && <p className="mt-2 text-xs text-ink/55"><b>Practised:</b> {a.practiced}</p>}
         {a.blocker && <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-2.5 text-sm text-amber-950"><HelpCircle size={14} className="mr-1 inline" /><b>Question:</b> {a.blocker}</p>}
         {(a.proof || a.attachment) && <div className="mt-3 flex flex-wrap items-center gap-3">{a.proof && (a.proof.startsWith("http") ? <a href={a.proof} target="_blank" rel="noopener noreferrer" className="chip bg-brand/10 text-brand underline">🔗 Proof link</a> : <span className="chip bg-ink/5">{a.proof}</span>)}{a.attachment && <a href={a.attachment} target="_blank" rel="noopener noreferrer"><img src={a.attachment} alt="Screenshot" className="h-20 rounded-xl ring-1 ring-ink/10" /></a>}</div>}
-        <CommentThread comments={a.comments ?? []} legacyMentorNote={a.mentorNote} viewer="mentor" onAdd={c => comment(a.id, c)} />
+        <CommentThread comments={a.comments ?? []} legacyMentorNote={a.mentorNote} viewer="mentor" onAdd={c => comment(a.id, c)} onEdit={(cid, t) => editComment(a.id, cid, t)} onDelete={cid => deleteComment(a.id, cid)} fromSheet={sheetComment(a)} />
       </article>)}</div>}
     </section>}
 
     {tab === "todo" && <div className="mt-8"><AskedQuestions /></div>}
 
     {tab === "progress" && <section className="mt-8">
-      <h2 className="font-display text-2xl font-extrabold">Level by level</h2><p className="mt-1 text-sm text-ink/55">Activity is hers. The ✅ verified stamp is yours. Tap it to give or remove it.</p>
+      <h2 className="font-display text-2xl font-extrabold">Level by level</h2><p className="mt-1 text-sm text-ink/55">Activity is hers. The ✅ verified stamp and the feedback are yours. Tap them to give, change or remove them.</p>
       <div className="card mt-4 divide-y divide-ink/5 overflow-hidden">{roadmap.map((m, i) => {
         const state = getStageState(i, stageIds, roadmapProgress.passed), id = `module-${m.number}`;
         const total = m.resources.filter(r => !r.optional).length + m.practice.length;
@@ -212,6 +225,7 @@ function MentorHub() {
           <span className={`chip ${state === "passed" ? "bg-emerald-100 text-emerald-800" : state === "ready" ? "bg-brand/10 text-brand" : "bg-ink/5 text-ink/40"}`}>{state === "passed" ? "Cleared" : state === "ready" ? "In progress" : "Locked"}</span>
           <span className="chip bg-ink/5 text-ink/60" title="Flashcards mastered">🃏 {mastered}/{lessons[i].cards.length}</span>
           <span className="flex gap-1" title="Best quiz scores: Easy, Medium, Hard">{qs.map(({ tier, result }) => <span key={tier.id} className={`chip ${result ? (result.best === result.total ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900") : "bg-ink/5 text-ink/40"}`}>{tier.emoji} {result ? `${result.best}/${result.total}` : "—"}</span>)}</span>
+          <button onClick={() => editLevelFeedback(i)} title={proofs[SKILLS[i].id]?.mentorFeedback ? `Your feedback: ${proofs[SKILLS[i].id]?.mentorFeedback}` : "Write feedback for this level"} className={`chip !px-3 !py-1.5 transition ${proofs[SKILLS[i].id]?.mentorFeedback ? "bg-ink text-white" : "bg-white text-ink/50 ring-1 ring-ink/10 hover:ring-brand/50"}`}><Pencil size={12} />{proofs[SKILLS[i].id]?.mentorFeedback ? "Feedback" : "Add feedback"}</button>
           <button onClick={() => toggleVerified(i)} className={`chip !px-3 !py-1.5 transition ${verified ? "bg-brand text-white" : "bg-white text-ink/50 ring-1 ring-ink/10 hover:ring-brand/50"}`}><BadgeCheck size={13} />{verified ? "Verified" : "Verify"}</button>
         </div>;
       })}</div>
@@ -230,7 +244,7 @@ function MentorHub() {
           <div className="mt-2 space-y-2">{TEMPLATES.map(t => <button key={t.text} onClick={() => send(t.kind, t.text)} className="w-full rounded-2xl bg-ink/[.04] px-4 py-2.5 text-left text-xs font-semibold leading-5 transition hover:-translate-y-0.5 hover:bg-brand/10">{t.text}</button>)}</div>
         </div>
         <div className="card p-5 sm:p-6"><h3 className="font-display text-lg font-extrabold">Sent messages</h3>
-          {inbox.length === 0 ? <p className="mt-2 text-sm text-ink/50">Nothing sent yet.</p> : <ul className="mt-3 space-y-3">{inbox.slice(0, 8).map(m => <li key={m.id} className="rounded-2xl bg-ink/[.04] p-3.5 text-sm"><p className="leading-6">{m.text}</p><p className="mt-1 flex items-center gap-2 text-[11px] font-bold text-ink/40"><span className="flex-1">{m.kind} · {fmtDay(m.at.slice(0, 10), { day: "numeric", month: "short" })}</span><button onClick={() => { if (window.confirm("Delete this message?")) setInbox(inbox.filter(x => x.id !== m.id)); }} aria-label="Delete message" title="Delete" className="text-ink/40 hover:text-rose-600"><Trash2 size={13} /></button></p>{m.reply && <p className="animate-pop mt-2 rounded-xl bg-white px-3 py-2 text-xs"><b>Hanifa:</b> {m.reply}</p>}</li>)}</ul>}
+          {inbox.length === 0 ? <p className="mt-2 text-sm text-ink/50">Nothing sent yet.</p> : <ul className="mt-3 space-y-3">{inbox.map(m => <li key={m.id} className="rounded-2xl bg-ink/[.04] p-3.5 text-sm"><p className="leading-6">{m.text}</p><p className="mt-1 flex items-center gap-2 text-[11px] font-bold text-ink/40"><span className="flex-1">{m.kind} · {fmtDay(m.at.slice(0, 10), { day: "numeric", month: "short" })}</span><button onClick={() => editMessage(m)} aria-label="Edit message" title="Edit" className="text-ink/40 hover:text-brand"><Pencil size={13} /></button><button onClick={() => { if (window.confirm("Delete this message?")) setInbox(inbox.filter(x => x.id !== m.id)); }} aria-label="Delete message" title="Delete" className="text-ink/40 hover:text-rose-600"><Trash2 size={13} /></button></p>{m.reply && <p className="animate-pop mt-2 rounded-xl bg-white px-3 py-2 text-xs"><b>Hanifa:</b> {m.reply}</p>}</li>)}</ul>}
         </div>
       </section>
       <section className="order-first space-y-4 lg:order-none">

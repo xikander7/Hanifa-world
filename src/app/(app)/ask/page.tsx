@@ -11,6 +11,8 @@ import { ASK_MODES, buildPrompt, chatGptLink, modeInfo, validateAsk } from "@/li
 import type { AskMode } from "@/lib/askPrompt";
 import { getStageState } from "@/lib/roadmap-progress";
 import { useLocalStore } from "@/lib/store";
+import { useRole } from "@/components/AppShell";
+import { AskedQuestions } from "@/components/AskedQuestions";
 import { useCelebrate } from "@/components/Celebrate";
 import { Nova } from "@/components/Nova";
 import { SectionHeading } from "@/components/SectionHeading";
@@ -27,6 +29,7 @@ export default function AskPage() { return <Suspense fallback={null}><Ask /></Su
 function Ask() {
   const params = useSearchParams();
   const { celebrate } = useCelebrate();
+  const role = useRole();
   const [roadmapProgress] = useLocalStore<RoadmapProgress>(KEYS.roadmap, EMPTY_ROADMAP);
   const [, setAsks] = useLocalStore<AskLog[]>(KEYS.asks, EMPTY_ASKS);
   const currentLevel = Math.max(1, stageIds.findIndex((_, i) => getStageState(i, stageIds, roadmapProgress.passed) === "ready") + 1 || roadmap.length);
@@ -111,6 +114,8 @@ function Ask() {
       <div className="mt-5 flex flex-wrap gap-3"><Link href="/time?new=1" className="btn-primary !py-2.5 text-sm">Write it in my Journal <ArrowRight size={15} /></Link><Link href="/home" className="btn-soft !py-2.5 text-sm">Back to Home</Link></div>
     </section>}
 
-    <p className="mt-6 flex items-start gap-2 rounded-2xl bg-white/60 px-4 py-3 text-xs leading-5 text-ink/55"><ShieldAlert size={14} className="mt-0.5 shrink-0 text-brand" />Sikander can see which questions you asked here. That way he can help you with the things you find tricky. You won't get in trouble for asking.</p>
+    <AskedQuestions viewer={role === "mentor" ? "mentor" : "hanifa"} />
+
+    <p className="mt-6 flex items-start gap-2 rounded-2xl bg-white/60 px-4 py-3 text-xs leading-5 text-ink/55"><ShieldAlert size={14} className="mt-0.5 shrink-0 text-brand" />Sikander can see which questions you asked here. That way he can help you with the things you find tricky, and add his own explanation. You won't get in trouble for asking.</p>
   </div>;
 }

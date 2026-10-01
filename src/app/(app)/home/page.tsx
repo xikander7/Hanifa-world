@@ -4,8 +4,8 @@ import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Check, Flame, MessageCircle, Pause, Play, Send, Target, Timer } from "lucide-react";
 import roadmap from "@/data/roadmap.json";
-import { SKILLS, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, IMPORTED_ACTIVITY, KEYS, fmtDay } from "@/lib/data";
-import type { Activity, InboxMessage, Quest, RoadmapProgress } from "@/lib/data";
+import { SKILLS, EMPTY_ASKS, EMPTY_INBOX, EMPTY_QUESTS, EMPTY_ROADMAP, IMPORTED_ACTIVITY, KEYS, fmtDay } from "@/lib/data";
+import type { Activity, AskLog, InboxMessage, Quest, RoadmapProgress } from "@/lib/data";
 import { DAILY_FOCUS_GOAL_MINUTES, XP } from "@/lib/game";
 import { novaSays } from "@/lib/nova";
 import { finishFocus, useFocusTimer } from "@/lib/useFocus";
@@ -192,9 +192,11 @@ function SikanderInbox() {
   const [activity] = useLocalStore<Activity[]>(KEYS.activity, IMPORTED_ACTIVITY);
   const [seen, setSeen] = useLocalStore<string>(KEYS.inboxSeen, "");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  type FeedItem = { id: string; at: string; text: string; kind: InboxMessage["kind"] | "comment"; topic: string; reply?: string };
+  const [asks] = useLocalStore<AskLog[]>(KEYS.asks, EMPTY_ASKS);
+  type FeedItem = { id: string; at: string; text: string; kind: InboxMessage["kind"] | "comment"; topic: string; reply?: string; onAsk?: boolean };
   const comments: FeedItem[] = activity.flatMap(a => (a.comments ?? []).filter(c => c.by === "mentor").map(c => ({ id: c.id, at: c.at, text: c.text, kind: "comment" as const, topic: a.topic })));
-  const feed: FeedItem[] = [...inbox.map(m => ({ ...m, topic: "" })), ...comments].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4);
+  const askComments: FeedItem[] = asks.flatMap(a => (a.comments ?? []).filter(c => c.by === "mentor").map(c => ({ id: c.id, at: c.at, text: c.text, kind: "comment" as const, topic: a.question || a.topic, onAsk: true })));
+  const feed: FeedItem[] = [...inbox.map(m => ({ ...m, topic: "" })), ...comments, ...askComments].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4);
   const unread = feed.filter(m => m.at > seen).length;
   const reply = (e: FormEvent, id: string) => { e.preventDefault(); const t = drafts[id]?.trim(); if (!t) return; setInbox(list => list.map(m => m.id === id ? { ...m, reply: t, repliedAt: new Date().toISOString() } : m)); setDrafts(d => ({ ...d, [id]: "" })); };
   const icon = (kind: string) => kind === "cheer" ? "💖" : kind === "challenge" ? "🎯" : "💬";
@@ -204,12 +206,12 @@ function SikanderInbox() {
       <div className="flex items-center gap-3"><span className="relative grid h-11 w-11 place-items-center rounded-2xl bg-ink text-xl text-white"><MessageCircle size={20} />{unread > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[10px] font-extrabold animate-pop">{unread}</span>}</span><div><p className="eyebrow">From Sikander</p><h2 className="font-display text-xl font-extrabold">{feed.length ? (unread ? "You have new messages" : "Messages & comments") : "Nothing yet"}</h2></div></div>
       {unread > 0 && <button onClick={() => setSeen(new Date().toISOString())} className="chip bg-ink/5 text-ink/60 hover:bg-ink/10"><Check size={12} />Mark all read</button>}
     </div>
-    {feed.length === 0 ? <p className="mt-3 text-sm text-ink/55">When Sikander sends a cheer, a challenge or comments on your journal, it shows up here. 💌</p> :
+    {feed.length === 0 ? <p className="mt-3 text-sm text-ink/55">When Sikander sends a cheer, a challenge or comments on your journal or questions, it shows up here. 💌</p> :
       <ul className="mt-4 space-y-3">{feed.map(m => <li key={m.id} className={`animate-fade-up rounded-2xl p-4 ${m.at > seen ? "bg-brand/10" : "bg-white/80 ring-1 ring-ink/5"}`}>
-        <div className="flex gap-3"><span className="text-2xl">{icon(m.kind)}</span><div className="min-w-0 flex-1"><p className="text-sm font-semibold leading-6">{m.text}</p><p className="mt-0.5 text-[11px] font-bold text-ink/40">{m.kind === "comment" ? `On your journal · ${m.topic}` : m.kind === "challenge" ? "Challenge" : "Message"}{m.at ? ` · ${fmtDay(m.at.slice(0, 10), { day: "numeric", month: "short" })}` : ""}</p>
+        <div className="flex gap-3"><span className="text-2xl">{icon(m.kind)}</span><div className="min-w-0 flex-1"><p className="text-sm font-semibold leading-6">{m.text}</p><p className="mt-0.5 text-[11px] font-bold text-ink/40">{m.kind === "comment" ? `${m.onAsk ? "On your question" : "On your journal"} · ${m.topic}` : m.kind === "challenge" ? "Challenge" : "Message"}{m.at ? ` · ${fmtDay(m.at.slice(0, 10), { day: "numeric", month: "short" })}` : ""}</p>
           {m.reply && <p className="mt-2 rounded-2xl bg-white px-3 py-2 text-xs"><b>You:</b> {m.reply}</p>}
           {!m.reply && m.kind !== "comment" && <form onSubmit={e => reply(e, m.id)} className="mt-2 flex gap-2"><input value={drafts[m.id] ?? ""} onChange={e => setDrafts(d => ({ ...d, [m.id]: e.target.value }))} placeholder="Reply…" className="field !py-2 text-xs" aria-label="Reply" /><button className="btn-primary !px-3.5 !py-2" aria-label="Send reply"><Send size={14} /></button></form>}
-          {m.kind === "comment" && <Link href="/time" className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-brand">Reply in journal <ArrowRight size={12} /></Link>}
+          {m.kind === "comment" && <Link href={m.onAsk ? "/ask#my-questions" : "/time"} className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-brand">{m.onAsk ? "Reply on your question" : "Reply in journal"} <ArrowRight size={12} /></Link>}
         </div></div>
       </li>)}</ul>}
   </section>;
