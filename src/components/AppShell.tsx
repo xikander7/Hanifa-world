@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, FormEvent, Suspense, useContext, useEffect, useState } from "react";
-import { BookOpen, Brain, CheckCircle2, Cloud, CloudOff, Compass, FileSpreadsheet, Flame, GraduationCap, HelpCircle, Home, LineChart, Lock, Menu, MessageCircleHeart, Music, MessageCircleQuestion, NotebookPen, Settings, ShieldCheck, Target, Timer, Trophy, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { BookOpen, Brain, CheckCircle2, Cloud, CloudOff, Compass, FileSpreadsheet, Flame, GraduationCap, HelpCircle, Home, LineChart, Lock, Menu, MessageCircleHeart, Minus, Music, MessageCircleQuestion, NotebookPen, Plus, Settings, ShieldCheck, Target, Timer, Trophy, Volume2, VolumeX, X, Zap } from "lucide-react";
 import type { Role } from "@/domain/types";
 import { KEYS, NOT_SEEN } from "@/lib/data";
 import { seedSheetEntries } from "@/lib/sheetSeed";
@@ -168,11 +168,12 @@ function MusicControl({ active }: { active: boolean }) {
         <p className="text-xs font-extrabold uppercase tracking-wider text-ink/45">Music 🎵</p>
         <button onClick={() => setMusic(music === "on" ? "off" : "on")} aria-pressed={playing} className={`rounded-full px-3 py-1 text-xs font-bold ${playing ? "bg-brand text-white" : "bg-ink/10 text-ink/60"}`}>{playing ? "On" : "Off"}</button>
       </div>
-      <label className="mt-3 flex items-center gap-2 text-ink/60">
-        <VolumeX size={15} aria-hidden />
-        <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => setVolume(Number(e.target.value))} aria-label="Music volume" className="h-2 w-full accent-brand" />
-        <Volume2 size={15} aria-hidden />
-      </label>
+      <div className="mt-3 flex items-center gap-2 text-ink/60">
+        <button onClick={() => setVolume(Math.max(0, Math.round((volume - 0.1) * 10) / 10))} disabled={volume <= 0} aria-label="Volume down" title="Volume down" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink/5 transition hover:bg-ink/10 disabled:opacity-40"><Minus size={15} /></button>
+        <input type="range" min={0} max={1} step={0.05} value={volume} onChange={e => setVolume(Number(e.target.value))} aria-label="Music volume" className="h-2 min-w-0 flex-1 accent-brand" />
+        <button onClick={() => setVolume(Math.min(1, Math.round((volume + 0.1) * 10) / 10))} disabled={volume >= 1} aria-label="Volume up" title="Volume up" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink/5 transition hover:bg-ink/10 disabled:opacity-40"><Plus size={15} /></button>
+      </div>
+      <p className="mt-2 text-center text-[11px] font-bold text-ink/45">Volume {Math.round(volume * 100)}%</p>
     </div>}
   </div>;
 }
