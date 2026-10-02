@@ -12,7 +12,8 @@ import { STORE_ERROR_EVENT, localStorageUse } from "@/lib/store";
 import { moveInlineImages } from "@/lib/images";
 import { cloudUrl, isCloudUrl, mentorSignIn, mentorSignOut, mentorToken, setCloudUrl, startCloud, useCloudStatus } from "@/lib/cloud";
 import { finishFocus, useFocusTimer } from "@/lib/useFocus";
-import { setMusicVolume, startMusic, stopMusic } from "@/lib/music";
+import { setMusicTrack, setMusicVolume, startMusic, stopMusic } from "@/lib/music";
+import { play } from "@/lib/sfx";
 import { useGame } from "@/lib/useGame";
 import { useHydrated, useLocalStore } from "@/lib/store";
 import { CelebrateProvider, useCelebrate } from "./Celebrate";
@@ -60,11 +61,12 @@ function NavLink({ item, variant }: { item: NavItem; variant: "side" | "more" | 
   return <Link href={item.href} className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition duration-200 ${active ? "bg-brand text-white shadow-glow" : "text-ink/65 hover:bg-white hover:text-ink"}`}><Icon size={19} className="transition group-hover:scale-110 group-hover:-rotate-6" /><span className="flex-1">{item.label}</span></Link>;
 }
 
-// Three themes Hanifa can pick: each has its own colours and its own things drifting in the background (globals.css).
+// Three themes Hanifa can pick: each has its own colours, its own things drifting in the background (globals.css)
+// and its own music (lib/music.ts). `tune` names that music in the menu.
 const VIBES = [
-  { id: "bloom", label: "Candy Land", emoji: "🍭", from: "#ec4899", to: "#a855f7" },
-  { id: "space", label: "Space Adventure", emoji: "🚀", from: "#6366f1", to: "#a855f7" },
-  { id: "ocean", label: "Ocean World", emoji: "🌊", from: "#0ea5e9", to: "#6366f1" },
+  { id: "bloom", label: "Candy Land", emoji: "🍭", tune: "Candy tune", from: "#ec4899", to: "#a855f7" },
+  { id: "space", label: "Space Adventure", emoji: "🚀", tune: "Space drift", from: "#6366f1", to: "#a855f7" },
+  { id: "ocean", label: "Ocean World", emoji: "🌊", tune: "Ocean waves", from: "#0ea5e9", to: "#6366f1" },
 ];
 
 const RoleContext = createContext<Role>("learner");
@@ -216,6 +218,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [pinError, setPinError] = useState("");
   const [vibe, setVibe] = useLocalStore<string>(KEYS.vibe, "bloom");
   const [sound, setSound] = useLocalStore<string>(KEYS.sound, "off");
+  const [music, setMusic] = useLocalStore<string>(KEYS.music, "on");
   const [guideSeen] = useLocalStore<string>(KEYS.guideSeen, "");
   const game = useGame();
   const hydrated = useHydrated();
@@ -224,7 +227,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => { try { if (sessionStorage.getItem(KEYS.role) === "mentor" && (!cloudUrl() || mentorToken())) setRole("mentor"); } catch { /* ignore */ } setRoleReady(true); }, []);
   // Older picks (Sunset, Forest) aren't themes any more, so they start on Candy Land.
   useEffect(() => { if (hydrated && !VIBES.some(v => v.id === vibe)) setVibe("bloom"); }, [hydrated, vibe, setVibe]);
-  useEffect(() => { document.documentElement.dataset.vibe = vibe; }, [vibe]);
+  useEffect(() => { document.documentElement.dataset.vibe = vibe; setMusicTrack(vibe); }, [vibe]);
   useEffect(() => { setOpen(false); }, [pathname]);
   // Mentor mode lives on Mentor Hub; Hanifa's pages are for Hanifa.
   useEffect(() => { if (role === "mentor" && !MENTOR_PAGES.some(p => pathname.startsWith(p))) router.replace("/mentor"); }, [role, pathname, router]);
@@ -248,6 +251,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Help lives in the top bar's ? button and the side menu; the "More" pages are in the side menu.
   const mobileNav = mentor ? mentorNav : learnerNav;
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  // The speaker button is the "all sound" switch: it mutes the music and the sound effects together, or turns both back on.
+  const audible = hydrated && (music === "on" || sound === "on");
+  const toggleAllSound = () => { const next = audible ? "off" : "on"; setMusic(next); setSound(next); };
+  const pickVibe = (id: string) => { setVibe(id); if (id !== vibe) play("pop"); };
+  const tune = (VIBES.find(v => v.id === vibe) ?? VIBES[0]).tune;
 
   const sidebar = <>
     <div className="flex items-center justify-between">
@@ -278,18 +286,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="mt-auto space-y-3 pt-5">
       {!mentor && <div className="rounded-3xl bg-white/70 p-4">
         <div className="flex items-center justify-between"><p className="text-[11px] font-extrabold uppercase tracking-wider text-ink/45">Pick your world</p>
-          <button onClick={() => setSound(sound === "on" ? "off" : "on")} aria-label={sound === "on" ? "Turn sound effects off" : "Turn sound effects on"} title="Sound effects (pops and chimes)" className="grid h-8 w-8 place-items-center rounded-full bg-ink/5 text-ink/70 transition hover:bg-ink/10">
-            {hydrated && sound === "on" ? <Volume2 size={15} /> : <VolumeX size={15} />}
+          <button onClick={toggleAllSound} aria-pressed={!audible} aria-label={audible ? "Mute all sound" : "Turn sound on"} title={audible ? "Mute all sound (music and effects)" : "Sound is muted: tap to turn music and effects on"}
+            className={`grid h-8 w-8 place-items-center rounded-full transition ${audible ? "bg-ink/5 text-ink/70 hover:bg-ink/10" : "bg-rose-100 text-rose-600 hover:bg-rose-200"}`}>
+            {audible ? <Volume2 size={15} /> : <VolumeX size={15} />}
           </button>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2">
-          {VIBES.map(v => <button key={v.id} onClick={() => setVibe(v.id)} title={v.label} aria-label={`${v.label} theme`} aria-pressed={vibe === v.id}
+          {VIBES.map(v => <button key={v.id} onClick={() => pickVibe(v.id)} title={v.label} aria-label={`${v.label} theme`} aria-pressed={vibe === v.id}
             className={`group flex flex-col items-center gap-1 rounded-2xl p-2 text-white transition hover:-translate-y-0.5 ${vibe === v.id ? "animate-pop ring-2 ring-ink ring-offset-2" : "opacity-80 hover:opacity-100"}`} style={{ background: `linear-gradient(135deg, ${v.from}, ${v.to})` }}>
             <span className="text-2xl transition group-hover:scale-125 group-hover:-rotate-12">{v.emoji}</span>
             <span className="text-[10px] font-extrabold leading-tight">{v.label}</span>
           </button>)}
         </div>
-        <div className="mt-4 flex items-center justify-between gap-2"><p className="text-[11px] font-extrabold uppercase tracking-wider text-ink/45">🎵 Music</p><MusicControl active plays={false} /></div>
+        <div className="mt-4 flex items-center justify-between gap-2"><p className="min-w-0 text-[11px] font-extrabold uppercase leading-tight tracking-wider text-ink/45">🎵 Music<span className="block truncate text-[10px] normal-case tracking-normal text-ink/40" title={`This world's music: ${tune}`}>{tune}</span></p><MusicControl active plays={false} /></div>
       </div>}
       <div className="rounded-3xl bg-white/70 p-3">
         <button onClick={becomeHanifa} className={`w-full rounded-2xl px-3 py-2 text-left text-xs font-bold ${role === "learner" ? "bg-white shadow-sticker" : "text-ink/55"}`}>🌸 Hanifa</button>

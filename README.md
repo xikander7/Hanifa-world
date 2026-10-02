@@ -301,11 +301,12 @@ The "pop", "correct" and "level up" sounds aren't recordings. [src/lib/sfx.ts](s
 browser to play musical notes at certain frequencies (a frequency is how high or low a note is). An **API** is a set of
 buttons a program is allowed to press on another program; here, the browser's sound system.
 
-The **background music** is made the same way, live, by [src/lib/music.ts](src/lib/music.ts): calm focus music with soft
-chords, a gentle bass and a quiet beat, played in a loop. A little **scheduler** plans the next notes a moment ahead,
+The **background music** is made the same way, live, by [src/lib/music.ts](src/lib/music.ts): calm focus music, and
+each world has its own tune. Candy Land plays a bouncy music-box tune, Space Adventure slow floating pads with twinkling
+echoes, and Ocean World a soft lo-fi loop with rolling waves and bubbles. Picking a world switches the music. A little **scheduler** plans the next notes a moment ahead,
 like a conductor reading the next bar. Browsers don't allow sound until you tap the page, so the music starts on the
-first tap. The top bar (and the side menu) has 🎵 to switch it on or off and − / + buttons for the volume. It pauses
-when the tab is hidden.
+first tap. The top bar (and the side menu) has 🎵 to switch it on or off and − / + buttons for the volume. The speaker
+in the side menu mutes everything (music and sound effects) at once. The music pauses when the tab is hidden.
 
 ### ChatGPT link (Ask for Help)
 
