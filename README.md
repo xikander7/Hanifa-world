@@ -2,7 +2,8 @@
 
 My Future World is a learning app made for Hanifa, with her mentor Sikander helping along the way. It helps her learn
 tech skills level by level, keep a diary of what she studied, play quizzes and flashcards, earn trophies, plan for
-university and scholarships, and ask for help when she's stuck.
+university and scholarships, and ask for help when she's stuck. Calm focus music plays in the background (with a volume
+control), and Sikander can fix or remove anything he adds as mentor.
 
 This README has two parts:
 
@@ -47,7 +48,7 @@ Think of the app like a **school notebook**:
   │  + browser   │         │  + browser   │         │  + browser   │
   │    storage   │         │    storage   │         │    storage   │
   └──────┬───────┘         └──────┬───────┘         └──────┬───────┘
-         │  sends & fetches changes every minute           │
+         │  sends changes in about a second, fetches every 15 s │
          └──────────────────┬──────────────────────────────┘
                             ▼
               ┌──────────────────────────────┐
@@ -69,7 +70,8 @@ In words:
 1. **Vercel** is where the website lives on the internet. When you type the web address, Vercel sends the app to your
    browser.
 2. The app runs **inside your browser** (Chrome, Safari…). It saves your work straight away in the browser's own little
-   storage box, so it works even with no internet.
+   storage box, so it works even with no internet. Screenshots go in a second, much bigger box (see "Browser storage"
+   below).
 3. If **Cloud save** is turned on, the app also sends changes to a small program running in Sikander's Google account.
    That program keeps a copy in a private Google spreadsheet, so every device can get the same data.
 4. The app also **reads Hanifa's Google Sheet** (the spreadsheet where she already writes weekly updates and hours) and
@@ -165,9 +167,9 @@ Tailwind turns those names into real CSS for you.
 **Where:** The settings are in [tailwind.config.ts](tailwind.config.ts). That's where the app's custom colours
 (`brand`, `ink`), fonts, shadows and fun **animations** (float, wiggle, pop, twinkle, flame…) are defined.
 
-**Colour themes:** Hanifa can pick Bloom, Ocean, Sunset or Forest. Each theme is a set of **CSS variables** (named
-colours) in [src/app/globals.css](src/app/globals.css). Switching the theme swaps the variables, and every button and
-card changes colour at once.
+**Colour themes ("worlds"):** Hanifa can pick Candy Land, Space Adventure or Ocean World. Each theme is a set of **CSS
+variables** (named colours) plus its own things drifting in the background, in [src/app/globals.css](src/app/globals.css).
+Switching the theme swaps the variables, and every button and card changes colour at once.
 
 **Helpers:** **PostCSS** and **Autoprefixer** ([postcss.config.mjs](postcss.config.mjs)) run behind the scenes.
 Autoprefixer adds extra lines so the styles also work in older browsers.
@@ -189,6 +191,12 @@ writes the jars, and tells every part of the screen to update, is [src/lib/store
 **Why this matters:** This is called **local-first**. The app works instantly and even offline, because it never has to
 wait for the internet to save. The internet is only used to *share* the data.
 
+**The second, bigger box: IndexedDB.** localStorage only holds about 5 MB for the whole app. That's plenty for words:
+six months of diary entries and comments is about 1–2 MB. But one screenshot is about 300 KB, so a couple of dozen would
+fill it. So screenshots are kept in **IndexedDB**, another storage box every browser has, which can hold hundreds of MB.
+The diary entry only keeps a short label for its screenshot, like `img:img_3c80381…`, the way a library card points to
+a book on a shelf. Code: [src/lib/images.ts](src/lib/images.ts).
+
 ### Google Apps Script: "Cloud save" (the app's backend)
 
 **What it is:** A free way to write small JavaScript programs that run on Google's computers, inside your own Google
@@ -199,7 +207,7 @@ things here: keeping one shared copy of the data, and keeping secrets (like the 
 where anyone could read them. Apps Script does both for free, without renting a server.
 
 **Where:** [apps-script/Code.js](apps-script/Code.js). It is published as a **web app**: a web address that the app sends
-messages to. It understands four requests:
+messages to. It understands six requests:
 
 | Request | Meaning |
 | --- | --- |
@@ -207,16 +215,18 @@ messages to. It understands four requests:
 | `login` | "Here's the Mentor PIN, am I allowed in?" If yes, it hands back a signed **token** (like a wristband at a theme park). |
 | `pull` | "What changed since I last asked?" |
 | `push` | "Here are my changes, please save them." Mentor-only changes are refused without a valid token. |
+| `putImage` | "Please keep this screenshot." It goes into its own **images** tab, once. |
+| `getImage` | "Please send me that screenshot." Devices ask only when they need to show it, then keep a copy. |
 
-It also emails Sikander when Hanifa asks a question or sends work to review. How to set it up:
-[docs/cloud-setup.md](docs/cloud-setup.md).
+It also emails Sikander when Hanifa asks a question or sends work to review, and can send Hanifa a friendly daily
+reminder if she hasn't studied yet that day. How to set it up: [docs/cloud-setup.md](docs/cloud-setup.md).
 
 ### Google Sheets
 
 Google Sheets is used in two ways:
 
 1. **As a simple database.** Cloud save stores the app's data in a private spreadsheet. A **database** is just an
-   organised place to keep data. A spreadsheet is a simple one.
+   organised place to keep data. A spreadsheet is a simple one. Screenshots have their own **images** tab in it.
 2. **As Hanifa's study notebook.** She already records her weekly updates and hours in a Google Sheet. The app reads
    those pages as **CSV** (plain text where commas separate the columns) straight from Google, and turns each row into a
    diary entry. Code: [src/lib/liveSheet.ts](src/lib/liveSheet.ts) and [src/domain/sheetSync.ts](src/domain/sheetSync.ts).
@@ -228,7 +238,8 @@ to the internet, so anyone can open it with a web address. Vercel is made by the
 they fit together nicely.
 
 **Deploying** means uploading a new version of the app so the live site updates. This project isn't linked to GitHub,
-so a new version is deployed by uploading the code (for example with the `vercel` command).
+so pushing code to GitHub does **not** change the website. A new version is deployed by uploading the code with the
+`vercel` command (see [Hosting](#hosting)).
 
 **Environment variables:** Some settings shouldn't be written inside the code, like the Cloud save address. They are
 put in Vercel's project settings instead, as **environment variables** (named settings the app reads when it's built).
@@ -284,11 +295,17 @@ reads Excel files. [scripts/import-workbook.mjs](scripts/import-workbook.mjs) us
 into [src/data/seed.json](src/data/seed.json), the starting data for the app. Mentor Hub can also accept a downloaded
 `.xlsx` or `.csv` file.
 
-### Web Audio API: sounds with no sound files
+### Web Audio API: sounds and music with no sound files
 
 The "pop", "correct" and "level up" sounds aren't recordings. [src/lib/sfx.ts](src/lib/sfx.ts) makes them by asking the
 browser to play musical notes at certain frequencies (a frequency is how high or low a note is). An **API** is a set of
 buttons a program is allowed to press on another program; here, the browser's sound system.
+
+The **background music** is made the same way, live, by [src/lib/music.ts](src/lib/music.ts): calm focus music with soft
+chords, a gentle bass and a quiet beat, played in a loop. A little **scheduler** plans the next notes a moment ahead,
+like a conductor reading the next bar. Browsers don't allow sound until you tap the page, so the music starts on the
+first tap. The top bar (and the side menu) has 🎵 to switch it on or off and − / + buttons for the volume. It pauses
+when the tab is hidden.
 
 ### ChatGPT link (Ask for Help)
 
@@ -327,6 +344,9 @@ layout: 5 tabs…"). You can see what changed, when, and go back if something br
 | **Responsive design** | One layout that works on a phone and a laptop (bottom bar on phones, side menu on laptops). | [src/components/AppShell.tsx](src/components/AppShell.tsx) |
 | **Accessibility** | Making the app usable for everyone, for example `aria-label` text that screen readers speak aloud. | Buttons in [AppShell.tsx](src/components/AppShell.tsx) |
 | **Privacy** | This private app tells search engines not to list it. | `robots` in [src/app/layout.tsx](src/app/layout.tsx) |
+| **Keeping big things apart** | Big files (screenshots) are stored separately from small text, so saving a comment never re-sends pictures. | [src/lib/images.ts](src/lib/images.ts) |
+| **Graceful fallback** | If one part is older than the other (an old Cloud save script), the app quietly falls back to the old way instead of breaking. | `putBackInline` in [src/lib/images.ts](src/lib/images.ts) |
+| **Backups** | A copy you keep yourself, in case something goes wrong. | [StorageHealth.tsx](src/components/StorageHealth.tsx) |
 
 ## 6. A tour of the folders
 
@@ -368,11 +388,13 @@ Let's follow one thing Hanifa does, from start to finish:
    diary updates.
 4. [game.ts](src/lib/game.ts) recalculates her **XP and streak**. If she reached a new level,
    [Celebrate.tsx](src/components/Celebrate.tsx) throws confetti and [sfx.ts](src/lib/sfx.ts) plays a sound.
-5. 1.5 seconds later, [cloud.ts](src/lib/cloud.ts) **pushes** the change to the Cloud save web app over the internet.
+5. Less than a second later, [cloud.ts](src/lib/cloud.ts) **pushes** the change to the Cloud save web app over the
+   internet. (If she added a screenshot, it is uploaded first, on its own.)
 6. [Code.js](apps-script/Code.js) saves it in the private spreadsheet, copies it to the **App Journal** tab of her working
    sheet, and emails Sikander if she asked a question.
-7. On Sikander's laptop, the app **pulls** changes every minute. The new entry appears in his **Mentor Hub**.
-8. He types a comment. It travels back the same way and shows up in Hanifa's diary.
+7. On Sikander's laptop, the app **pulls** changes every 15 seconds. The new entry appears in his **Mentor Hub**.
+8. He types a comment. It travels back the same way and shows up in Hanifa's diary. If he made a typo, he can press ✏️
+   to fix it or 🗑️ to delete it.
 
 If Hanifa had no internet in step 5, the entry would wait safely on her device and be sent when she's back online.
 
@@ -409,6 +431,7 @@ If Hanifa had no internet in step 5, the entry would wait safely on her device a
 | **Hosting** | Keeping a website on always-on computers so people can visit it. |
 | **JSON** | A neat text format for data: `{ "name": "Hanifa", "level": 3 }`. |
 | **Library / package** | Code someone else wrote that you can reuse. |
+| **IndexedDB** | A much bigger storage box in the browser, used here for screenshots. |
 | **localStorage** | A small storage box the browser gives each website. |
 | **Merge** | Combining two sets of changes into one. |
 | **Offline** | No internet connection. |
@@ -438,7 +461,15 @@ To share progress between devices, turn on **Cloud save**: follow [docs/cloud-se
 
 ## Hosting
 
-Hosted on Vercel (project `hanifa-world-vercel`). Cloud save is connected through the `NEXT_PUBLIC_CLOUD_URL` environment variable in Vercel's project settings. The project is not linked to GitHub, so a new version has to be deployed by uploading the code.
+Hosted on Vercel (project `hanifa-world-vercel`). Cloud save is connected through the `NEXT_PUBLIC_CLOUD_URL` environment variable in Vercel's project settings. The project is **not linked to GitHub**: pushing to `main` does not update the site. Deploy from the project folder:
+
+```bash
+pnpm dlx vercel deploy --prod --yes
+```
+
+Wait for "Production … ready", then hard-refresh the site (Cmd+Shift+R). If a build sits on "Creating an optimized production build" for more than 5 minutes, stop it (Ctrl+C) and run it again; `vercel ls hanifa-world-vercel` shows each deployment's status.
+
+**Changing `apps-script/Code.js`** is a separate step: paste the whole file into the Apps Script project, then **Deploy → Manage deployments → ✏️ → Version: New version → Deploy** (keeps the same web address). See [docs/cloud-setup.md](docs/cloud-setup.md).
 
 ## Source data
 
@@ -458,10 +489,10 @@ pnpm typecheck
 pnpm build
 ```
 
-The bundled runtime in this environment can run the checks directly when the shell has no `node` on PATH:
+If the shell can't find `node` or `pnpm`, they are installed by pnpm in `~/Library/pnpm`:
 
 ```bash
-/Users/xandershah/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node ./node_modules/vitest/vitest.mjs run
+export PATH="$HOME/Library/pnpm/nodejs/24.21.0/bin:$HOME/Library/pnpm:$PATH"
 ```
 
 ## Pages
@@ -475,17 +506,17 @@ The menu shows five main tabs, then "More", then Mentor Hub for the mentor.
 | `/home` | My Day | Nova the mascot, daily goals, focus timer, messages from Mentor, streak calendar, and a "copy my update for Sikander" report |
 | `/adventure` | Level Map | 20-level world map with playlists, missions, proof for Mentor verification, and level-clear celebrations (`/journey` redirects here) |
 | `/learn` | Quiz & Cards | Brain Gym: 120 flashcards (spaced repetition), three quizzes per level (Easy 4, Medium 6, Hard 6 questions = 320 in total), and the Daily 3 |
-| `/time` | My Diary | Time logs, reflections, questions for Mentor, proof, screenshots, and comment threads |
+| `/time` | My Diary | Time logs, reflections, questions for Mentor, proof, screenshots, and comment threads (she can edit or delete her own entries and comments) |
 | `/me` | My Trophies | XP, level, badges and achievements |
-| `/quests` | Mini Missions | Missions assigned by Mentor or added by Hanifa, with submit-for-review |
-| `/ask` | Ask for Help | A 3-step form that writes a clear, teacher-style question (with her current level) and opens ChatGPT with it already typed in. No API key or cost; `src/lib/askPrompt.ts` builds the message, and Mentor Hub shows what she asked |
+| `/quests` | Mini Missions | Missions assigned by Mentor or added by Hanifa, with submit-for-review. She can edit or delete her own missions; Mentor's are his to change |
+| `/ask` | Ask for Help | A 3-step form that writes a clear, teacher-style question (with her current level) and opens ChatGPT with it already typed in. No API key or cost; `src/lib/askPrompt.ts` builds the message. "My questions" lists what she asked; Sikander can add his own explanation and she can reply |
 | `/dreams` | Dream Schools | University shortlist, scholarship hunt, country comparison, Mentor notes |
 | `/sheet` | Study Sheet | Opens Hanifa's shared Google Sheet, syncs it on demand, and explains each of its pages in plain words |
-| `/mentor` | Mentor Hub | Sync & devices (Cloud save setup, device links, sheet sync), what needs attention, 14-day chart, reviews, journal comments, level-by-level mastery, messages and mission assignment |
+| `/mentor` | Mentor Hub | Its own menu: **To do** (reviews, questions, unanswered entries, her ChatGPT questions), **Her Diary**, **Progress** (14-day chart, level-by-level mastery, verify and level feedback), **Messages & Missions**, and **Settings** (Cloud save, sheet sync, Storage & backup) |
 
 ## Syncing Hanifa's Google Sheet
 
-Her **Weekly Learning Updates** and **Time Tracking Daily** pages sync into the journal automatically. The sheet is shared as "Anyone with the link", so the browser reads each page as CSV from Google (`/gviz/tq?tqx=out:csv`, which allows cross-origin requests) — no sign-in or server needed. The app syncs when it opens and when the tab comes back into view, at most every 5 minutes (`src/lib/liveSheet.ts`), and there is a **Sync now** button on the Study Sheet page and in Mentor Hub → Sync from sheet.
+Her **Weekly Learning Updates** and **Time Tracking Daily** pages sync into the journal automatically. The sheet is shared as "Anyone with the link", so the browser reads each page as CSV from Google (`/gviz/tq?tqx=out:csv`, which allows cross-origin requests) — no sign-in or server needed. The app syncs when it opens, when the tab comes back into view, and at most once a minute while open (`src/lib/liveSheet.ts`). There is also a **Sync now** button on the Study Sheet page and in Mentor Hub → Settings.
 
 - Entries get stable ids (`sheet-weekly-N`, `sheet-time-YYYY-MM-DD`), so re-syncing updates instead of duplicating.
 - Hanifa's comments and Sikander's review column become chat messages; comments written in the app are kept.
@@ -496,17 +527,50 @@ Her **Weekly Learning Updates** and **Time Tracking Daily** pages sync into the 
 
 Going the other way (app → sheet) is part of Cloud save: see below.
 
+## Fixing mistakes (Mentor)
+
+Sikander can correct or remove everything he adds, and tidy up what Hanifa sends:
+
+| What | Where | How |
+| --- | --- | --- |
+| Comments on diary entries | Her Diary, To do | ✏️ edits his own comments (and old-style notes), 🗑️ deletes any comment |
+| Whole diary entries | Her Diary, To do | 🗑️ in the entry's corner |
+| Missions | Messages & Missions → "Your missions for Hanifa" | ✏️ edits everything, including status (undo an approval) and feedback; 🗑️ deletes |
+| Sent messages | Messages & Missions → Sent messages | ✏️ / 🗑️ on each one |
+| Level feedback and verified stamp | Progress → Level by level | "Feedback" to write, change or clear; "Verified" to give or remove |
+| Her ChatGPT questions | To do → Questions she asked ChatGPT | 🗑️ removes one |
+
+Entries and comments that come **from the Google Sheet** are copied in again on every sync, so deleting them in the app
+wouldn't stick. They show "📊 From the sheet: change it there". Edit or delete the row in the sheet and the app follows.
+The same goes for replies typed in the App Journal tab.
+
+## Screenshots, storage and backups (ready for months of data)
+
+- **Words are small.** Six months of daily entries with comments is about 1–2 MB, well within the browser's ~5 MB.
+- **Screenshots are kept apart.** They are shrunk to about 300 KB (still readable), saved in the browser's IndexedDB, and
+  uploaded once to an `images` tab in the private data spreadsheet (`putImage`). The diary entry stores only `img:<id>`;
+  other devices fetch a screenshot (`getImage`) the first time they show it and keep a copy. Older entries that still hold
+  the picture itself are moved out automatically when the app starts. Code: `src/lib/images.ts`, `src/components/Screenshot.tsx`.
+- **Old Cloud save script?** If it answers `unknown-action`, screenshots go back inside the entries (the old way) and the
+  app tries again a day later, so nothing breaks while the script is being updated.
+- **Storage & backup** (Mentor Hub → Settings, `src/components/StorageHealth.tsx`) shows how full the device is, how many
+  screenshots it keeps and how many are waiting to upload, and downloads a backup file of everything, screenshots
+  included. Good habit: once a month.
+- The app asks the browser to keep its storage (`navigator.storage.persist()`), and warns once a device is 80% full.
+  If a browser clears it anyway, Cloud save brings everything back.
+
 ## How XP, streaks and badges work
 
-Everything is **derived from stored activity** in `src/lib/game.ts`, never stored on its own, so it can't be double-counted (quiz XP only counts the best score of each quiz, and pays 10 / 15 / 20 XP per right answer on Easy / Medium / Hard, focus XP is capped per day, and the workbook's sample week is ignored). Teaching content lives in `src/data/lessons.ts`. Hanifa can switch colour themes and sounds from the sidebar.
+Everything is **derived from stored activity** in `src/lib/game.ts`, never stored on its own, so it can't be double-counted (quiz XP only counts the best score of each quiz, and pays 10 / 15 / 20 XP per right answer on Easy / Medium / Hard, focus XP is capped per day, and the workbook's sample week is ignored). Teaching content lives in `src/data/lessons.ts`. Hanifa can switch colour themes and sound effects from the sidebar, and the music from the top bar.
 
 ## Cloud save and security
 
 Cloud save is a Google Apps Script web app (`apps-script/Code.js`) that runs in Sikander's Google account. It is free and needs no other service:
 
-- **Every device:** the synced keys (`SYNCED_KEYS` in `src/lib/data.ts`) are stored in a private spreadsheet in Sikander's Drive. Each key has a revision; devices pull changes every minute and whenever the app comes back into view, and push their own changes 1.5 seconds after they happen. When two devices changed the same key, `merge3` in `src/domain/cloudSync.ts` merges them (item by item for lists, key by key for objects), so a journal entry on her phone and a comment from Sikander on his laptop both survive. Offline changes are kept and sent later.
+- **Every device:** the synced keys (`SYNCED_KEYS` in `src/lib/data.ts`) are stored in a private spreadsheet in Sikander's Drive. Each key has a revision; devices pull changes every 15 seconds while the app is on screen and whenever it comes back into view, and push their own changes 0.8 seconds after they happen. Screenshots that haven't been uploaded yet go up before each sync. When two devices changed the same key, `merge3` in `src/domain/cloudSync.ts` merges them (item by item for lists, key by key for objects), so a journal entry on her phone and a comment from Sikander on his laptop both survive. Offline changes are kept and sent later.
 - **Two-way sheet sync:** the sheet's own tabs flow into the app (see above), and journal entries written in the app are copied to an **App Journal** tab in the working sheet. A reply typed in its "Sikander's reply" column becomes Sikander's comment in the app.
-- **Email alerts:** the script emails Sikander when Hanifa asks for help, sends something to review, or replies (see `docs/cloud-setup.md`).
+- **Email alerts:** the script emails Sikander when Hanifa asks for help, sends something to review, or replies, and can email Hanifa a daily reminder (Script Property `HANIFA_EMAIL`; see `docs/cloud-setup.md`).
+- **Screenshots:** stored in the `images` tab of the private spreadsheet. Only `data:image/jpeg|png|webp` up to ~1.1 MB under a random id is accepted.
 - **Mentor PIN:** with Cloud save on, the PIN is checked by the web app (Script Property `MENTOR_PIN`) and is never in the app's code. Five wrong tries lock sign-in for 15 minutes. A successful sign-in gives that device a signed token; switching back to Hanifa removes it.
 - **Mentor-only changes are enforced on the server:** mentor comments, messages, mission approvals and feedback, level verification and Dream notes are refused unless the push carries a valid Mentor token (`mentorOnlyChanges` in `apps-script/Code.js`, tested in `tests/cloudSync.test.ts`).
 - Without Cloud save there is no Mentor sign-in: the PIN only exists in the web app's Script Properties, never in the app's code or its history.
@@ -514,4 +578,4 @@ Cloud save is a Google Apps Script web app (`apps-script/Code.js`) that runs in 
 
 ## Product principles
 
-Activity is separate from Mentor-verified progress. Hanifa can record learning, time, quests, questions, and evidence. Only Mentor actions can approve milestones, request revisions or send messages, and with Cloud save on, the server enforces that. Historical review decisions remain visible.
+Activity is separate from Mentor-verified progress. Hanifa can record learning, time, quests, questions, and evidence. Only Mentor actions can approve milestones, request revisions or send messages, and with Cloud save on, the server enforces that. Mistakes are always fixable: Sikander can edit or delete what he adds, and Hanifa can edit or delete her own entries, comments and missions.
