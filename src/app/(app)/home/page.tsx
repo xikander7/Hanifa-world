@@ -195,7 +195,7 @@ function SikanderInbox() {
   const [asks] = useLocalStore<AskLog[]>(KEYS.asks, EMPTY_ASKS);
   type FeedItem = { id: string; at: string; text: string; kind: InboxMessage["kind"] | "comment"; topic: string; reply?: string; onAsk?: boolean };
   const comments: FeedItem[] = activity.flatMap(a => (a.comments ?? []).filter(c => c.by === "mentor").map(c => ({ id: c.id, at: c.at, text: c.text, kind: "comment" as const, topic: a.topic })));
-  const askComments: FeedItem[] = asks.flatMap(a => (a.comments ?? []).filter(c => c.by === "mentor").map(c => ({ id: c.id, at: c.at, text: c.text, kind: "comment" as const, topic: a.question || a.topic, onAsk: true })));
+  const askComments: FeedItem[] = asks.flatMap(a => (a.comments ?? []).filter(c => c.by === "mentor").map(c => ({ id: c.id, at: c.at, text: c.text, kind: "comment" as const, topic: a.question ? `“${a.question.length > 50 ? `${a.question.slice(0, 50)}…` : a.question}”` : a.topic, onAsk: true })));
   const feed: FeedItem[] = [...inbox.map(m => ({ ...m, topic: "" })), ...comments, ...askComments].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4);
   const unread = feed.filter(m => m.at > seen).length;
   const reply = (e: FormEvent, id: string) => { e.preventDefault(); const t = drafts[id]?.trim(); if (!t) return; setInbox(list => list.map(m => m.id === id ? { ...m, reply: t, repliedAt: new Date().toISOString() } : m)); setDrafts(d => ({ ...d, [id]: "" })); };
