@@ -16,6 +16,7 @@
  *    (approving, verifying, messages, mentor comments) are refused unless they come from a device signed in as Mentor.
  *
  *  - Emails Sikander when Hanifa needs him: a question, a help request, a mission or level to review, or a reply.
+ *  - Keeps screenshots in an "images" tab of the private data spreadsheet, apart from the diary, so the diary stays small.
  *
  * Script Properties (Project Settings > Script Properties):
  *  - MENTOR_PIN   required, your PIN
@@ -41,6 +42,11 @@ const SYNCED_KEYS = [
 const CHUNK = 45000; // a Sheets cell holds 50,000 characters
 const MAX_VALUE_CHARS = 20000000;
 const MAX_PIN_TRIES = 5; // then a 15-minute pause
+// Screenshots are stored apart from the diary (an "images" tab in the private data spreadsheet), so syncing a comment
+// never re-sends them. Each is saved once under a random id and fetched only by devices that show it.
+const IMAGE_ID = /^[A-Za-z0-9_-]{8,80}$/;
+const IMAGE_DATA = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+const MAX_IMAGE_CHARS = 1500000; // about 1.1 MB; the app shrinks screenshots well below this
 const REPLY_CHECK_SECONDS = 30;
 const APP_URL = "https://hanifa-world-vercel-xikander7s-projects.vercel.app";
 
@@ -60,6 +66,8 @@ function handle(req, backend) {
     if (req.action === "login") return login(String(req.pin || ""), backend);
     if (req.action === "pull") return pull(req, backend);
     if (req.action === "push") return push(req, backend);
+    if (req.action === "putImage") return putImage(req, backend);
+    if (req.action === "getImage") return getImage(req, backend);
     return { ok: false, error: "unknown-action" };
   } catch (err) {
     return { ok: false, error: String((err && err.message) || err) };
@@ -82,6 +90,23 @@ function mentorToken(backend) {
   return backend.sign("mentor", secret);
 }
 const isMentor = (token, backend) => Boolean(token) && Boolean(backend.prop("TOKEN_SECRET")) && token === mentorToken(backend);
+
+function putImage(req, backend) {
+  const id = String(req.id || ""), data = String(req.data || "");
+  if (!IMAGE_ID.test(id)) return { ok: false, error: "bad-image-id" };
+  if (data.length > MAX_IMAGE_CHARS) return { ok: false, error: "image-too-big" };
+  if (!IMAGE_DATA.test(data)) return { ok: false, error: "not-an-image" };
+  // An id is only ever used for one picture, so saving it again changes nothing.
+  backend.withLock(() => { if (!backend.hasImage(id)) backend.saveImage(id, data); });
+  return { ok: true };
+}
+
+function getImage(req, backend) {
+  const id = String(req.id || "");
+  if (!IMAGE_ID.test(id)) return { ok: false, error: "bad-image-id" };
+  const data = backend.loadImage(id);
+  return data ? { ok: true, data } : { ok: false, error: "no-such-image" };
+}
 
 function pull(req, backend) {
   let known = {};
@@ -335,6 +360,20 @@ function sheetsBackend() {
     for (let i = 0; i < keys.length; i++) if (keys[i][0] === key) return i + 2;
     return 0;
   };
+  let images = null;
+  const imageTab = () => {
+    if (images) return images;
+    const book = dataSheet().getParent();
+    images = book.getSheetByName("images") || book.insertSheet("images");
+    return images;
+  };
+  const imageRow = id => {
+    const sheet = imageTab(), last = sheet.getLastRow();
+    if (last < 1) return 0;
+    const ids = sheet.getRange(1, 1, last, 1).getValues();
+    for (let i = 0; i < ids.length; i++) if (ids[i][0] === id) return i + 1;
+    return 0;
+  };
   const journalTab = () => {
     const book = SpreadsheetApp.openById(WORKING_SHEET_ID);
     return book.getSheetByName(JOURNAL_TAB) || book.insertSheet(JOURNAL_TAB);
@@ -423,6 +462,20 @@ function sheetsBackend() {
         sheet.appendRow(row);
       });
     },
+    hasImage: id => imageRow(id) > 0,
+    saveImage: (id, data) => {
+      const sheet = imageTab(), chunks = [];
+      for (let i = 0; i < data.length; i += CHUNK) chunks.push("~" + data.slice(i, i + CHUNK));
+      const width = 3 + chunks.length;
+      if (sheet.getMaxColumns() < width) sheet.insertColumnsAfter(sheet.getMaxColumns(), width - sheet.getMaxColumns());
+      sheet.getRange(sheet.getLastRow() + 1, 1, 1, width).setValues([[id, new Date(), chunks.length].concat(chunks)]);
+    },
+    loadImage: id => {
+      const row = imageRow(id);
+      if (!row) return null;
+      const sheet = imageTab(), count = Number(sheet.getRange(row, 3).getValue()) || 0;
+      return count ? sheet.getRange(row, 4, 1, count).getValues()[0].map(c => String(c).slice(1)).join("") : null;
+    },
     writeJournal: rows => {
       const sheet = journalTab();
       sheet.clearContents();
@@ -498,4 +551,4 @@ function setup() {
 }
 
 // Lets the app's tests load this file. Apps Script has no `module`, so this line does nothing there.
-if (typeof module !== "undefined") module.exports = { handle, mentorOnlyChanges, mentorAlerts, reminderFor, timeAppColumns, weeklyAppColumns, journalRows, applyJournalReplies, SYNCED_KEYS, CHUNK };
+if (typeof module !== "undefined") module.exports = { handle, MAX_IMAGE_CHARS, mentorOnlyChanges, mentorAlerts, reminderFor, timeAppColumns, weeklyAppColumns, journalRows, applyJournalReplies, SYNCED_KEYS, CHUNK };

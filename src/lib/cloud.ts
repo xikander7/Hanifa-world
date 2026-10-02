@@ -49,7 +49,7 @@ export function useCloudStatus() {
 }
 
 // ---------- talking to the web app ----------
-async function call<T>(url: string, body: Record<string, unknown>): Promise<T> {
+export async function cloudCall<T>(url: string, body: Record<string, unknown>): Promise<T> {
   // text/plain keeps this a "simple" request, which Apps Script answers without a CORS preflight.
   const response = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body), redirect: "follow" });
   if (!response.ok) throw new Error(`Cloud save answered ${response.status}`);
@@ -66,16 +66,16 @@ const transport = (url: string): Transport => ({
     if (!result.ok) throw new Error(result.error || "Cloud save said no");
     return result.keys;
   },
-  push: async changes => (await call<{ results: Record<string, PushResult> }>(url, { action: "push", changes, token: mentorToken() })).results,
+  push: async changes => (await cloudCall<{ results: Record<string, PushResult> }>(url, { action: "push", changes, token: mentorToken() })).results,
 });
 
-export async function pingCloud(url: string) { await call(url, { action: "ping" }); }
+export async function pingCloud(url: string) { await cloudCall(url, { action: "ping" }); }
 
 /** Asks the web app to check the PIN. Returns an error message, or "" when signed in. */
 export async function mentorSignIn(pin: string): Promise<string> {
   const url = cloudUrl();
   if (!url) return "";
-  try { setMentorToken((await call<{ token: string }>(url, { action: "login", pin })).token); return ""; }
+  try { setMentorToken((await cloudCall<{ token: string }>(url, { action: "login", pin })).token); return ""; }
   catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (message === "wrong-pin") return "That code didn’t work. Try again.";
@@ -87,6 +87,10 @@ export async function mentorSignIn(pin: string): Promise<string> {
 export async function mentorSignOut() { if (cloudUrl()) await syncNow().catch(() => undefined); setMentorToken(""); }
 
 // ---------- the sync loop ----------
+/** Work to do with the cloud before each sync (screenshots go up first, so the entries that show them never arrive before them). */
+const beforeSync = new Set<(url: string) => Promise<void>>();
+export function onBeforeSync(fn: (url: string) => Promise<void>) { beforeSync.add(fn); return () => { beforeSync.delete(fn); }; }
+
 let running: Promise<void> | null = null, again = false;
 let pushTimer: number | undefined;
 /** Keys saved on this device while a sync was on the wire; they go out in the next round. */
@@ -101,6 +105,7 @@ async function runOnce() {
       read: (key: string) => parse(rawGet(key)),
       write: (key: string, value: unknown) => { if (value === undefined || value === null) return; writeStore(key, value, { fromCloud: true }); },
     };
+    for (const fn of beforeSync) await fn(url).catch(() => undefined); // a stuck screenshot must never hold up the diary
     touchedDuringSync.clear();
     const outcome = await syncOnce(SYNCED_KEYS, local, loadMeta(), transport(url));
     touchedDuringSync.forEach(key => { outcome.meta.dirty[key] = true; again = true; });

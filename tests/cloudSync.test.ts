@@ -16,6 +16,7 @@ function fakeGoogle(pin = "2468") {
   let journal: unknown[][] = [];
   const mail: { to: string; subject: string; body: string }[] = [];
   const appColumns: Record<string, { header: string[]; byRow: Record<string, unknown[]> }> = {};
+  const images = new Map<string, string>();
   const backend = {
     prop: (name: string) => props.get(name) ?? null,
     setProp: (name: string, value: string) => { props.set(name, value); },
@@ -33,9 +34,12 @@ function fakeGoogle(pin = "2468") {
     writeAppColumns: (tab: string, header: string[], byRow: Record<string, unknown[]>) => { appColumns[tab] = { header, byRow: roundTrip(byRow) }; },
     ownerEmail: () => "mentor@example.com",
     sendMail: (to: string, subject: string, body: string) => { mail.push({ to, subject, body }); },
+    hasImage: (id: string) => images.has(id),
+    saveImage: (id: string, data: string) => { images.set(id, data); },
+    loadImage: (id: string) => images.get(id) ?? null,
   };
   return {
-    backend, rows, mail, appColumns,
+    backend, rows, mail, appColumns, images,
     journal: () => journal,
     typeReply: (entryId: string, reply: string) => { journal = journal.map(r => (String(r[11]) === `'${entryId}` ? r.map((c, i) => (i === 10 ? reply : c)) : r)); cache.clear(); },
     call: (req: Record<string, unknown>) => roundTrip(server.handle(roundTrip(req), backend)),
@@ -288,5 +292,26 @@ describe("Hanifa's daily reminder", () => {
   it("is gentle when there is no streak, and ignores the sample week", () => {
     const reminder = server.reminderFor([day("import-1", "2026-09-30")], "2026-10-01");
     expect(reminder.subject).toContain("Nova misses you");
+  });
+});
+
+describe("Screenshots, stored apart from the diary", () => {
+  const picture = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ==";
+
+  it("saves a screenshot once and gives it back to any device", () => {
+    const google = fakeGoogle();
+    expect(google.call({ action: "putImage", id: "img_abcdef12", data: picture })).toEqual({ ok: true });
+    expect(google.call({ action: "putImage", id: "img_abcdef12", data: picture })).toEqual({ ok: true });
+    expect(google.images.size).toBe(1);
+    expect(google.call({ action: "getImage", id: "img_abcdef12" })).toEqual({ ok: true, data: picture });
+    expect(google.call({ action: "getImage", id: "img_missing1" })).toEqual({ ok: false, error: "no-such-image" });
+  });
+
+  it("refuses anything that isn't a reasonably sized image", () => {
+    const google = fakeGoogle();
+    expect(google.call({ action: "putImage", id: "../../etc", data: picture }).error).toBe("bad-image-id");
+    expect(google.call({ action: "putImage", id: "img_abcdef12", data: "<script>alert(1)</script>" }).error).toBe("not-an-image");
+    expect(google.call({ action: "putImage", id: "img_abcdef12", data: picture + "A".repeat(server.MAX_IMAGE_CHARS) }).error).toBe("image-too-big");
+    expect(google.images.size).toBe(0);
   });
 });

@@ -17,6 +17,8 @@ import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { AskedQuestions } from "@/components/AskedQuestions";
 import { useCelebrate } from "@/components/Celebrate";
 import { CommentThread, LEGACY_NOTE_ID, sheetComment } from "@/components/CommentThread";
+import { Screenshot } from "@/components/Screenshot";
+import { StorageHealth } from "@/components/StorageHealth";
 import { MissionForm } from "@/components/MissionForm";
 import { Nova } from "@/components/Nova";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -204,7 +206,7 @@ function MentorHub() {
         {a.did && <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{a.did}</p>}
         {a.practiced && <p className="mt-2 text-xs text-ink/55"><b>Practised:</b> {a.practiced}</p>}
         {a.blocker && <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-2.5 text-sm text-amber-950"><HelpCircle size={14} className="mr-1 inline" /><b>Question:</b> {a.blocker}</p>}
-        {(a.proof || a.attachment) && <div className="mt-3 flex flex-wrap items-center gap-3">{a.proof && (a.proof.startsWith("http") ? <a href={a.proof} target="_blank" rel="noopener noreferrer" className="chip bg-brand/10 text-brand underline">🔗 Proof link</a> : <span className="chip bg-ink/5">{a.proof}</span>)}{a.attachment && <a href={a.attachment} target="_blank" rel="noopener noreferrer"><img src={a.attachment} alt="Screenshot" className="h-20 rounded-xl ring-1 ring-ink/10" /></a>}</div>}
+        {(a.proof || a.attachment) && <div className="mt-3 flex flex-wrap items-center gap-3">{a.proof && (a.proof.startsWith("http") ? <a href={a.proof} target="_blank" rel="noopener noreferrer" className="chip bg-brand/10 text-brand underline">🔗 Proof link</a> : <span className="chip bg-ink/5">{a.proof}</span>)}{a.attachment && <Screenshot value={a.attachment} />}</div>}
         <CommentThread comments={a.comments ?? []} legacyMentorNote={a.mentorNote} viewer="mentor" onAdd={c => comment(a.id, c)} onEdit={(cid, t) => editComment(a.id, cid, t)} onDelete={cid => deleteComment(a.id, cid)} fromSheet={sheetComment(a)} />
       </article>)}</div>}
     </section>}
@@ -231,7 +233,7 @@ function MentorHub() {
       })}</div>
     </section>}
 
-    {tab === "settings" && <div className="space-y-5"><CloudSetup /><SheetSync /></div>}
+    {tab === "settings" && <div className="space-y-5"><CloudSetup /><SheetSync /><StorageHealth /></div>}
 
     {tab === "message" && <div className="grid gap-6 lg:grid-cols-2">
       <section className="space-y-4">

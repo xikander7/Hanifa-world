@@ -71,3 +71,10 @@ const noopSubscribe = () => () => {};
 export function useHydrated() {
   return useSyncExternalStore(noopSubscribe, () => true, () => false);
 }
+
+/** Roughly how full localStorage is: browsers allow about 5 million characters per site, for all keys together. */
+export function localStorageUse(): { used: number; limit: number } {
+  let used = 0;
+  try { for (let i = 0; i < window.localStorage.length; i++) { const key = window.localStorage.key(i) ?? ""; used += key.length + (window.localStorage.getItem(key)?.length ?? 0); } } catch { /* blocked */ }
+  return { used, limit: 5_000_000 };
+}

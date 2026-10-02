@@ -27,6 +27,8 @@ export const KEYS = {
   cloudUrl: "future-world-cloud-url",
   cloudMeta: "future-world-cloud-meta-v1",
   mentorToken: "future-world-mentor-token",
+  imagesPending: "future-world-images-pending",
+  imagesOldServer: "future-world-images-old-server",
 } as const;
 
 /**
@@ -124,18 +126,30 @@ export const FEELINGS = [
   { emoji: "🤔", label: "Confused" }, { emoji: "😮‍💨", label: "Tough day" }, { emoji: "😴", label: "Sleepy" },
 ];
 
-export const fileToCompressedDataUrl = async (file: File, max = 1000): Promise<string> => {
+/** About 300 KB: big enough to read code in a screenshot, small enough that hundreds fit comfortably. */
+const MAX_SCREENSHOT_CHARS = 400_000;
+/** Shrinks a picture to at most `max` pixels across and, step by step, to under MAX_SCREENSHOT_CHARS. */
+export const fileToCompressedDataUrl = async (file: File, max = 1400): Promise<string> => {
   const url = URL.createObjectURL(file);
   const image = new Image();
   image.src = url;
   await new Promise(resolve => { image.onload = resolve; image.onerror = resolve; });
-  const scale = Math.min(1, max / Math.max(image.width || 1, image.height || 1));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(image.width * scale));
-  canvas.height = Math.max(1, Math.round(image.height * scale));
-  canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const draw = (size: number, quality: number) => {
+    const scale = Math.min(1, size / Math.max(image.width || 1, image.height || 1));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const ctx = canvas.getContext("2d");
+    if (ctx) { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(image, 0, 0, canvas.width, canvas.height); } // white behind see-through PNGs
+    return canvas.toDataURL("image/jpeg", quality);
+  };
+  let size = max, quality = 0.75, data = draw(size, quality);
+  while (data.length > MAX_SCREENSHOT_CHARS && size > 500) {
+    if (quality > 0.55) quality -= 0.1; else size = Math.round(size * 0.8);
+    data = draw(size, quality);
+  }
   URL.revokeObjectURL(url);
-  return canvas.toDataURL("image/jpeg", 0.7);
+  return data;
 };
 
 export const EMPTY_LIST: never[] = [];

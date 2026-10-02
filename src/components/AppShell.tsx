@@ -8,7 +8,8 @@ import type { Role } from "@/domain/types";
 import { KEYS, NOT_SEEN } from "@/lib/data";
 import { seedSheetEntries } from "@/lib/sheetSeed";
 import { syncFromLiveSheet, syncIsDue } from "@/lib/liveSheet";
-import { STORE_ERROR_EVENT } from "@/lib/store";
+import { STORE_ERROR_EVENT, localStorageUse } from "@/lib/store";
+import { moveInlineImages } from "@/lib/images";
 import { cloudUrl, isCloudUrl, mentorSignIn, mentorSignOut, mentorToken, setCloudUrl, startCloud, useCloudStatus } from "@/lib/cloud";
 import { finishFocus, useFocusTimer } from "@/lib/useFocus";
 import { setMusicVolume, startMusic, stopMusic } from "@/lib/music";
@@ -85,6 +86,16 @@ function Watchers({ role, roleReady }: { role: Role; roleReady: boolean }) {
 
   useEffect(() => { if (hydrated) seedSheetEntries(); }, [hydrated]);
 
+  // Keeping months of data safe: screenshots move out of the diary into their own store, the browser is asked not to
+  // clear the app's storage when space runs low, and a nearly full store is flagged before anything fails to save.
+  useEffect(() => {
+    if (!hydrated) return;
+    moveInlineImages().catch(() => undefined);
+    navigator.storage?.persist?.().catch(() => undefined);
+    const { used, limit } = localStorageUse();
+    if (used / limit > 0.8) celebrate({ emoji: "💾", title: "This device's storage is nearly full", text: "Sikander: open Mentor Hub → Settings → Storage & backup.", confetti: false, sound: "pop" });
+  }, [hydrated, celebrate]);
+
   // Cloud save. A "?cloud=" link from Mentor Hub connects this device to it.
   useEffect(() => {
     if (!hydrated) return;
@@ -119,7 +130,7 @@ function Watchers({ role, roleReady }: { role: Role; roleReady: boolean }) {
   }, [hydrated, roleReady, hanifa, celebrate]);
 
   useEffect(() => {
-    const warn = () => celebrate({ emoji: "⚠️", title: "Couldn't save that", text: "This browser's storage is full. Remove a few screenshots from old journal entries, then try again.", confetti: false, sound: "pop" });
+    const warn = () => celebrate({ emoji: "⚠️", title: "Couldn't save that", text: "This browser's storage is full. Sikander: open Mentor Hub → Settings → Storage & backup.", confetti: false, sound: "pop" });
     window.addEventListener(STORE_ERROR_EVENT, warn);
     return () => window.removeEventListener(STORE_ERROR_EVENT, warn);
   }, [celebrate]);
