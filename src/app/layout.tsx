@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { MotionFX } from "@/components/MotionFX";
 
 const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 const body = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-body", display: "swap" });
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <div className="aurora" aria-hidden><i /><i /><i /></div>
         <div className="decor" aria-hidden><span /><span /><span /><span /><span /><span /></div>
+        <MotionFX />
         {children}
       </body>
     </html>

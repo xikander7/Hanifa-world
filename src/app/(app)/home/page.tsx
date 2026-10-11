@@ -105,7 +105,7 @@ export default function HomePage() {
 
     {/* ---------- today's goals + focus ---------- */}
     <div className="grid gap-6 lg:grid-cols-5">
-      <Reveal className="card p-6 lg:col-span-3">
+      <Reveal from="left" className="card p-6 lg:col-span-3">
         <div className="flex items-start justify-between gap-3">
           <div><p className="eyebrow">Today’s plan</p><h2 className="mt-1 font-display text-2xl font-extrabold">{game.today.perfect ? "Perfect day! 🌟" : "3 small goals, 1 big day"}</h2><p className="mt-1 text-sm text-ink/55">Finish all three for a <b>+{XP.perfectDay} XP</b> Perfect Day bonus.</p></div>
           <Ring value={(game.today.done / 3) * 100} size={64} stroke={8}><span className="font-display text-lg font-extrabold">{game.today.done}/3</span></Ring>
@@ -120,13 +120,13 @@ export default function HomePage() {
           </li>)}
         </ul>
       </Reveal>
-      <Reveal delay={80} className="lg:col-span-2"><FocusCard /></Reveal>
+      <Reveal from="right" delay={80} className="lg:col-span-2"><FocusCard /></Reveal>
     </div>
 
     {/* ---------- messages + missions from Sikander ---------- */}
     <div className="grid gap-6 lg:grid-cols-2">
-      <Reveal><SikanderInbox /></Reveal>
-      <Reveal delay={80} className="card p-6">
+      <Reveal from="left"><SikanderInbox /></Reveal>
+      <Reveal from="right" delay={80} className="card p-6">
         <div className="flex items-center justify-between"><div><p className="eyebrow">Missions</p><h2 className="mt-1 font-display text-xl font-extrabold">Little jobs with prizes</h2></div><Target className="text-brand animate-bounce-soft" /></div>
         {missions.length ? <ul className="stagger mt-4 space-y-2.5">{missions.slice(0, 3).map(q => <li key={q.id}><Link href="/quests" className="flex items-center gap-3 rounded-2xl bg-white/80 p-3 ring-1 ring-ink/5 transition hover:-translate-y-0.5 hover:ring-brand/40"><span className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10">{q.createdBy === "mentor" ? "📌" : "✨"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{q.title}</span><span className="block text-xs text-ink/50">{q.status}{q.dueDate ? ` · due ${fmtDay(q.dueDate)}` : ""}</span></span><span className="chip bg-brand/10 text-brand">+{q.xp ?? XP.defaultQuest}</span></Link></li>)}</ul>
           : <div className="mt-4 rounded-2xl border border-dashed border-ink/15 p-6 text-center"><p className="animate-bounce-soft text-3xl">🌤️</p><p className="mt-2 text-sm font-bold">No missions right now</p><p className="text-xs text-ink/50">Make your own, or wait for one from Sikander.</p></div>}

@@ -15,6 +15,7 @@ import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useCelebrate } from "@/components/Celebrate";
 import { Nova } from "@/components/Nova";
 import { ProgressBar } from "@/components/ProgressBar";
+import { Reveal } from "@/components/Reveal";
 import { SectionHeading } from "@/components/SectionHeading";
 
 type RoadmapModule = (typeof roadmap)[number];
@@ -103,7 +104,7 @@ export default function AdventurePage() {
     <div className="space-y-4">
       {worlds.map((world, wi) => {
         const cleared = world.levels.filter(i => stateFor(i) === "passed").length;
-        return <section key={world.name} className="card p-5 sm:p-6" style={{ animationDelay: `${wi * 70}ms` }}>
+        return <Reveal as="section" key={world.name} from={wi % 2 ? "right" : "left"} className="card p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand/10 text-2xl">{WORLD_EMOJI[world.name]}</span><div><h2 className="font-display text-lg font-extrabold leading-tight">{world.name}</h2><p className="text-xs text-ink/55">{WORLD_BLURB[world.name]}</p></div></div>
             <span className="chip bg-ink/5 text-ink/60">{cleared}/{world.levels.length} cleared</span>
@@ -128,7 +129,7 @@ export default function AdventurePage() {
               </div>;
             })}
           </div>
-        </section>;
+        </Reveal>;
       })}
     </div>
 

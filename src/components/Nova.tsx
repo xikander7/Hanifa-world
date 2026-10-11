@@ -1,21 +1,51 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 export type NovaMood = "happy" | "cheer" | "think" | "sleepy";
 
 /**
  * Nova, Hanifa's little yellow buddy: a round helper with one big goggle and blue overalls.
  * Blinks, floats, waves when cheering, and changes face with the mood.
+ * With `watch`, Nova's eye follows the mouse (or finger), Nova leans towards it, and the pupil grows when you come close.
  */
-export function Nova({ mood = "happy", size = 120, float = true, className = "" }: { mood?: NovaMood; size?: number; float?: boolean; className?: string }) {
+export function Nova({ mood = "happy", size = 120, float = true, watch = false, className = "" }: { mood?: NovaMood; size?: number; float?: boolean; watch?: boolean; className?: string }) {
   const eye = { transformBox: "fill-box" as const, transformOrigin: "center" };
   const ink = "#2b2140";
-  return <svg viewBox="0 0 120 120" width={size} height={size} role="img" aria-label="Nova, your little yellow buddy" className={`${float ? "animate-float" : ""} ${className}`} overflow="visible">
+  const ref = useRef<SVGSVGElement>(null);
+  useEffect(() => {
+    const svg = ref.current;
+    if (!watch || !svg || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0, x = -1, y = -1;
+    const look = () => {
+      frame = 0;
+      if (x < 0) return;
+      const r = svg.getBoundingClientRect();
+      const dx = x - (r.left + r.width / 2), dy = y - (r.top + r.height * 0.35), dist = Math.hypot(dx, dy) || 1;
+      const reach = Math.min(1, dist / 200) * 4.6; // the pupil can travel 4.6 units inside the eye
+      svg.style.setProperty("--lx", (dx / dist * reach).toFixed(2));
+      svg.style.setProperty("--ly", (dy / dist * reach).toFixed(2));
+      svg.style.setProperty("--lean", `${Math.max(-9, Math.min(9, dx / 50)).toFixed(1)}deg`);
+      svg.style.setProperty("--wow", dist < r.width * 0.9 ? "1.3" : "1");
+    };
+    const queue = () => { if (!frame) frame = requestAnimationFrame(look); };
+    const onPointer = (e: PointerEvent) => { x = e.clientX; y = e.clientY; queue(); };
+    window.addEventListener("pointermove", onPointer, { passive: true });
+    window.addEventListener("pointerdown", onPointer, { passive: true });
+    window.addEventListener("scroll", queue, { passive: true });
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("pointermove", onPointer); window.removeEventListener("pointerdown", onPointer); window.removeEventListener("scroll", queue); };
+  }, [watch]);
+  // Without `watch` these variables are never set, so the pupil and body stay exactly where they always were.
+  const pupil = { transform: "translate(calc(var(--lx, 0) * 1px), calc(var(--ly, 0) * 1px)) scale(var(--wow, 1))", transformBox: "fill-box" as const, transformOrigin: "center", transition: "transform .15s ease-out" };
+  const lean = { transform: "rotate(var(--lean, 0deg))", transformOrigin: "60px 108px", transition: "transform .5s cubic-bezier(.3,1.5,.5,1)" };
+  return <svg ref={ref} viewBox="0 0 120 120" width={size} height={size} role="img" aria-label="Nova, your little yellow buddy" className={`${float ? "animate-float" : ""} ${className}`} overflow="visible">
     <defs>
       <linearGradient id="nova-skin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffe066" /><stop offset="1" stopColor="#fbbf24" /></linearGradient>
       <linearGradient id="nova-denim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3b82f6" /><stop offset="1" stopColor="#1d4ed8" /></linearGradient>
       <radialGradient id="nova-lens" cx=".4" cy=".35" r=".7"><stop offset="0" stopColor="#f1f5f9" /><stop offset="1" stopColor="#94a3b8" /></radialGradient>
     </defs>
     <ellipse cx="60" cy="114" rx="24" ry="4" fill="rgb(var(--ink) / .12)" />
+    <g style={watch ? lean : undefined}>
 
     {/* arms: both up when cheering, one waving otherwise */}
     {mood === "cheer"
@@ -48,9 +78,11 @@ export function Nova({ mood = "happy", size = 120, float = true, className = "" 
       ? <path d="M51 43 Q60 49 69 43" stroke={ink} strokeWidth="3" strokeLinecap="round" fill="none" />
       : <g className="animate-blink" style={eye}>
           <circle cx="60" cy="42" r="10.5" fill="white" />
-          <circle cx={mood === "think" ? 63 : 60} cy={mood === "think" ? 38 : 43} r="5.5" fill="#7c4a1e" />
-          <circle cx={mood === "think" ? 63 : 60} cy={mood === "think" ? 38 : 43} r="3" fill={ink} />
-          <circle cx={mood === "think" ? 61 : 58} cy={mood === "think" ? 36 : 41} r="1.4" fill="white" />
+          <g style={watch ? pupil : undefined}>
+            <circle cx={mood === "think" ? 63 : 60} cy={mood === "think" ? 38 : 43} r="5.5" fill="#7c4a1e" />
+            <circle cx={mood === "think" ? 63 : 60} cy={mood === "think" ? 38 : 43} r="3" fill={ink} />
+            <circle cx={mood === "think" ? 61 : 58} cy={mood === "think" ? 36 : 41} r="1.4" fill="white" />
+          </g>
         </g>}
     <circle cx="60" cy="42" r="12" fill="none" stroke="white" strokeOpacity=".35" strokeWidth="1.5" />
 
@@ -64,5 +96,6 @@ export function Nova({ mood = "happy", size = 120, float = true, className = "" 
       <path className="animate-twinkle" style={{ transformBox: "fill-box", transformOrigin: "center" }} d="M106 20 l2.4 6.2 6.2 2.4 -6.2 2.4 -2.4 6.2 -2.4 -6.2 -6.2 -2.4 6.2 -2.4z" />
       <path className="animate-twinkle" style={{ transformBox: "fill-box", transformOrigin: "center", animationDelay: "1.2s" }} d="M12 26 l1.8 4.6 4.6 1.8 -4.6 1.8 -1.8 4.6 -1.8 -4.6 -4.6 -1.8 4.6 -1.8z" />
     </g>}
+    </g>
   </svg>;
 }

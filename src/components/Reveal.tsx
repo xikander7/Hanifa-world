@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
-/** Fades and lifts its children into view as they scroll on screen. */
-export function Reveal({ children, delay = 0, className = "", as: Tag = "div" }: { children: React.ReactNode; delay?: number; className?: string; as?: "div" | "section" | "article" }) {
+/** Fades and lifts its children into view as they scroll on screen. `from` slides it in from the side or zooms it up instead. */
+export function Reveal({ children, delay = 0, className = "", as: Tag = "div", from }: { children: React.ReactNode; delay?: number; className?: string; as?: "div" | "section" | "article"; from?: "left" | "right" | "zoom" }) {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const node = ref.current; if (!node) return;
@@ -12,5 +12,5 @@ export function Reveal({ children, delay = 0, className = "", as: Tag = "div" }:
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  return <Tag ref={ref as never} className={`reveal ${className}`} style={{ "--d": `${delay}ms` } as React.CSSProperties}>{children}</Tag>;
+  return <Tag ref={ref as never} data-from={from} className={`reveal ${className}`} style={{ "--d": `${delay}ms` } as React.CSSProperties}>{children}</Tag>;
 }
