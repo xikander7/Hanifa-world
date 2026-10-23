@@ -42,6 +42,7 @@ const SYNCED_KEYS = [
 const CHUNK = 45000; // a Sheets cell holds 50,000 characters
 const MAX_VALUE_CHARS = 20000000;
 const MAX_PIN_TRIES = 5; // then a 15-minute pause
+const PIN_PAUSE_MS = 15 * 60 * 1000;
 // Screenshots are stored apart from the diary (an "images" tab in the private data spreadsheet), so syncing a comment
 // never re-sends them. Each is saved once under a random id and fetched only by devices that show it.
 const IMAGE_ID = /^[A-Za-z0-9_-]{8,80}$/;
@@ -74,14 +75,32 @@ function handle(req, backend) {
   }
 }
 
+/** Compares two texts without stopping at the first difference, so the time taken doesn't hint at how much matched. */
+function sameText(a, b) {
+  const x = String(a), y = String(b);
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x.charCodeAt(i) || 0) ^ (y.charCodeAt(i) || 0);
+  return diff === 0;
+}
+
 function login(pin, backend) {
   const expected = backend.prop("MENTOR_PIN");
   if (!expected) return { ok: false, error: "MENTOR_PIN is not set in Script Properties" };
-  const tries = Number(backend.cacheGet("pin-fails") || 0);
-  if (tries >= MAX_PIN_TRIES) return { ok: false, error: "too-many-tries" };
-  if (pin !== String(expected)) { backend.cachePut("pin-fails", String(tries + 1), 900); return { ok: false, error: "wrong-pin" }; }
-  backend.cachePut("pin-fails", "0", 1);
-  return { ok: true, token: mentorToken(backend) };
+  // One guess at a time: the count is kept in Script Properties (a cache can be emptied) and updated under the lock,
+  // so many guesses sent at the same moment can't all slip in before the count goes up.
+  return backend.withLock(() => {
+    const now = Date.parse(backend.now());
+    if (Number(backend.prop("PIN_LOCKED_UNTIL") || 0) > now) return { ok: false, error: "too-many-tries" };
+    if (!sameText(pin, expected)) {
+      const fails = Number(backend.prop("PIN_FAILS") || 0) + 1;
+      if (fails >= MAX_PIN_TRIES) { backend.setProp("PIN_FAILS", "0"); backend.setProp("PIN_LOCKED_UNTIL", String(now + PIN_PAUSE_MS)); }
+      else backend.setProp("PIN_FAILS", String(fails));
+      return { ok: false, error: "wrong-pin" };
+    }
+    backend.setProp("PIN_FAILS", "0");
+    backend.setProp("PIN_LOCKED_UNTIL", "0");
+    return { ok: true, token: mentorToken(backend) };
+  });
 }
 
 function mentorToken(backend) {
@@ -89,7 +108,7 @@ function mentorToken(backend) {
   if (!secret) { secret = backend.uuid() + backend.uuid(); backend.setProp("TOKEN_SECRET", secret); }
   return backend.sign("mentor", secret);
 }
-const isMentor = (token, backend) => Boolean(token) && Boolean(backend.prop("TOKEN_SECRET")) && token === mentorToken(backend);
+const isMentor = (token, backend) => Boolean(token) && Boolean(backend.prop("TOKEN_SECRET")) && sameText(token, mentorToken(backend));
 
 function putImage(req, backend) {
   const id = String(req.id || ""), data = String(req.data || "");
@@ -129,7 +148,7 @@ function push(req, backend) {
   backend.withLock(() => {
     for (const change of changes) {
       const key = change.key;
-      if (SYNCED_KEYS.indexOf(key) < 0) continue;
+      if (SYNCED_KEYS.indexOf(key) < 0 || change.value === undefined) continue;
       if (JSON.stringify(change.value).length > MAX_VALUE_CHARS) { results[key] = { status: "forbidden", rev: 0, value: null, reason: "too-big" }; continue; }
       const current = backend.load(key) || { rev: 0, value: null };
       if (Number(change.baseRev) !== current.rev) { results[key] = { status: "conflict", rev: current.rev, value: current.value }; continue; }
@@ -150,7 +169,9 @@ function push(req, backend) {
 
 // ------------------------------------------------------------------ what only Sikander may change
 const list = value => (Array.isArray(value) ? value : []);
-const byId = value => { const map = {}; list(value).forEach(item => { if (item && item.id) map[item.id] = item; }); return map; };
+// A map with no prototype, so an id like "constructor" or "toString" is just an id and never finds a built-in by mistake.
+const byId = value => { const map = Object.create(null); list(value).forEach(item => { if (item && item.id) map[item.id] = item; }); return map; };
+const ownEntry = (obj, id) => (obj && typeof obj === "object" && Object.prototype.hasOwnProperty.call(obj, id) && obj[id] && typeof obj[id] === "object" ? obj[id] : {});
 const text = value => (value === undefined || value === null ? "" : String(value));
 // Comments that came from the working sheet's review columns are the sheet's, not a device's.
 const fromSheet = (entry, comment) => entry.source === "sheet" && /-(mentor|hanifa)$/.test(comment.id) && comment.id.indexOf(entry.id) === 0;
@@ -175,13 +196,16 @@ function mentorOnlyChanges(key, before, after) {
       if (!was && q.createdBy === "mentor") problems.push("mission from Sikander");
       if (text(q.mentorFeedback) !== text(was && was.mentorFeedback)) problems.push("mission feedback");
       if (q.status === "Needs a tweak" && (!was || was.status !== "Needs a tweak")) problems.push("mission review");
-      if (q.status === "Completed" && q.requiresApproval && (!was || was.status !== "Completed")) problems.push("mission approval");
+      // Judged on the server's copy too, so switching "needs review" off in the same change can't skip the approval.
+      if (q.status === "Completed" && (q.requiresApproval || (was && was.requiresApproval)) && (!was || was.status !== "Completed")) problems.push("mission approval");
+      // A mission Sikander set keeps its review rule: only he can switch it off or change who made it.
+      if (was && was.createdBy === "mentor" && (Boolean(q.requiresApproval) !== Boolean(was.requiresApproval) || q.createdBy !== was.createdBy)) problems.push("mission review rule");
     });
   }
   if (key === "future-world-skill-proof-v2") {
     const old = before && typeof before === "object" ? before : {};
     Object.keys(after || {}).forEach(id => {
-      const now = after[id] || {}, was = old[id] || {};
+      const now = ownEntry(after, id), was = ownEntry(old, id);
       if (now.verified && !was.verified) problems.push("level verification");
       if (text(now.mentorFeedback) !== text(was.mentorFeedback)) problems.push("level feedback");
     });
@@ -250,8 +274,13 @@ function sendAlertEmail(alerts, backend) {
 const JOURNAL_HEADER = ["Date", "Type", "Topic", "Minutes", "What I learned / did", "Practised", "Feeling", "Question for Sikander", "Proof", "Chat in the app", "Sikander's reply (type here)", "Entry id (don't edit)"];
 const REPLY_COL = 10, ID_COL = 11; // zero-based
 const replyId = entryId => entryId + "-sheetreply";
-// Text that starts with = + - @ would become a formula in Sheets.
-const safeCell = value => { const s = text(value); return /^[=+\-@]/.test(s) ? "'" + s : s; };
+// Text that starts with = + - @ (or a tab / line break) would become a formula in Sheets. Every text cell goes through this,
+// because anyone who can reach this web app can send any text, and a formula such as IMPORTDATA could send the sheet's contents away.
+const safeCell = value => { const s = text(value); return /^[=+\-@\t\r]/.test(s) ? "'" + s : s; };
+/** A number for a minutes cell; anything else (such as text meant as a formula) becomes an empty cell. */
+const minutesCell = value => { const n = Number(value); return Number.isFinite(n) && n > 0 ? n : ""; };
+/** Last guard before writing to Sheets: text that would still turn into a formula gets the same protection. */
+const plainRows = rows => rows.map(row => row.map(cell => (typeof cell === "string" ? safeCell(cell) : cell)));
 
 /** One row per entry Hanifa wrote in the app (the sheet's own rows and the sample week are left out), newest first. */
 function journalRows(activity, replies) {
@@ -259,7 +288,7 @@ function journalRows(activity, replies) {
     .filter(a => a && a.source !== "sheet" && String(a.id).indexOf("import-") !== 0)
     .sort((a, b) => text(b.date).localeCompare(text(a.date)))
     .map(a => [
-      a.date, a.kind, safeCell(a.topic), a.minutes || "", safeCell(a.did), safeCell(a.practiced), text(a.feeling),
+      safeCell(a.date), safeCell(a.kind), safeCell(a.topic), minutesCell(a.minutes), safeCell(a.did), safeCell(a.practiced), safeCell(a.feeling),
       safeCell(a.blocker), safeCell(a.proof) + (a.attachment ? (a.proof ? " - " : "") + "\u{1F4F8} screenshot in the app" : ""),
       safeCell(list(a.comments).filter(c => c.id !== replyId(a.id)).map(c => (c.by === "mentor" ? "Sikander: " : "Hanifa: ") + c.text).join("\n")),
       safeCell(replies[a.id] || ""), "'" + a.id,
@@ -303,7 +332,7 @@ function timeAppColumns(activity) {
   const days = {};
   const day = date => (days[date] = days[date] || { minutes: 0, notes: [], chat: [] });
   list(activity).forEach(a => {
-    if (!a || !a.date) return;
+    if (!a || !/^\d{4}-\d{2}-\d{2}$/.test(String(a.date))) return; // a date that isn't a real day never becomes a row
     if (isAppEntry(a)) {
       const d = day(a.date);
       d.minutes += Number(a.minutes) || 0;
@@ -450,7 +479,7 @@ function sheetsBackend() {
       const lastRow = sheet.getLastRow();
       const keys = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().map(r => keyOf(r[0])) : [];
       const blank = header.map(() => "");
-      const values = keys.map(k => byRow[k] || blank);
+      const values = plainRows(keys.map(k => byRow[k] || blank));
       if (values.length) sheet.getRange(2, first + 1, values.length, header.length).setValues(values);
       if (keyType !== "date") return;
       const missing = Object.keys(byRow).filter(k => keys.indexOf(k) < 0).sort();
@@ -459,7 +488,7 @@ function sheetsBackend() {
         const row = new Array(first + header.length).fill("");
         row[0] = when; row[1] = Utilities.formatDate(when, tz, "EEE");
         byRow[k].forEach((v, i) => { row[first + i] = v; });
-        sheet.appendRow(row);
+        sheet.appendRow(plainRows([row])[0]);
       });
     },
     hasImage: id => imageRow(id) > 0,
@@ -479,7 +508,7 @@ function sheetsBackend() {
     writeJournal: rows => {
       const sheet = journalTab();
       sheet.clearContents();
-      sheet.getRange(1, 1, rows.length, JOURNAL_HEADER.length).setValues(rows);
+      sheet.getRange(1, 1, rows.length, JOURNAL_HEADER.length).setValues(plainRows(rows));
       sheet.setFrozenRows(1);
       sheet.getRange(1, 1, 1, JOURNAL_HEADER.length).setFontWeight("bold");
       sheet.getRange(1, REPLY_COL + 1, Math.max(rows.length, 2), 1).setBackground("#fff7d6");
