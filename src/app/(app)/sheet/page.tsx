@@ -62,9 +62,10 @@ export default function SheetPage() {
         <div className="min-w-0 flex-1"><p className="text-xs font-extrabold uppercase tracking-widest text-white/75">Google Sheets</p><h2 className="mt-1 font-display text-2xl font-extrabold">Hanifa Admission Working</h2><p className="mt-1 text-sm text-white/85">It opens in a new tab. The app reads it by itself every time you open the app, and you can press “Sync now” any time.</p></div>
       </div>
       <div className="relative mt-5 flex flex-wrap gap-3">
-        <a href={WORKING_SHEET_URL} target="_blank" rel="noopener noreferrer" className="btn bg-white text-brand shadow-pop hover:-translate-y-0.5">Open the sheet <ExternalLink size={16} /></a>
-        <button onClick={syncNow} disabled={syncing} className="btn bg-white/20 text-white hover:bg-white/30 disabled:opacity-70"><RefreshCw size={15} className={syncing ? "animate-spin" : ""} />{syncing ? "Syncing…" : "Sync now"}</button>
-        <button onClick={copy} className="btn bg-white/20 text-white hover:bg-white/30"><Copy size={15} />Copy link</button>
+        {WORKING_SHEET_URL && <a href={WORKING_SHEET_URL} target="_blank" rel="noopener noreferrer" className="btn bg-white text-brand shadow-pop hover:-translate-y-0.5">Open the sheet <ExternalLink size={16} /></a>}
+        {WORKING_SHEET_URL && <button onClick={syncNow} disabled={syncing} className="btn bg-white/20 text-white hover:bg-white/30 disabled:opacity-70"><RefreshCw size={15} className={syncing ? "animate-spin" : ""} />{syncing ? "Syncing…" : "Sync now"}</button>}
+        {WORKING_SHEET_URL && <button onClick={copy} className="btn bg-white/20 text-white hover:bg-white/30"><Copy size={15} />Copy link</button>}
+        {!WORKING_SHEET_URL && <p className="text-sm font-semibold text-white/85">No Google Sheet is connected to this copy of the app.</p>}
       </div>
     </section>
 
@@ -86,6 +87,6 @@ export default function SheetPage() {
           {t.columns.length > 0 && <ul className="mt-3 space-y-1.5">{t.columns.map(c => <li key={c} className="flex gap-2 text-sm leading-6 text-ink/70"><span className="text-brand">•</span>{c}</li>)}</ul>}</div></div>
     </article>)}</div>
 
-    <div className="mt-8 flex flex-wrap items-center justify-center gap-3"><a href={WORKING_SHEET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary">Open the sheet <ExternalLink size={16} /></a><Link href="/home" className="btn-soft">Back to Home</Link></div>
+    <div className="mt-8 flex flex-wrap items-center justify-center gap-3">{WORKING_SHEET_URL && <a href={WORKING_SHEET_URL} target="_blank" rel="noopener noreferrer" className="btn-primary">Open the sheet <ExternalLink size={16} /></a>}<Link href="/home" className="btn-soft">Back to Home</Link></div>
   </div>;
 }

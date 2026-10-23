@@ -2,7 +2,7 @@
 
 Cloud save lets Hanifa's phone, her laptop and your laptop share the same progress. It also copies her app journal into
 the working sheet and brings your sheet replies back into the app. It runs as a small Google Apps Script in **your**
-Google account (syedxanshah@gmail.com) and costs nothing.
+Google account and costs nothing.
 
 ## 1. Create the script
 
@@ -17,7 +17,9 @@ Google account (syedxanshah@gmail.com) and costs nothing.
 1. Click **Project Settings** (⚙️ on the left) and scroll to **Script Properties**.
 2. Press **Add script property**. Property: `MENTOR_PIN`, Value: your PIN (6 or more digits is safer than 4). Press **Save script properties**.
 
-Only you can see this, and the PIN is no longer anywhere in the app.
+Add a second property, `WORKING_SHEET_ID`: the id of the working sheet, which is the long code in its web address between `/d/` and `/edit`. It is kept here, not in the code, because the code is in a public repository.
+
+Only you can see these, and the PIN is no longer anywhere in the app.
 
 ## 3. Run setup once
 

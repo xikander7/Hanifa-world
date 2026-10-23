@@ -290,7 +290,7 @@ the game points, flashcards, sheet syncing, Cloud save merging and Mentor permis
 
 ### SheetJS (`xlsx`): reading Excel files
 
-The app started from an Excel workbook ([docs/source/Hanifa Admission Working.xlsx](docs/source/)). The `xlsx` package
+The app started from an Excel workbook (kept private, so it is not in this repository). The `xlsx` package
 reads Excel files. [scripts/import-workbook.mjs](scripts/import-workbook.mjs) uses it to turn the workbook's five sheets
 into [src/data/seed.json](src/data/seed.json), the starting data for the app. Mentor Hub can also accept a downloaded
 `.xlsx` or `.csv` file.
@@ -462,7 +462,7 @@ To share progress between devices, turn on **Cloud save**: follow [docs/cloud-se
 
 ## Hosting
 
-Hosted on Vercel (project `hanifa-world-vercel`). Cloud save is connected through the `NEXT_PUBLIC_CLOUD_URL` environment variable in Vercel's project settings. The project is **not linked to GitHub**: pushing to `main` does not update the site. Deploy from the project folder:
+Hosted on Vercel (project `hanifa-world-vercel`). Cloud save is connected through the `NEXT_PUBLIC_CLOUD_URL` environment variable in Vercel's project settings, and the Study Sheet through `NEXT_PUBLIC_WORKING_SHEET_ID` (the sheet's id is kept out of this public repository). The project is **not linked to GitHub**: pushing to `main` does not update the site. Deploy from the project folder:
 
 ```bash
 pnpm dlx vercel deploy --prod --yes
@@ -474,7 +474,7 @@ Wait for "Production … ready", then hard-refresh the site (Cmd+Shift+R). If a 
 
 ## Source data
 
-The original Excel workbook and master prompt are in `docs/source/`. The importer maps the five workbook sheets into `src/data/seed.json`:
+The master prompt is in `docs/source/`. The original Excel workbook is private and not in this repository: put your own copy at `docs/source/Hanifa Admission Working.xlsx` (git ignores it). The importer maps the five workbook sheets into `src/data/seed.json`:
 
 ```bash
 node --experimental-strip-types scripts/import-workbook.mjs

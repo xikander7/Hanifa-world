@@ -25,6 +25,7 @@ async function fetchTab(tab: string) {
  * into the journal. Safe to repeat: entries have stable ids, and comments written in the app are kept.
  */
 export async function syncFromLiveSheet(): Promise<LiveSyncResult> {
+  if (!WORKING_SHEET_ID) throw new Error("No working sheet is connected to this site");
   const topics = SKILLS.map(s => s.topic);
   const [weeklyRows, timeRows] = await Promise.all([fetchTab(SYNCED_TABS.weekly), fetchTab(SYNCED_TABS.time)]);
   const weekly = parseWeekly(weeklyRows, topics), time = parseTimeTracking(timeRows, topics);

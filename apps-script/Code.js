@@ -20,6 +20,7 @@
  *
  * Script Properties (Project Settings > Script Properties):
  *  - MENTOR_PIN   required, your PIN
+ *  - WORKING_SHEET_ID required, the id of the working sheet (the long code in its web address, between /d/ and /edit)
  *  - MENTOR_EMAIL optional; alerts go here. Without it they go to the Google account that runs this script
  *  - HANIFA_EMAIL optional; her daily reminder goes here (several addresses can be separated with commas)
  *  - REMINDER_HOUR optional, 0-23 (default 17); REMINDER_TIMEZONE optional (default Asia/Karachi). Run setup again after changing them
@@ -27,7 +28,7 @@
  *  - DATA_SHEET_ID created automatically on first run
  */
 
-const WORKING_SHEET_ID = "1U-4tJ5tJGLne0uCzxhKHlO9aBvm9DsfIOvV94VDXYfE";
+// The working sheet's id is not in this file (the file is in a public repository): add it as the Script Property WORKING_SHEET_ID.
 const JOURNAL_TAB = "App Journal";
 const TIME_TAB = "Time Tracking Daily";
 const WEEKLY_TAB = "Weekly Learning Updates";
@@ -132,7 +133,7 @@ function pull(req, backend) {
   try { known = JSON.parse(req.revs || "{}"); } catch (err) { known = {}; }
   if (backend.cacheGet("replies-checked") !== "1") {
     backend.cachePut("replies-checked", "1", REPLY_CHECK_SECONDS);
-    importJournalReplies(backend);
+    try { importJournalReplies(backend); } catch (err) { /* the sheet is a bonus copy: if it can't be read, syncing the diary still works */ }
   }
   const revs = backend.revs();
   const keys = {};
@@ -158,7 +159,10 @@ function push(req, backend) {
       // A key's first save is a device joining, not news: only later changes can send an email.
       if (!mentor && current.rev > 0) mentorAlerts(key, current.value, change.value).forEach(a => alerts.push(a));
       results[key] = { status: "ok", rev: current.rev + 1 };
-      if (key === ACTIVITY_KEY) { backend.writeJournal(journalRows(change.value, backend.journalReplies())); writeMainSheet(change.value, backend); }
+      if (key === ACTIVITY_KEY) {
+        try { backend.writeJournal(journalRows(change.value, backend.journalReplies())); } catch (err) { /* a problem with the sheet must never lose Hanifa's work */ }
+        writeMainSheet(change.value, backend);
+      }
     }
   });
   if (alerts.length) {
@@ -403,8 +407,13 @@ function sheetsBackend() {
     for (let i = 0; i < ids.length; i++) if (ids[i][0] === id) return i + 1;
     return 0;
   };
+  const workingBook = () => {
+    const id = props.getProperty("WORKING_SHEET_ID");
+    if (!id) throw new Error("WORKING_SHEET_ID is not set in Script Properties");
+    return SpreadsheetApp.openById(id);
+  };
   const journalTab = () => {
-    const book = SpreadsheetApp.openById(WORKING_SHEET_ID);
+    const book = workingBook();
     return book.getSheetByName(JOURNAL_TAB) || book.insertSheet(JOURNAL_TAB);
   };
   return {
@@ -453,7 +462,7 @@ function sheetsBackend() {
      * values for those columns. Rows without app data get empty cells; days the tab doesn't have yet are added.
      */
     writeAppColumns: (tabName, header, byRow, keyType) => {
-      const sheet = SpreadsheetApp.openById(WORKING_SHEET_ID).getSheetByName(tabName);
+      const sheet = workingBook().getSheetByName(tabName);
       if (!sheet) return;
       const width = Math.max(sheet.getLastColumn(), 1);
       const top = sheet.getRange(1, 1, 1, width).getValues()[0].map(String);
@@ -568,7 +577,8 @@ function sendTestReminder() { dailyReminder(true); }
 function setup() {
   const backend = sheetsBackend();
   backend.revs();
-  SpreadsheetApp.openById(WORKING_SHEET_ID).getName();
+  if (!backend.prop("WORKING_SHEET_ID")) throw new Error("Add WORKING_SHEET_ID in Project Settings \u{2192} Script Properties, then run setup again.");
+  SpreadsheetApp.openById(backend.prop("WORKING_SHEET_ID")).getName();
   MailApp.getRemainingDailyQuota(); // asks for permission to send the alert emails
   if (!backend.prop("MENTOR_PIN")) throw new Error("Add MENTOR_PIN in Project Settings \u{2192} Script Properties, then run setup again.");
   // The daily reminder timer (free): one per day at REMINDER_HOUR in REMINDER_TIMEZONE. Re-running setup replaces it.

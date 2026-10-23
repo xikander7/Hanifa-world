@@ -40,9 +40,14 @@ export const SYNCED_KEYS: string[] = [
   KEYS.skillProof, KEYS.brain, KEYS.inbox, KEYS.inboxSeen, KEYS.asks,
 ];
 
-/** Hanifa's working Google Sheet (weekly updates, daily time tracking, training plan, university research). */
-export const WORKING_SHEET_ID = "1U-4tJ5tJGLne0uCzxhKHlO9aBvm9DsfIOvV94VDXYfE";
-export const WORKING_SHEET_URL = `https://docs.google.com/spreadsheets/d/${WORKING_SHEET_ID}/edit?gid=1730295282#gid=1730295282`;
+/**
+ * Hanifa's working Google Sheet (weekly updates, daily time tracking, training plan, university research).
+ * Its id comes from the NEXT_PUBLIC_WORKING_SHEET_ID setting (Vercel project settings, or .env.local), never from the code,
+ * so this public repository doesn't point at a real sheet. Without it the sheet links and live sync are simply off.
+ */
+const SHEET_ID_SETTING = process.env.NEXT_PUBLIC_WORKING_SHEET_ID ?? "";
+export const WORKING_SHEET_ID = /^[\w-]{20,}$/.test(SHEET_ID_SETTING) ? SHEET_ID_SETTING : "";
+export const WORKING_SHEET_URL = WORKING_SHEET_ID ? `https://docs.google.com/spreadsheets/d/${WORKING_SHEET_ID}/edit?gid=1730295282#gid=1730295282` : "";
 
 // ---------- shared types ----------
 export type Comment = { id: string; by: "mentor" | "hanifa"; text: string; at: string };

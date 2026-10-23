@@ -73,7 +73,7 @@ export function SheetSync() {
       {error && <p role="alert" className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
       <p className="mt-6 text-xs font-extrabold uppercase tracking-wider text-ink/45">No internet to Google, or the sheet stops being link-shared? Use a download</p>
       <ol className="mt-3 space-y-2 text-sm leading-6">
-        <li><b>1.</b> Open the sheet: <a href={WORKING_SHEET_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-bold text-brand underline">Hanifa Admission Working <ExternalLink size={12} /></a></li>
+        <li><b>1.</b> Open the sheet: {WORKING_SHEET_URL ? <a href={WORKING_SHEET_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-bold text-brand underline">Hanifa Admission Working <ExternalLink size={12} /></a> : "Hanifa Admission Working"}</li>
         <li><b>2.</b> In Google Sheets choose <b>File → Download → Microsoft Excel (.xlsx)</b>.</li>
         <li><b>3.</b> Pick that file below and check the preview. Nothing changes until you press Import.</li>
       </ol>

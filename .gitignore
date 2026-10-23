@@ -8,3 +8,4 @@ coverage/
 src/data/seed.local.json
 .vercel
 .env*
+docs/source/*.xlsx

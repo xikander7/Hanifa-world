@@ -7,22 +7,22 @@
     "source": "sheet",
     "topic": "Computer Basics",
     "minutes": 0,
-    "did": "Hardware/software their interaction, basics of all computer compnents; CPU GPU RAM SSD HDD PSU Motherboard peripherals, OS their types and kinds;PC OS, mobile OS RTOS, server OS Embaded O, CPU and threads, extensions, motherboard in detail, directory structures, O notions , common data structures, absolute and relative paths, task manager/system manager, command line, commands; bash,cmd,powershell, eviromental variables, software packages and package managers, text editors; notepad, notepad++, VScode, Networking; IP address; public v/s priavte ip local host, DNS, Port TCP/IP HTTP and HTTPS, client-server architecture, API basics GitHub",
-    "practiced": "completed exercises from youtube videos online, used gemini and other AIs asked friends and family in the field. · Progress: 70%",
+    "did": "Sample entry. Hardware and software: CPU, RAM, storage, the operating system, file extensions and the command line.",
+    "practiced": "Watched the course videos and tried the exercises. · Progress: 70%",
     "feeling": "🤔",
-    "blocker": "confused on data structures github vscode directory structures Linux",
-    "proof": "sent on whatsapp",
+    "blocker": "Sample question: the command line still feels confusing.",
+    "proof": "Sample proof link",
     "comments": [
       {
         "id": "sheet-weekly-1-hanifa",
         "by": "hanifa",
-        "text": "basic computer components were easu to learn data structures are a bit confusing did not understand linux even on youtube it was confusing, same with VS apart from that i think the rest of everythign was easy to undertsand since using a computer you're actually using all of these and have examples in ur daily routine work and what i learned was to just identify and undertsand \"how\" eveything worked.",
+        "text": "Sample comment: the hardware parts were easy to learn, the command line was harder.",
         "at": "2026-09-27T12:00:00.000Z"
       },
       {
         "id": "sheet-weekly-1-mentor",
         "by": "mentor",
-        "text": "I reviewed , good work.\nOn weekend we might connect to cover the confusion topics",
+        "text": "Sample review: good work. Let's go over the confusing parts together.",
         "at": "2026-09-27T12:00:00.000Z"
       }
     ]
@@ -34,7 +34,7 @@
     "source": "sheet",
     "topic": "General study",
     "minutes": 180,
-    "did": "command task manager command line commands (bash powershell cmd) enviromental variables software packages text editors",
+    "did": "Sample entry: task manager, command line basics, environment variables, text editors.",
     "practiced": "",
     "feeling": "✨",
     "blocker": "",
