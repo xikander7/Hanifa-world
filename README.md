@@ -575,7 +575,7 @@ Cloud save is a Google Apps Script web app (`apps-script/Code.js`) that runs in 
 - **Mentor PIN:** with Cloud save on, the PIN is checked by the web app (Script Property `MENTOR_PIN`) and is never in the app's code. Five wrong tries lock sign-in for 15 minutes. A successful sign-in gives that device a signed token; switching back to Hanifa removes it.
 - **Mentor-only changes are enforced on the server:** mentor comments, messages, mission approvals and feedback, level verification and Dream notes are refused unless the push carries a valid Mentor token (`mentorOnlyChanges` in `apps-script/Code.js`, tested in `tests/cloudSync.test.ts`).
 - Without Cloud save there is no Mentor sign-in: the PIN only exists in the web app's Script Properties, never in the app's code or its history.
-- The web app's address is the key to the data: anyone who has it can read the synced data. Only share it through the Mentor Hub link.
+- The web app's address is in the website's code, so by itself it is not a secret. Turn on the **family access code** (the `ACCESS_CODE` Script Property, see docs/cloud-setup.md): once it is set, nobody can read or change the synced data without it, and each device asks for it once.
 
 ## Product principles
 

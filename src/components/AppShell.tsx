@@ -10,6 +10,7 @@ import { seedSheetEntries } from "@/lib/sheetSeed";
 import { syncFromLiveSheet, syncIsDue } from "@/lib/liveSheet";
 import { STORE_ERROR_EVENT, localStorageUse } from "@/lib/store";
 import { moveInlineImages } from "@/lib/images";
+import { AccessCodePrompt } from "./AccessCodePrompt";
 import { cloudUrl, cloudUrlIsBuiltIn, isCloudUrl, mentorSignIn, mentorSignOut, mentorToken, setCloudUrl, startCloud, useCloudStatus } from "@/lib/cloud";
 import { finishFocus, useFocusTimer } from "@/lib/useFocus";
 import { setMusicTrack, setMusicVolume, startMusic, stopMusic } from "@/lib/music";
@@ -344,6 +345,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Suspense fallback={null}>{mobileNav.map(item => <NavLink key={item.href} item={item} variant="mobile" />)}</Suspense>
     </nav>
     {role === "learner" && !isActive("/ask") && <NovaHelper />}
+    <AccessCodePrompt />
   </CelebrateProvider></RoleContext.Provider>;
 }
 

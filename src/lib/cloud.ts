@@ -39,7 +39,7 @@ export const mentorToken = () => rawGet(KEYS.mentorToken) ?? "";
 const setMentorToken = (token: string) => rawSet(KEYS.mentorToken, token || null);
 
 // ---------- status, for the little cloud in the top bar ----------
-export type CloudStatus = { state: "off" | "syncing" | "synced" | "offline" | "error"; at?: number; message?: string; refused?: boolean };
+export type CloudStatus = { state: "off" | "syncing" | "synced" | "offline" | "error"; at?: number; message?: string; refused?: boolean; needsCode?: boolean };
 let status: CloudStatus = { state: "off" };
 const statusListeners = new Set<() => void>();
 const setStatus = (next: CloudStatus) => { status = next; statusListeners.forEach(fn => fn()); };
@@ -48,10 +48,16 @@ export function useCloudStatus() {
   return useSyncExternalStore(fn => { statusListeners.add(fn); return () => { statusListeners.delete(fn); }; }, () => status, () => OFF);
 }
 
+// ---------- the family access code (optional: only asked for when the Cloud save script has one) ----------
+export const NEEDS_CODE = "access-code-needed";
+export const accessCode = () => { const saved = parse(rawGet(KEYS.accessCode)); return typeof saved === "string" ? saved : ""; };
+export const setAccessCode = (code: string) => rawSet(KEYS.accessCode, code.trim() ? JSON.stringify(code.trim()) : null);
+
 // ---------- talking to the web app ----------
 export async function cloudCall<T>(url: string, body: Record<string, unknown>): Promise<T> {
+  const code = accessCode();
   // text/plain keeps this a "simple" request, which Apps Script answers without a CORS preflight.
-  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body), redirect: "follow" });
+  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(code ? { ...body, code } : body), redirect: "follow" });
   if (!response.ok) throw new Error(`Cloud save answered ${response.status}`);
   const result = await response.json() as T & { ok: boolean; error?: string };
   if (!result.ok) throw new Error(result.error || "Cloud save said no");
@@ -60,7 +66,8 @@ export async function cloudCall<T>(url: string, body: Record<string, unknown>): 
 
 const transport = (url: string): Transport => ({
   pull: async revs => {
-    const response = await fetch(`${url}?action=pull&revs=${encodeURIComponent(JSON.stringify(revs))}`, { redirect: "follow", cache: "no-store" });
+    const code = accessCode();
+    const response = await fetch(`${url}?action=pull&revs=${encodeURIComponent(JSON.stringify(revs))}${code ? `&code=${encodeURIComponent(code)}` : ""}`, { redirect: "follow", cache: "no-store" });
     if (!response.ok) throw new Error(`Cloud save answered ${response.status}`);
     const result = await response.json() as { ok: boolean; error?: string; keys: Record<string, Remote> };
     if (!result.ok) throw new Error(result.error || "Cloud save said no");
@@ -78,6 +85,7 @@ export async function mentorSignIn(pin: string): Promise<string> {
   try { setMentorToken((await cloudCall<{ token: string }>(url, { action: "login", pin })).token); return ""; }
   catch (error) {
     const message = error instanceof Error ? error.message : "";
+    if (message === NEEDS_CODE) return "This device needs the family access code first. Close this and enter it when asked.";
     if (message === "wrong-pin") return "That code didn’t work. Try again.";
     if (message === "too-many-tries") return "Too many tries. Wait 15 minutes, then try again.";
     return "Couldn't reach Cloud save to check the code. Check the internet and try again.";
@@ -113,7 +121,8 @@ async function runOnce() {
     setStatus({ state: "synced", at: Date.now(), refused: outcome.refused.length > 0, message: outcome.refused.length ? "Some changes need Mentor sign-in and were undone." : undefined });
   } catch (error) {
     const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-    setStatus({ state: offline ? "offline" : "error", at: status.at, message: error instanceof Error ? error.message : String(error) });
+    const message = error instanceof Error ? error.message : String(error);
+    setStatus({ state: offline ? "offline" : "error", at: status.at, message: message === NEEDS_CODE ? "Needs the family access code" : message, needsCode: message === NEEDS_CODE });
   }
 }
 

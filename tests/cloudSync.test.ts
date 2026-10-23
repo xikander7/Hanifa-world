@@ -226,6 +226,53 @@ describe("the App Journal tab in the working sheet", () => {
   });
 });
 
+describe("The family access code", () => {
+  const withCode = (code = "family-secret-2026") => { const google = fakeGoogle(); google.props.set("ACCESS_CODE", code); return google; };
+  const actions = [{ action: "pull", revs: "{}" }, { action: "push", changes: [] }, { action: "login", pin: "2468" }, { action: "getImage", id: "abcdefgh" }, { action: "putImage", id: "abcdefgh", data: "data:image/png;base64,AAAA" }];
+
+  it("changes nothing while no code is set", () => {
+    const google = fakeGoogle();
+    for (const req of actions) expect(google.call(req).error).not.toBe("access-code-needed");
+    expect(google.call({ action: "ping" })).toMatchObject({ ok: true, codeRequired: false });
+  });
+
+  it("refuses every request without the right code, but still answers a ping", () => {
+    const google = withCode();
+    expect(google.call({ action: "ping" })).toMatchObject({ ok: true, codeRequired: true });
+    for (const req of actions) {
+      expect(google.call(req)).toEqual({ ok: false, error: "access-code-needed" });
+      expect(google.call({ ...req, code: "wrong" })).toEqual({ ok: false, error: "access-code-needed" });
+      expect(google.call({ ...req, code: "family-secret-2026 " })).toEqual({ ok: false, error: "access-code-needed" });
+      expect(google.call({ ...req, code: null })).toEqual({ ok: false, error: "access-code-needed" });
+    }
+    expect(google.rows.size).toBe(0); // nothing was read or written
+  });
+
+  it("works normally with the right code, including the Mentor PIN login", () => {
+    const google = withCode();
+    const code = "family-secret-2026";
+    expect(google.call({ action: "pull", revs: "{}", code }).ok).toBe(true);
+    expect(google.call({ action: "push", code, changes: [{ key: KEYS.quests, baseRev: 0, value: [] }] }).ok).toBe(true);
+    expect(google.call({ action: "login", pin: "2468", code }).token).toMatch(/^[\w-]{40,}$/);
+  });
+
+  it("does not count wrong access codes against the Mentor PIN tries", () => {
+    const google = withCode();
+    for (let i = 0; i < 8; i++) google.call({ action: "login", pin: "0000", code: "nope" });
+    expect(google.call({ action: "login", pin: "2468", code: "family-secret-2026" }).ok).toBe(true);
+  });
+});
+
+describe("Data from the cloud can't swap an object's prototype", () => {
+  it("ignores a __proto__ key when merging", () => {
+    const evil = JSON.parse('{"__proto__": {"verified": true}, "a": 1}');
+    const merged = merge3({}, { b: 2 }, evil) as Record<string, unknown>;
+    expect(Object.getPrototypeOf(merged)).toBe(Object.prototype);
+    expect(merged.verified).toBeUndefined();
+    expect(merged.a).toBe(1);
+  });
+});
+
 describe("Text sent to the app can never become a sheet formula", () => {
   it("protects every column of the App Journal and the main tabs, including date, kind, feeling and minutes", async () => {
     const google = fakeGoogle();

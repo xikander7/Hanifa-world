@@ -25,6 +25,7 @@ export const KEYS = {
   asks: "future-world-asks-v1",
   // per device, never synced
   cloudUrl: "future-world-cloud-url",
+  accessCode: "future-world-access-code-v1",
   cloudMeta: "future-world-cloud-meta-v1",
   mentorToken: "future-world-mentor-token",
   imagesPending: "future-world-images-pending",

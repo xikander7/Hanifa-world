@@ -49,6 +49,16 @@ device and is sent later).
 To connect every device automatically instead, set `NEXT_PUBLIC_CLOUD_URL` to the web app URL where the site is hosted
 (for example in Vercel's Environment Variables) and redeploy the site.
 
+## 6. Turn on the family access code (recommended)
+
+The web app's address is part of the website, so on its own it is not a secret. An access code makes sure only your family's devices can use Cloud save.
+
+1. In **Project Settings → Script Properties**, add `ACCESS_CODE` with a long code that is hard to guess (8 or more characters, for example three random words). Press **Save script properties**. No new deployment is needed.
+2. The next time Hanifa's phone, her laptop and your laptop open the app, each asks for the code **once**. Send it to her privately (not in a public place). Choose **Later** and the app keeps working on that device; it asks again the next time.
+3. To change the code, edit `ACCESS_CODE` and enter the new one on each device. To turn the feature off, empty the property.
+
+Without the code nothing can be read or changed, including by older copies of the app.
+
 ## Updating the script later
 
 After changing `Code.js`, paste it in again, then **Deploy → Manage deployments → ✏️ → Version: New version → Deploy**.

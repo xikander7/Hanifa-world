@@ -51,6 +51,7 @@ export function merge3(base: Json, local: Json, remote: Json): Json {
     const b = isObject(base) ? base : {};
     const out: Record<string, Json> = {};
     for (const k of new Set([...Object.keys(remote), ...Object.keys(local)])) {
+      if (k === "__proto__") continue; // data from the cloud must never be able to swap an object's prototype
       const inL = k in local, inR = k in remote;
       if (inL && inR) out[k] = merge3(b[k], local[k], remote[k]);
       else if (inL) { if (!(k in b && same(b[k], local[k]))) out[k] = local[k]; }

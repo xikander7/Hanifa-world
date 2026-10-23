@@ -21,6 +21,8 @@
  * Script Properties (Project Settings > Script Properties):
  *  - MENTOR_PIN   required, your PIN
  *  - WORKING_SHEET_ID required, the id of the working sheet (the long code in its web address, between /d/ and /edit)
+ *  - ACCESS_CODE optional but recommended: a long family code (8+ characters). When set, each device must enter it once;
+ *    without it, anyone who finds this web app's address could read or change the diary. Leave it empty to keep things open.
  *  - MENTOR_EMAIL optional; alerts go here. Without it they go to the Google account that runs this script
  *  - HANIFA_EMAIL optional; her daily reminder goes here (several addresses can be separated with commas)
  *  - REMINDER_HOUR optional, 0-23 (default 17); REMINDER_TIMEZONE optional (default Asia/Karachi). Run setup again after changing them
@@ -64,7 +66,9 @@ function respond(result) { return ContentService.createTextOutput(JSON.stringify
 // ------------------------------------------------------------------ request handling (no Google services in here, so it can be tested)
 function handle(req, backend) {
   try {
-    if (req.action === "ping") return { ok: true, app: "my-future-world", version: 1 };
+    if (req.action === "ping") return { ok: true, app: "my-future-world", version: 1, codeRequired: Boolean(backend.prop("ACCESS_CODE")) };
+    const locked = accessGate(req, backend);
+    if (locked) return locked;
     if (req.action === "login") return login(String(req.pin || ""), backend);
     if (req.action === "pull") return pull(req, backend);
     if (req.action === "push") return push(req, backend);
@@ -82,6 +86,17 @@ function sameText(a, b) {
   let diff = x.length ^ y.length;
   for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x.charCodeAt(i) || 0) ^ (y.charCodeAt(i) || 0);
   return diff === 0;
+}
+
+/**
+ * The family access code (optional). While the Script Property ACCESS_CODE is empty nothing changes. Once it is set, every
+ * request except "ping" must carry it, so the web app's address alone (which is inside the public website) is not enough
+ * to read or change anything. Each device is asked for the code once and remembers it.
+ */
+function accessGate(req, backend) {
+  const code = backend.prop("ACCESS_CODE");
+  if (!code) return null;
+  return sameText(req.code === undefined || req.code === null ? "" : req.code, code) ? null : { ok: false, error: "access-code-needed" };
 }
 
 function login(pin, backend) {
@@ -590,4 +605,4 @@ function setup() {
 }
 
 // Lets the app's tests load this file. Apps Script has no `module`, so this line does nothing there.
-if (typeof module !== "undefined") module.exports = { handle, MAX_IMAGE_CHARS, mentorOnlyChanges, mentorAlerts, reminderFor, timeAppColumns, weeklyAppColumns, journalRows, applyJournalReplies, SYNCED_KEYS, CHUNK };
+if (typeof module !== "undefined") module.exports = { handle, accessGate, MAX_IMAGE_CHARS, mentorOnlyChanges, mentorAlerts, reminderFor, timeAppColumns, weeklyAppColumns, journalRows, applyJournalReplies, SYNCED_KEYS, CHUNK };
